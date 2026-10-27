@@ -1,0 +1,307 @@
+<section class="sala-form-panel" aria-labelledby="claseFormTitle">
+    <button class="sala-back-btn" type="button" onclick="volverASeleccionAgendar()">
+        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Elegir otra opción
+    </button>
+
+    <div class="sala-form-heading">
+        <span class="sala-form-heading-icon sala-option-clase" aria-hidden="true">
+            <i class="fa-solid fa-book-open"></i>
+        </span>
+        <div>
+            <p class="sala-computo-eyebrow">REGISTRO DE CLASE</p>
+            <h2 id="claseFormTitle" tabindex="-1">Agendar clase</h2>
+            <p>Selecciona la carrera, materia, grupo y horario que se reservará.</p>
+        </div>
+    </div>
+
+    <form class="sala-registration-form" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="categoria" value="clase">
+        <div class="sala-class-type-badge"><i class="fa-solid fa-book-open" aria-hidden="true"></i> Tipo: Clase regular</div>
+        {% if clase_form.non_field_errors %}
+        <div class="sala-form-errors" role="alert">{{ clase_form.non_field_errors }}</div>
+        {% endif %}
+        <div class="sala-form-grid">
+            {% for field in clase_form %}
+                {% if field.name == 'fecha' or field.name == 'fecha_fin_repeticion' %}
+                <div class="sala-form-field{% if field.errors %} has-error{% endif %}" data-date-picker>
+                    {{ field }}
+                    <label class="sala-form-label" for="{{ field.id_for_label }}-trigger">
+                        {% if field.name == 'fecha' %}Fecha de inicio{% else %}Repetir hasta{% endif %}
+                    </label>
+                    <button id="{{ field.id_for_label }}-trigger" class="sala-date-trigger" type="button" aria-haspopup="dialog" aria-expanded="false" data-date-trigger>
+                        <span data-date-label>Selecciona una fecha</span>
+                        <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+                    </button>
+                    <div class="sala-calendar-popover" role="dialog" aria-label="Seleccionar fecha" hidden>
+                        <div class="sala-calendar-heading">
+                            <button class="sala-calendar-nav" type="button" aria-label="Mes anterior" data-calendar-prev><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
+                            <strong data-calendar-title></strong>
+                            <button class="sala-calendar-nav" type="button" aria-label="Mes siguiente" data-calendar-next><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+                        </div>
+                        <div class="sala-calendar-weekdays" aria-hidden="true">
+                            <span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span>
+                        </div>
+                        <div class="sala-calendar-days" data-calendar-days></div>
+                    </div>
+                    {% for error in field.errors %}<span class="sala-field-error">{{ error }}</span>{% endfor %}
+                </div>
+                {% elif field.is_hidden %}
+                {{ field }}
+                {% elif field.name == 'dias_repeticion' %}
+                <fieldset class="sala-form-field sala-weekday-field{% if field.errors %} has-error{% endif %}">
+                    <legend class="sala-form-label">{{ field.label }}</legend>
+                    <p class="sala-field-hint">La clase se reservará cada semana en los días seleccionados.</p>
+                    <div class="sala-weekday-options">
+                        {% for checkbox in field %}
+                        <label class="sala-weekday-option">
+                            {{ checkbox.tag }}
+                            <span>{{ checkbox.choice_label }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                    {% for error in field.errors %}<span class="sala-field-error">{{ error }}</span>{% endfor %}
+                </fieldset>
+                {% else %}
+                <div class="sala-form-field{% if field.errors %} has-error{% endif %}">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {% if field.name == 'numero_cuenta_docente' %}
+                    <span id="docenteLookupFeedback" class="sala-field-hint" role="status" aria-live="polite">Busca al docente por su número de cuenta.</span>
+                    {% endif %}
+                    {% for error in field.errors %}<span class="sala-field-error">{{ error }}</span>{% endfor %}
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        <div class="sala-form-actions">
+            <button class="sala-form-submit" type="submit">
+                <i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Registrar clase
+            </button>
+        </div>
+    </form>
+</section>
+
+<script>
+    (function() {
+        const cuentaInput = document.querySelector('[data-docente-lookup]');
+        const docenteInput = document.querySelector('[data-docente-id]');
+        const carreraSelect = document.querySelector('[data-carrera-select]');
+        const materiaSelect = document.querySelector('[data-materia-select]');
+        const grupoSelect = document.querySelector('[data-grupo-select]');
+        const feedback = document.getElementById('docenteLookupFeedback');
+        if (!cuentaInput || !docenteInput || !carreraSelect || !materiaSelect || !grupoSelect || !feedback) return;
+
+        let solicitudActual = 0;
+        function resetCatalogos() {
+            carreraSelect.replaceChildren(new Option('Busca primero al docente', ''));
+            materiaSelect.replaceChildren(new Option('Primero busca al docente', ''));
+            grupoSelect.replaceChildren(new Option('Primero busca al docente', ''));
+        }
+
+        async function cargarCatalogos(cuenta, carreraId) {
+            resetCatalogos();
+            if (!cuenta || !carreraId) return;
+
+            try {
+                const url = new URL('{% url "catalogos_clase_docente" %}', window.location.origin);
+                url.searchParams.set('cuenta', cuenta);
+                url.searchParams.set('carrera', carreraId);
+                const response = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                const resultado = await response.json();
+                if (!response.ok) {
+                    feedback.textContent = resultado.error || 'No fue posible cargar las materias y grupos.';
+                    return;
+                }
+
+                materiaSelect.replaceChildren(new Option('Selecciona una materia', ''));
+                resultado.materias.forEach(function(materia) {
+                    materiaSelect.add(new Option(materia.nombre, materia.id));
+                });
+                grupoSelect.replaceChildren(new Option('Selecciona un grupo', ''));
+                resultado.grupos.forEach(function(grupo) {
+                    grupoSelect.add(new Option(grupo.nombre, grupo.id));
+                });
+
+                if (!resultado.materias.length || !resultado.grupos.length) {
+                    feedback.textContent = 'El catálogo de esta carrera aún no tiene materias o grupos registrados.';
+                } else {
+                    feedback.textContent = 'Docente, carrera, materias y grupos cargados.';
+                }
+            } catch (error) {
+                feedback.textContent = 'No fue posible cargar las materias y grupos. Intenta nuevamente.';
+            }
+        }
+
+        cuentaInput.addEventListener('change', async function() {
+            const cuenta = cuentaInput.value.trim();
+            const solicitud = ++solicitudActual;
+            docenteInput.value = '';
+            carreraSelect.value = '';
+            resetCatalogos();
+            cuentaInput.setCustomValidity('Ingresa el número de cuenta de un docente registrado.');
+
+            if (!cuenta) {
+                cuentaInput.setCustomValidity('');
+                feedback.textContent = 'Busca al docente por su número de cuenta.';
+                return;
+            }
+
+            feedback.textContent = 'Buscando docente...';
+            try {
+                const url = new URL('{% url "buscar_docente_sala" %}', window.location.origin);
+                url.searchParams.set('cuenta', cuenta);
+                const response = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                const resultado = await response.json();
+                if (solicitud !== solicitudActual) return;
+
+                if (!response.ok || !resultado.encontrado) {
+                    feedback.textContent = resultado.error || 'No se encontró un docente con ese número de cuenta.';
+                    return;
+                }
+
+                if (!resultado.carrera_id || !resultado.carrera) {
+                    feedback.textContent = 'El docente no tiene una carrera disponible en el catálogo.';
+                    return;
+                }
+
+                docenteInput.value = resultado.persona_id;
+                carreraSelect.replaceChildren(new Option(resultado.carrera, resultado.carrera_id));
+                carreraSelect.value = String(resultado.carrera_id);
+                cuentaInput.setCustomValidity('');
+                feedback.textContent = 'Docente encontrado: ' + resultado.nombre + '. Cargando su carrera...';
+                await cargarCatalogos(cuenta, resultado.carrera_id);
+            } catch (error) {
+                if (solicitud !== solicitudActual) return;
+                feedback.textContent = 'No fue posible buscar el docente. Intenta nuevamente.';
+            }
+        });
+
+        carreraSelect.addEventListener('change', function() {
+            const cuenta = cuentaInput.value.trim();
+            const carreraId = carreraSelect.value;
+            cargarCatalogos(cuenta, carreraId);
+        });
+    })();
+</script>
+
+<script>
+    (function() {
+        const dateFormat = new Intl.DateTimeFormat('es-MX', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+        const monthFormat = new Intl.DateTimeFormat('es-MX', {
+            month: 'long',
+            year: 'numeric'
+        });
+
+        function parseDate(value) {
+            if (!value) return null;
+            const parts = value.split('-').map(Number);
+            return new Date(parts[0], parts[1] - 1, parts[2]);
+        }
+
+        function formatIso(date) {
+            return [
+                date.getFullYear(),
+                String(date.getMonth() + 1).padStart(2, '0'),
+                String(date.getDate()).padStart(2, '0')
+            ].join('-');
+        }
+
+        function closePicker(picker) {
+            const trigger = picker.querySelector('[data-date-trigger]');
+            const popover = picker.querySelector('.sala-calendar-popover');
+            popover.hidden = true;
+            trigger.setAttribute('aria-expanded', 'false');
+        }
+
+        window.inicializarCalendariosSala = function() {
+        document.querySelectorAll('[data-date-picker]').forEach(function(picker) {
+            if (picker.dataset.calendarInitialized) return;
+            picker.dataset.calendarInitialized = 'true';
+            const input = picker.querySelector('[data-calendar-value]');
+            const trigger = picker.querySelector('[data-date-trigger]');
+            const label = picker.querySelector('[data-date-label]');
+            const popover = picker.querySelector('.sala-calendar-popover');
+            const title = picker.querySelector('[data-calendar-title]');
+            const days = picker.querySelector('[data-calendar-days]');
+            let visibleMonth = parseDate(input.value) || new Date();
+            visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
+
+            function renderCalendar() {
+                title.textContent = monthFormat.format(visibleMonth);
+                days.replaceChildren();
+                const firstDay = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
+                const offset = (firstDay.getDay() + 6) % 7;
+                const selected = parseDate(input.value);
+                const today = new Date();
+
+                for (let index = 0; index < 42; index += 1) {
+                    const date = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), index - offset + 1);
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'sala-calendar-day';
+                    button.textContent = String(date.getDate());
+                    button.setAttribute('aria-label', dateFormat.format(date));
+                    if (date.getMonth() !== visibleMonth.getMonth()) button.classList.add('is-outside-month');
+                    if (date.toDateString() === today.toDateString()) button.classList.add('is-today');
+                    if (selected && date.toDateString() === selected.toDateString()) {
+                        button.classList.add('is-selected');
+                        button.setAttribute('aria-pressed', 'true');
+                    }
+
+                    button.addEventListener('click', function() {
+                        input.value = formatIso(date);
+                        label.textContent = dateFormat.format(date);
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                        closePicker(picker);
+                        trigger.focus();
+                    });
+                    days.appendChild(button);
+                }
+            }
+
+            const initialDate = parseDate(input.value);
+            if (initialDate) label.textContent = dateFormat.format(initialDate);
+            picker.querySelector('[data-calendar-prev]').addEventListener('click', function() {
+                visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1);
+                renderCalendar();
+            });
+            picker.querySelector('[data-calendar-next]').addEventListener('click', function() {
+                visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1);
+                renderCalendar();
+            });
+            trigger.addEventListener('click', function() {
+                const isOpening = popover.hidden;
+                document.querySelectorAll('[data-date-picker] .sala-calendar-popover').forEach(function(other) {
+                    other.hidden = true;
+                    other.parentElement.querySelector('[data-date-trigger]').setAttribute('aria-expanded', 'false');
+                });
+                if (isOpening) {
+                    const chosenDate = parseDate(input.value);
+                    if (chosenDate) visibleMonth = new Date(chosenDate.getFullYear(), chosenDate.getMonth(), 1);
+                    renderCalendar();
+                    popover.hidden = false;
+                    trigger.setAttribute('aria-expanded', 'true');
+                }
+            });
+            picker.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape' && !popover.hidden) {
+                    closePicker(picker);
+                    trigger.focus();
+                }
+            });
+        });
+        };
+        window.inicializarCalendariosSala();
+
+        document.addEventListener('click', function(event) {
+            document.querySelectorAll('[data-date-picker]').forEach(function(picker) {
+                if (!picker.contains(event.target)) closePicker(picker);
+            });
+        });
+    })();
+</script>

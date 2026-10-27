@@ -1,0 +1,197 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro de Auditoría y Reportes | UAPIX</title>
+    
+    <!-- Favicon institucional -->
+    <link rel="icon" type="image/png" href="{% static 'inicio/images/icono-pag.png' %}">
+
+    <!-- Calendario local para no depender de servicios externos -->
+    <link rel="stylesheet" href="{% static 'inicio/vendor/flatpickr/flatpickr.min.css' %}">
+    <script src="{% static 'inicio/vendor/flatpickr/flatpickr.min.js' %}"></script>
+    <script src="{% static 'inicio/vendor/flatpickr/es.js' %}"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'inicio/css/estilos.css' %}?v=20261022-1">
+</head>
+<body class="audit-body">
+
+    <!-- Header institucional o barra superior con botón Regresar -->
+    <header class="institutional-header">
+        <div class="brand-left">
+            <img src="{% static 'inicio/images/banner-uap-blanco.png' %}" alt="Escudo" class="audit-logo">
+           
+        </div>
+        <div class="user-links">
+            <a href="{% url 'homePage' %}"><i class="fa-solid fa-arrow-left"></i>  Regresar </a>
+        </div>
+    </header>
+
+    <!-- Contenedor Principal de Auditoría (Una sola vista) -->
+    <main class="main-container audit-container">
+        
+        <h2 class="audit-title">CENTRO DE AUDITORÍA Y REPORTES</h2>
+
+        <!-- Panel de Filtros y Tabla -->
+        <div class="audit-card-panel">
+            
+            <!-- Filtros de Búsqueda -->
+            <div class="filters-row">
+                <div class="filter-group">
+                    <label for="moduloFiltro">Módulo:</label>
+                    <select class="audit-select" id="moduloFiltro">
+                        <option>Todos los Módulos</option>
+                        <option>Sala de Cómputo</option>
+                        <option>Biblioteca</option>
+                        <option>Auto Acceso</option>
+                        <option>Inventario Tecnológico</option>
+                        <option>Préstamos y Devolución</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="accionFiltro">Acción:</label>
+                    <select class="audit-select" id="accionFiltro">
+                        <option>Todas las acciones</option>
+                        <option>Crear</option>
+                        <option>Editar</option>
+                        <option>Eliminar</option>
+                        <option>Consultar</option>
+                    </select>
+                </div>
+                <div class="filter-group date-filter-container">
+                    <label for="rangoFechasDisplay">Rango de fechas:</label>
+                    <div class="input-calendar-wrapper" id="datePickerToggle">
+                        <input type="text" id="rangoFechasDisplay" class="audit-input" placeholder="Selecciona un rango" readonly>
+                        <i class="fa-solid fa-magnifying-glass-chart calendar-icon-trigger"></i>
+                    </div>
+
+                    <div class="date-dropdown-panel is-hidden" id="dateDropdownPanel">
+                        <div class="date-quick-options">
+                            <button type="button" class="quick-option-btn" onclick="seleccionarFiltroRapido('hoy')">Hoy</button>
+                            <button type="button" class="quick-option-btn" onclick="seleccionarFiltroRapido('ayer')">Ayer</button>
+                            <button type="button" class="quick-option-btn" onclick="seleccionarFiltroRapido('ultimos7')">Últimos 7 días</button>
+                            <button type="button" class="quick-option-btn" onclick="seleccionarFiltroRapido('semana')">Esta semana</button>
+                            <button type="button" class="quick-option-btn active" onclick="seleccionarFiltroRapido('personalizado')">Personalizar rango</button>
+                        </div>
+
+                        <div class="date-calendar-view" id="flatpickrInlineContainer"></div>
+                    </div>
+                </div>
+                <div class="filter-actions">
+                    <button type="button" class="btn-action-audit">Filtrar</button>
+                </div>
+            </div>
+
+            <!-- Tabla de Resultados -->
+            <div class="audit-table-wrapper">
+                <table class="audit-table">
+                    <thead>
+                        <tr>
+                            <th>FECHA Y HORA</th>
+                            <th>OPERADOR</th>
+                            <th>MÓDULO</th>
+                            <th>TIPO</th>
+                            <th>ACCIÓN REGISTRADA</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <!-- Botones de Exportación -->
+            <div class="export-buttons-row">
+                <button class="btn-export excel"><i class="fa-solid fa-file-excel"></i> EXPORTAR EXCEL</button>
+                <button class="btn-export pdf"><i class="fa-solid fa-file-pdf"></i> EXPORTAR PDF</button>
+            </div>
+
+        </div>
+
+    </main>
+    
+    <script>
+    let calendarioFechas;
+
+    function seleccionarFiltroRapido(filtro) {
+        if (!calendarioFechas) return;
+
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        const inicio = new Date(hoy);
+        const fin = new Date(hoy);
+
+        if (filtro === "ayer") {
+            inicio.setDate(inicio.getDate() - 1);
+            fin.setTime(inicio.getTime());
+        } else if (filtro === "ultimos7") {
+            inicio.setDate(inicio.getDate() - 6);
+        } else if (filtro === "semana") {
+            inicio.setDate(inicio.getDate() - ((inicio.getDay() + 6) % 7));
+        }
+
+        document.querySelectorAll(".quick-option-btn").forEach(function(boton) {
+            boton.classList.toggle("active", boton.getAttribute("onclick").includes("'" + filtro + "'"));
+        });
+
+        if (filtro === "personalizado") {
+            calendarioFechas.clear();
+            return;
+        }
+        calendarioFechas.setDate([inicio, fin], true);
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const campoFechas = document.getElementById("rangoFechasDisplay");
+        const panelFechas = document.getElementById("dateDropdownPanel");
+        const botonToggle = document.getElementById("datePickerToggle");
+        const contenedorCalendario = document.querySelector(".date-calendar-view");
+
+        if (!campoFechas || !panelFechas || !botonToggle || !contenedorCalendario) {
+            console.error("No se encontraron los elementos necesarios para mostrar el calendario.");
+            return;
+        }
+        if (typeof window.flatpickr !== "function") {
+            console.error("Flatpickr no se pudo cargar; verifica la conexión a jsDelivr.");
+            return;
+        }
+
+        calendarioFechas = window.flatpickr(campoFechas, {
+            mode: "range",
+            showMonths: 2,
+            dateFormat: "d/m/Y",
+            locale: (window.flatpickr.l10ns && window.flatpickr.l10ns.es) || "default",
+            clickOpens: false,
+            inline: true,
+            disableMobile: true,
+            appendTo: contenedorCalendario
+        });
+
+        contenedorCalendario.appendChild(calendarioFechas.calendarContainer);
+        panelFechas.classList.add("is-hidden");
+        botonToggle.addEventListener("click", function(evento) {
+            evento.stopPropagation();
+            const mostrarCalendario = panelFechas.classList.contains("is-hidden");
+            panelFechas.classList.toggle("is-hidden", !mostrarCalendario);
+            if (mostrarCalendario) {
+                calendarioFechas.redraw();
+            }
+        });
+        document.addEventListener("click", function(evento) {
+            if (!panelFechas.contains(evento.target) && !botonToggle.contains(evento.target)) {
+                panelFechas.classList.add("is-hidden");
+            }
+        });
+    });
+    </script>
+
+    <!-- Footer Fijo -->
+    <footer class="institutional-footer">
+        <p class="footer-modular">Administración Universitaria 2025-2029</p>
+        <img src="{% static 'inicio/images/footer-flor-down.png.png' %}" alt="Flor" class="footer-flor audit-footer-flor">
+    </footer>
+
+</body>
+</html>

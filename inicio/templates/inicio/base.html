@@ -1,0 +1,73 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PORTAL DE GESTIÓN UAPIX{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{% static 'inicio/images/icono-pag.png' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'inicio/css/estilos.css' %}?v=20261019-3">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+
+    <!-- Incluir el Header -->
+    {% include 'inicio/partials/header.html' %}
+    <!-- Contenido Principal Dinámico -->
+    <main class="main-container">
+        <div class="header-branding">
+            <img src="{% static 'inicio/images/escudo_w.png' %}" alt="Escudo UAEMéx" class="escudo-img">
+            <img src="{% static 'inicio/images/footer-flor-up.png.png' %}" alt="Flor decorativa" class="branding-flor">
+            <div class="divider-line"></div>
+        </div>
+
+        {% block content %}
+        {% endblock %}
+
+        <div class="header-branding" style="margin-top: 30px; margin-bottom: 0;">
+            <div class="divider-line" style="margin-bottom: 10px;"></div>
+        </div>
+    </main>
+
+    <!-- Incluir el Footer -->
+    {% include 'inicio/partials/footer.html' %}
+
+    <!-- Scripts de Interacción del Menú -->
+    <script>
+        const adminDropdown = document.querySelector('.admin-dropdown');
+        const adminButton = adminDropdown?.querySelector('.admin-btn');
+        const usersGroup = adminDropdown?.querySelector('.menu-group');
+        const usersButton = usersGroup?.querySelector('.group-label');
+
+        if (adminButton && adminDropdown) {
+            adminButton.addEventListener('click', () => {
+                const isOpen = adminDropdown.classList.toggle('is-open');
+                adminButton.setAttribute('aria-expanded', String(isOpen));
+                if (!isOpen && usersGroup && usersButton) {
+                    usersGroup.classList.remove('is-open');
+                    usersButton.setAttribute('aria-expanded', 'false');
+                }
+            });
+        }
+
+        if (usersButton && usersGroup) {
+            usersButton.addEventListener('click', () => {
+                const isOpen = usersGroup.classList.toggle('is-open');
+                usersButton.setAttribute('aria-expanded', String(isOpen));
+            });
+        }
+
+        document.addEventListener('click', (event) => {
+            if (adminDropdown && !adminDropdown.contains(event.target)) {
+                adminDropdown.classList.remove('is-open');
+                if (usersGroup) usersGroup.classList.remove('is-open');
+                if (adminButton) adminButton.setAttribute('aria-expanded', 'false');
+                if (usersButton) usersButton.setAttribute('aria-expanded', 'false');
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

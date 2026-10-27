@@ -1,0 +1,292 @@
+{% extends 'inicio/base.html' %}
+{% load static %}
+
+{% block title %}Sala de Cómputo | UAPIX{% endblock %}
+
+{% block body_class %}sala-computo-body{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'inicio/css/modulos.css' %}?v=20261023-14">
+{% endblock %}
+
+{% block content %}
+<section class="sala-computo-page">
+    <header class="sala-computo-heading">
+        <div>
+            <p class="sala-computo-eyebrow">Módulo operativo</p>
+            <h1>Sala de Cómputo</h1>
+            <p class="sala-computo-subtitle">Gestión de accesos y administración del espacio.</p>
+        </div>
+        <div class="sala-kiosk-card" role="status" aria-label="Modo kiosco, próximamente">
+            <span class="sala-kiosk-icon" aria-hidden="true">
+                <i class="fa-solid fa-tablet-screen-button"></i>
+            </span>
+            <span class="sala-kiosk-copy">
+                <strong>Modo kiosco</strong>
+                <small>Acceso de autoservicio</small>
+            </span>
+            <span class="sala-kiosk-status" id="salaKioskStatus">Próximamente</span>
+        </div>
+    </header>
+
+    {% if messages %}
+    <div class="sala-page-messages" aria-live="polite">
+        {% for message in messages %}
+        <p class="sala-form-success{% if 'error' in message.tags %} sala-form-error-notice{% endif %}" role="{% if 'error' in message.tags %}alert{% else %}status{% endif %}">
+            {% if 'error' in message.tags %}<i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{% else %}<i class="fa-solid fa-circle-check" aria-hidden="true"></i>{% endif %}
+            {{ message }}
+        </p>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ================= VISTA PRINCIPAL DEL PANEL ================= -->
+    <div id="mainOperatorDashboard">
+        <section class="sala-equipment-status" aria-labelledby="equipmentStatusTitle">
+            <div class="sala-equipment-summary">
+                <span class="sala-equipment-icon" aria-hidden="true">
+                    <i class="fa-solid fa-computer"></i>
+                </span>
+                <div>
+                    <h2 id="equipmentStatusTitle">Estado de equipos</h2>
+                    <p>Disponibilidad de la sala</p>
+                </div>
+            </div>
+            <div class="sala-equipment-counts">
+                <div class="sala-equipment-count sala-equipment-occupied">
+                    <span class="sala-count-dot" aria-hidden="true"></span>
+                    <strong>12</strong>
+                    <span>Ocupados</span>
+                </div>
+                <div class="sala-equipment-count sala-equipment-available">
+                    <span class="sala-count-dot" aria-hidden="true"></span>
+                    <strong>18</strong>
+                    <span>Disponibles</span>
+                </div>
+                <div class="sala-equipment-progress" role="progressbar" aria-label="Equipos ocupados" aria-valuemin="0" aria-valuemax="30" aria-valuenow="12">
+                    <span></span>
+                </div>
+                <span class="sala-equipment-total">30 equipos en total</span>
+            </div>
+            <p class="sala-demo-note">
+                <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                Datos de ejemplo; aún no están conectados al estado real de los equipos.
+            </p>
+        </section>
+
+        <section class="sala-tools-panel" aria-labelledby="salaToolsTitle">
+            <div class="sala-tools-heading">
+                <h2 id="salaToolsTitle">Herramientas del módulo</h2>
+                <p>Accesos de apoyo para la administración de la sala.</p>
+            </div>
+
+            <div class="sala-tools-grid">
+                <button id="agendarToolCard" class="sala-tool-card sala-tool-card-action" type="button" onclick="mostrarSelectorAgendar()">
+                    <span class="sala-tool-icon sala-tool-icon-calendar" aria-hidden="true">
+                        <i class="fa-solid fa-calendar-check"></i>
+                    </span>
+                    <div>
+                        <h3>Agendar evento o clase</h3>
+                        <p>Reservar el espacio con anticipación.</p>
+                    </div>
+                </button>
+
+                <article class="sala-tool-card">
+                    <span class="sala-tool-icon sala-tool-icon-incidents" aria-hidden="true">
+                        <i class="fa-solid fa-screwdriver-wrench"></i>
+                    </span>
+                    <div>
+                        <h3>Incidencias y reportes</h3>
+                        <p>Bitácora de fallas en equipos.</p>
+                    </div>
+                    <span class="sala-tool-status"><i class="fa-solid fa-lock" aria-hidden="true"></i> Próximamente</span>
+                </article>
+
+                <article class="sala-tool-card">
+                    <span class="sala-tool-icon sala-tool-icon-history" aria-hidden="true">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </span>
+                    <div>
+                        <h3>Historial y bitácora</h3>
+                        <p>Consulta del uso de la sala.</p>
+                    </div>
+                    <span class="sala-tool-status"><i class="fa-solid fa-lock" aria-hidden="true"></i> Próximamente</span>
+                </article>
+            </div>
+        </section>
+
+        <section class="sala-sessions-panel" aria-labelledby="activeSessionsTitle">
+            <div class="sala-sessions-heading">
+                <div>
+                    <p class="sala-computo-eyebrow">CONTROL DEL DÍA</p>
+                    <h2 id="activeSessionsTitle">Sesiones y clases activas del día</h2>
+                    <p>Consulta rápida de las actividades programadas en la sala.</p>
+                </div>
+                <span class="sala-active-indicator">
+                    <span aria-hidden="true"></span>
+                    2 sesiones activas
+                </span>
+            </div>
+
+            <p class="sala-demo-note sala-session-demo-note">
+                <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                Filas de ejemplo para la maqueta; todavía no se actualizan en tiempo real.
+            </p>
+
+            <div class="sala-sessions-table-wrapper">
+                <table class="sala-sessions-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Actividad</th>
+                            <th scope="col">Grupo</th>
+                            <th scope="col">Responsable</th>
+                            <th scope="col">Horario</th>
+                            <th scope="col">Equipos</th>
+                            <th scope="col">Estado</th>
+                            <th scope="col">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td data-label="Actividad">
+                                <span class="sala-session-name">Programación I</span>
+                                <span class="sala-session-type">Clase</span>
+                            </td>
+                            <td data-label="Grupo">301</td>
+                            <td data-label="Responsable">Docente asignado</td>
+                            <td data-label="Horario">08:00 – 10:00</td>
+                            <td data-label="Equipos">12 equipos</td>
+                            <td data-label="Estado"><span class="sala-session-state">En curso</span></td>
+                            <td data-label="Acciones">
+                                <div class="sala-session-actions">
+                                    <button class="sala-session-action" type="button" disabled aria-label="Modificar sesión (próximamente)" title="Disponible próximamente">
+                                        <i class="fa-solid fa-pen" aria-hidden="true"></i>
+                                        <span>Modificar</span>
+                                    </button>
+                                    <button class="sala-session-action sala-session-cancel" type="button" disabled aria-label="Cancelar sesión (próximamente)" title="Disponible próximamente">
+                                        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                                        <span>Cancelar</span>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td data-label="Actividad">
+                                <span class="sala-session-name">Ofimática básica</span>
+                                <span class="sala-session-type">Taller</span>
+                            </td>
+                            <td data-label="Grupo">102</td>
+                            <td data-label="Responsable">Responsable asignado</td>
+                            <td data-label="Horario">10:00 – 12:00</td>
+                            <td data-label="Equipos">8 equipos</td>
+                            <td data-label="Estado"><span class="sala-session-state">En curso</span></td>
+                            <td data-label="Acciones">
+                                <div class="sala-session-actions">
+                                    <button class="sala-session-action" type="button" disabled aria-label="Modificar sesión (próximamente)" title="Disponible próximamente">
+                                        <i class="fa-solid fa-pen" aria-hidden="true"></i>
+                                        <span>Modificar</span>
+                                    </button>
+                                    <button class="sala-session-action sala-session-cancel" type="button" disabled aria-label="Cancelar sesión (próximamente)" title="Disponible próximamente">
+                                        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                                        <span>Cancelar</span>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <!-- ================= VISTA DINÁMICA: SELECCIÓN DE TIPO DE AGENDAMIENTO ================= -->
+    <div id="agendarSelectorView" class="sala-view-hidden">
+        <button class="sala-back-btn" type="button" onclick="regresarAlPanel()" aria-label="Volver al panel operativo">
+            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver al panel
+        </button>
+
+        <section class="sala-tools-panel sala-scheduler-panel" aria-labelledby="scheduleTitle">
+            <div id="salaActivityPicker">
+                <div class="sala-tools-heading">
+                    <p class="sala-computo-eyebrow">RESERVA DE ESPACIO</p>
+                    <h1 id="scheduleTitle" tabindex="-1">¿Qué deseas agendar?</h1>
+                    <p>Elige una opción para registrar los datos y reservar la sala de cómputo.</p>
+                </div>
+
+                <div class="sala-selection-grid">
+                    <button class="sala-option-card sala-option-card-clase" type="button" onclick="seleccionarTipoAgendamiento('clase')">
+                        <span class="sala-option-icon sala-option-clase" aria-hidden="true">
+                            <i class="fa-solid fa-book-open"></i>
+                        </span>
+                        <span class="sala-option-kicker">HORARIO ACADÉMICO</span>
+                        <span class="sala-option-title" role="heading" aria-level="2">Clase regular</span>
+                        <span class="sala-option-description">Registra materia, docente, grupo y horario de la clase.</span>
+                        <span class="sala-option-link">Continuar <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
+                    </button>
+
+                    <button class="sala-option-card sala-option-card-evento" type="button" onclick="seleccionarTipoAgendamiento('evento')">
+                        <span class="sala-option-icon sala-option-evento" aria-hidden="true">
+                            <i class="fa-solid fa-chalkboard-user"></i>
+                        </span>
+                        <span class="sala-option-kicker">ACTIVIDAD ESPECIAL</span>
+                        <span class="sala-option-title" role="heading" aria-level="2">Evento</span>
+                        <span class="sala-option-description">Agenda un taller, conferencia u otra actividad especial.</span>
+                        <span class="sala-option-link">Continuar <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="agendarClaseView" class="sala-form-view sala-view-hidden">
+                {% include 'inicio/agendar_clase.html' %}
+            </div>
+            <div id="agendarEventoView" class="sala-form-view sala-view-hidden">
+                {% include 'inicio/agendar_evento.html' %}
+            </div>
+        </section>
+    </div>
+</section>
+
+<!-- Script para la transición dinámica de vistas -->
+<script>
+    function mostrarSelectorAgendar() {
+        document.getElementById('mainOperatorDashboard').classList.add('sala-view-hidden');
+        document.getElementById('agendarSelectorView').classList.remove('sala-view-hidden');
+        document.getElementById('agendarSelectorView').classList.add('sala-view-active');
+        document.getElementById('salaActivityPicker').classList.remove('sala-view-hidden');
+        document.getElementById('agendarClaseView').classList.add('sala-view-hidden');
+        document.getElementById('agendarEventoView').classList.add('sala-view-hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        document.getElementById('scheduleTitle').focus();
+    }
+
+    function regresarAlPanel() {
+        document.getElementById('agendarSelectorView').classList.remove('sala-view-active');
+        document.getElementById('agendarSelectorView').classList.add('sala-view-hidden');
+        document.getElementById('mainOperatorDashboard').classList.remove('sala-view-hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        document.getElementById('agendarToolCard').focus();
+    }
+
+    function seleccionarTipoAgendamiento(tipo) {
+        document.getElementById('salaActivityPicker').classList.add('sala-view-hidden');
+        document.getElementById('agendarClaseView').classList.toggle('sala-view-hidden', tipo !== 'clase');
+        document.getElementById('agendarEventoView').classList.toggle('sala-view-hidden', tipo !== 'evento');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        document.getElementById(tipo === 'clase' ? 'claseFormTitle' : 'eventoFormTitle').focus();
+    }
+
+    function volverASeleccionAgendar() {
+        document.getElementById('agendarClaseView').classList.add('sala-view-hidden');
+        document.getElementById('agendarEventoView').classList.add('sala-view-hidden');
+        document.getElementById('salaActivityPicker').classList.remove('sala-view-hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        document.getElementById('scheduleTitle').focus();
+    }
+
+    const vistaAgendamientoActiva = '{{ active_schedule_view|escapejs }}';
+    if (vistaAgendamientoActiva) {
+        mostrarSelectorAgendar();
+        seleccionarTipoAgendamiento(vistaAgendamientoActiva);
+    }
+</script>
+{% endblock %}

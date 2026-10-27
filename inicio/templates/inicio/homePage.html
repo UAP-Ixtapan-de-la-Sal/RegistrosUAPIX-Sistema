@@ -1,0 +1,150 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicio | PORTAL DE GESTIÓN UAPIX</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Librería Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'inicio/css/estilos.css' %}?v=20261021-splash-7">
+</head>
+<body>
+
+    <!-- Incluir Header -->
+    {% include 'inicio/partials/header.html' %}
+
+    <div id="splash-screen" class="home-splash" role="status" aria-live="polite">
+    <div class="splash-content">
+        <div class="home-splash-video-frame">
+            <video class="home-splash-animation" autoplay muted playsinline preload="auto" disablepictureinpicture disableremoteplayback controlslist="nodownload noplaybackrate noremoteplayback" tabindex="-1" aria-label="Isotipo animado de UAPIX">
+                <source src="{% static 'inicio/images/Isotipo-animado-splash.mp4' %}" type="video/mp4">
+            </video>
+        </div>
+        <h2>Te damos la bienvenida, {{ request.user.username }}</h2>
+    </div>
+    </div>
+
+    <!-- Contenido Principal -->
+    <main class="main-container">
+        
+        <div class="header-branding">
+            <img src="{% static 'inicio/images/escudo_w.png' %}" alt="Escudo UAPIX" class="escudo-img">
+            <img src="{% static 'inicio/images/footer-flor-up.png.png' %}" alt="Flor decorativa" class="branding-flor">
+            <div class="divider-line"></div>
+        </div>
+
+        <h2 class="home-section-title">Módulos disponibles</h2>
+
+        <!-- Bento Grid con tus permisos y nuevos iconos profesionales -->
+        <div class="bento-grid">
+            {% if request.user.mod_sala_computo or request.user.is_superuser %}
+                <a class="bento-card" href="{% url 'sala_computo' %}">
+                    <div class="card-icon-slot">
+                        <i class="fa-solid fa-desktop"></i>
+                    </div>
+                    <div class="card-title">Sala de Cómputo</div>
+                </a>
+            {% endif %}
+
+            {% if request.user.mod_auto_acceso or request.user.is_superuser %}
+                <a class="bento-card" href="#">
+                    <div class="card-icon-slot">
+                        <i class="fa-solid fa-chalkboard-user"></i>
+                    </div>
+                    <div class="card-title">Auto Acceso</div>
+                </a>
+            {% endif %}
+
+            {% if request.user.mod_biblioteca or request.user.is_superuser %}
+                <a class="bento-card" href="#">
+                    <div class="card-icon-slot">
+                        <i class="fa-solid fa-book-bookmark"></i>
+                    </div>
+                    <div class="card-title">Biblioteca Digital</div>
+                </a>
+            {% endif %}
+
+            {% if request.user.mod_prestamos or request.user.is_superuser %}
+                <a class="bento-card" href="#">
+                    <div class="card-icon-slot">
+                        <i class="fa-solid fa-clipboard-list"></i>
+                    </div>
+                    <div class="card-title">Préstamos y Devolución de Equipos</div>
+                </a>
+            {% endif %}
+
+            {% if request.user.mod_insumos or request.user.is_superuser %}
+                <a class="bento-card" href="#">
+                    <div class="card-icon-slot">
+                        <i class="fa-brands fa-dropbox"></i>
+                    </div>
+                    <div class="card-title">Control de Insumos y materiales</div>
+                </a>
+            {% endif %}
+
+            {% if request.user.mod_tecnologicos or request.user.is_superuser %}
+                <a class="bento-card" href="#">
+                    <div class="card-icon-slot">
+                        <i class="fa-solid fa-microchip"></i>
+                    </div>
+                    <div class="card-title">Insumos Tecnológicos</div>
+                </a>
+            {% endif %}
+        </div>
+
+        <div class="home-bottom-branding">
+            <div class="divider-line"></div>
+        </div>
+
+    </main>
+
+    <!-- Incluir Footer -->
+    {% include 'inicio/partials/footer.html' %}
+
+    <!-- Script para desplegar el menú de administración -->
+    <script>
+        const splashScreen = document.getElementById('splash-screen');
+        const splashVideo = splashScreen?.querySelector('video');
+
+        if (splashScreen) {
+            let splashTimeout;
+            const ocultarSplash = () => {
+                if (splashScreen.classList.contains('is-leaving')) return;
+                window.clearTimeout(splashTimeout);
+                splashScreen.classList.add('is-leaving');
+                splashScreen.addEventListener('transitionend', () => {
+                    splashScreen.remove();
+                }, { once: true });
+                window.setTimeout(() => splashScreen.remove(), 700);
+            };
+
+            if (splashVideo) {
+                splashVideo.addEventListener('ended', ocultarSplash, { once: true });
+                splashVideo.addEventListener('error', ocultarSplash, { once: true });
+                splashTimeout = window.setTimeout(ocultarSplash, 10000);
+                splashVideo.play().catch(ocultarSplash);
+            } else {
+                splashTimeout = window.setTimeout(ocultarSplash, 2000);
+            }
+        }
+
+        const adminDropdown = document.querySelector('.admin-dropdown');
+        const adminButton = adminDropdown?.querySelector('.admin-btn');
+
+        if (adminButton && adminDropdown) {
+            adminButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                adminDropdown.classList.toggle('is-open');
+            });
+
+            document.addEventListener('click', (event) => {
+                if (!adminDropdown.contains(event.target)) {
+                    adminDropdown.classList.remove('is-open');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

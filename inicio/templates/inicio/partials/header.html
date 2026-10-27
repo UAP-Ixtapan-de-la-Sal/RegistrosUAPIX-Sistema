@@ -1,0 +1,38 @@
+{% load static %}
+<header class="institutional-header">
+    <div style="font-weight: 700; font-size: 1.1rem; color: #fff;">
+        {% if request.resolver_match.url_name == 'sala_computo' %}
+            PANEL OPERATIVO
+        {% else %}
+            PORTAL DE GESTIÓN UAPIX
+        {% endif %}
+    </div>
+    
+    <div class="user-links" style="display: flex; gap: 16px; align-items: center; position: relative;">
+        <!-- Menú desplegable limpio solo para el Superusuario -->
+        {% if request.user.is_superuser %}
+            <div class="admin-dropdown">
+                <button class="admin-btn" type="button" aria-expanded="false" aria-controls="admin-menu">
+                    <span>⚙️</span> Administrar ▾
+                </button>
+                <div class="dropdown-panel" id="admin-menu">
+                    <div class="dropdown-header-title">Panel de Administración</div>
+                    <a href="{% url 'agregar_usuario' %}" class="dropdown-item">
+                        <span class="dropdown-icon">👥</span>
+                        <span class="dropdown-text">Gestión de Usuarios</span>
+                    </a>
+                    <a href="{% url 'auditoria_reportes' %}" class="dropdown-item">
+                        <span class="dropdown-icon">📊</span>
+                        <span class="dropdown-text">Auditoría y Reportes</span>
+                    </a>
+                    <a href="#" class="dropdown-item">
+                        <span class="dropdown-icon">💾</span>
+                        <span class="dropdown-text">Respaldos de BD</span>
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+        
+        <a href="{% url 'logout' %}" style="color: #fff; text-decoration: none;">Cerrar sesión</a>
+    </div>
+</header>

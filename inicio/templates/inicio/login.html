@@ -1,0 +1,57 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión | Portal de gestión UAPIX</title>
+    <link rel="icon" type="image/png" href="{% static 'inicio/images/icono-pag.png' %}">
+    
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'inicio/css/estilos.css' %}?v=20261019-3">
+</head>
+<body class="login-page-body">
+
+  <div class="login-card">
+    <div class="brand">
+      <div class="logo">
+        <img src="{% static 'inicio/images/ESCUDO.png' %}" alt="Escudo UAPIX">
+      </div>
+      <h1>Bienvenido</h1>
+      <p>Inicia sesión en tu cuenta</p>
+    </div>
+
+    <form method="POST">
+        {% csrf_token %}
+        
+        {% if messages %}
+            <div class="error-message">
+                {% for message in messages %}
+                    {% if forloop.last %}{{ message }}{% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="field">
+            <label for="usuario">Usuario:</label>
+            <div class="input-wrapper">
+                <i class="fa-solid fa-user"></i>
+                <input type="text" id="usuario" name="usuario" placeholder="Ingresa tu usuario" required autofocus>
+            </div>
+        </div>
+
+        <div class="field">
+            <label for="contrasena">Contraseña:</label>
+            <div class="input-wrapper">
+                <i class="fa-solid fa-lock"></i>
+                <input type="password" id="contrasena" name="contrasena" placeholder="••••••••" required>
+            </div>
+        </div>
+
+        <button type="submit">Iniciar Sesión</button>
+    </form>
+  </div>
+
+</body>
+</html>

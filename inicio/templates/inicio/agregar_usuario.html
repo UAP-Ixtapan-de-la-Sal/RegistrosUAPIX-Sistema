@@ -1,0 +1,191 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Agregar Nuevo Usuario</title>
+    
+    <!-- Enlazamos tu archivo de estilos globales -->
+    <link rel="stylesheet" href="{% static 'inicio/css/estilos.css' %}">
+</head>
+<body class="add-user-view">
+
+    <!-- Header -->
+    {% include 'inicio/partials/header.html' %}
+
+    <div class="center-wrapper">
+        <div class="card">
+            <a href="{% url 'homePage' %}" class="btn-cerrar" title="Cerrar">✕</a>
+            
+            <h2>Agregar Nuevo Usuario</h2>
+
+            <!-- Bloque para mostrar mensajes de éxito/error de Django -->
+            {% if messages %}
+                <div class="messages-container">
+                    {% for message in messages %}
+                        <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-success{% endif %}">
+                            ✓ {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <form method="POST">
+                {% csrf_token %}
+                
+                <div class="form-grid">
+                    
+                    <!-- CAJA 1: CREDENCIALES (Centrada y organizada) -->
+                    <div class="section-box">
+                        <div class="section-title">👤 Datos de Acceso</div>
+                        
+                        <div class="input-group">
+                            <div class="input-box">
+                                <label>Nombre de Usuario</label>
+                                {{ form.username }}
+                            </div>
+
+                            <div class="input-box">
+                                <label>Contraseña</label>
+                                <div class="password-wrapper">
+                                    {{ form.password }}
+                                    <!-- Ojito de contraseña -->
+                                    <span class="toggle-password" id="togglePassword" title="Mostrar contraseña">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="input-box">
+                                <label>Tipo de Rol</label>
+                                {{ form.rol }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CAJA 2: MÓDULOS (Centrada y organizada) -->
+                    <div class="section-box">
+                        <div class="section-title">⚙️ Asignación de Módulos</div>
+                        
+                        <div class="modules-grid">
+                            <label class="checkbox-card">
+                                {{ form.mod_sala_computo }}
+                                <span>Sala de Cómputo</span>
+                            </label>
+                            <label class="checkbox-card">
+                                {{ form.mod_prestamos }}
+                                <span>Préstamos / Devolución</span>
+                            </label>
+                            <label class="checkbox-card">
+                                {{ form.mod_auto_acceso }}
+                                <span>Auto Acceso</span>
+                            </label>
+                            <label class="checkbox-card">
+                                {{ form.mod_insumos }}
+                                <span>Control Insumos</span>
+                            </label>
+                            <label class="checkbox-card">
+                                {{ form.mod_biblioteca }}
+                                <span>Biblioteca Digital</span>
+                            </label>
+                            <label class="checkbox-card">
+                                {{ form.mod_tecnologicos }}
+                                <span>Insumos Tecn.</span>
+                            </label>
+                        </div>
+                    </div>
+
+                </div>
+
+                <hr>
+
+                <!-- Botones Finales -->
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit">Registrar Usuario</button>
+                    <a href="{% url 'admin:index' %}" class="admin-link" target="_blank">
+                        Ir al Panel de Administración Avanzado <span>→</span>
+                    </a>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+    <!-- Footer -->
+    {% include 'inicio/partials/footer.html' %}
+
+    <!-- Script para hacer funcionar el ojito, validación de letras y validación de envío -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 1. Funcionalidad del ojito de contraseña
+            const togglePassword = document.getElementById('togglePassword');
+            const passwordInput = document.querySelector('input[name="password"]');
+
+            if (togglePassword && passwordInput) {
+                togglePassword.addEventListener('click', function () {
+                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                    passwordInput.setAttribute('type', type);
+                    this.style.color = type === 'text' ? 'var(--color-green)' : '#94a3b8';
+                });
+            }
+
+            // 2. Validación de solo letras en el Nombre de Usuario
+            const usernameInput = document.querySelector('input[name="username"]');
+            if (usernameInput) {
+                usernameInput.addEventListener('input', function() {
+                    this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+                });
+            }
+
+            // 3. Validación al enviar el formulario (Rol y Módulos) con Tooltip Nativo
+            const form = document.querySelector('form');
+            const rolSelect = document.querySelector('select[name="rol"]');
+            const checkboxes = document.querySelectorAll('.modules-grid input[type="checkbox"]');
+            
+            // Limpiar el error del select cuando el usuario elija una opción
+            if (rolSelect) {
+                rolSelect.addEventListener('change', function() {
+                    this.setCustomValidity('');
+                });
+            }
+
+            // Limpiar el error de los checkboxes cuando el usuario marque al menos uno
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', function() {
+                    if (document.querySelectorAll('.modules-grid input[type="checkbox"]:checked').length > 0) {
+                        // Limpiamos el mensaje en el primer checkbox
+                        checkboxes[0].setCustomValidity('');
+                    }
+                });
+            });
+
+            if (form) {
+                form.addEventListener('submit', function(event) {
+                    // --- Validar Rol ---
+                    if (rolSelect && rolSelect.value === "") {
+                        event.preventDefault();
+                        rolSelect.setCustomValidity("Por favor, selecciona un Tipo de Rol.");
+                        rolSelect.reportValidity(); // Muestra el tooltip
+                        return;
+                    }
+
+                    // --- Validar Módulos ---
+                    const checkboxesMarcados = document.querySelectorAll('.modules-grid input[type="checkbox"]:checked');
+                    if (checkboxesMarcados.length === 0 && checkboxes.length > 0) {
+                        event.preventDefault();
+                        // Asignamos el error al primer checkbox para que el globo aparezca ahí
+                        const primerCheckbox = checkboxes[0];
+                        primerCheckbox.setCustomValidity("Por favor, selecciona al menos un módulo a asignar.");
+                        primerCheckbox.reportValidity(); // Muestra el tooltip
+                        return;
+                    }
+                });
+            }
+        });
+    </script>
+
+</body>
+</html>

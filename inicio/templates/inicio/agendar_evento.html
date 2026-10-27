@@ -1,0 +1,130 @@
+<section class="sala-form-panel" aria-labelledby="eventoFormTitle">
+    <button class="sala-back-btn" type="button" onclick="volverASeleccionAgendar()">
+        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Elegir otra opción
+    </button>
+
+    <div class="sala-form-heading">
+        <span class="sala-form-heading-icon sala-option-evento" aria-hidden="true">
+            <i class="fa-solid fa-chalkboard-user"></i>
+        </span>
+        <div>
+            <p class="sala-computo-eyebrow">REGISTRO DE EVENTO</p>
+            <h2 id="eventoFormTitle" tabindex="-1">Agendar evento</h2>
+            <p>Completa los datos del evento y de su ponente.</p>
+        </div>
+    </div>
+
+    <form class="sala-registration-form" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="categoria" value="evento">
+        {% if evento_form.non_field_errors %}
+        <div class="sala-form-errors" role="alert">{{ evento_form.non_field_errors }}</div>
+        {% endif %}
+        <div class="sala-form-grid">
+            {% for field in evento_form %}
+                {% if field.name == 'fecha' %}
+                <div class="sala-form-field{% if field.errors %} has-error{% endif %}" data-date-picker>
+                    {{ field }}
+                    <label class="sala-form-label" for="{{ field.id_for_label }}-trigger">Fecha</label>
+                    <button id="{{ field.id_for_label }}-trigger" class="sala-date-trigger" type="button" aria-haspopup="dialog" aria-expanded="false" data-date-trigger>
+                        <span data-date-label>Selecciona una fecha</span>
+                        <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+                    </button>
+                    <div class="sala-calendar-popover" role="dialog" aria-label="Seleccionar fecha" hidden>
+                        <div class="sala-calendar-heading">
+                            <button class="sala-calendar-nav" type="button" aria-label="Mes anterior" data-calendar-prev><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
+                            <strong data-calendar-title></strong>
+                            <button class="sala-calendar-nav" type="button" aria-label="Mes siguiente" data-calendar-next><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+                        </div>
+                        <div class="sala-calendar-weekdays" aria-hidden="true">
+                            <span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span>
+                        </div>
+                        <div class="sala-calendar-days" data-calendar-days></div>
+                    </div>
+                    {% for error in field.errors %}<span class="sala-field-error">{{ error }}</span>{% endfor %}
+                </div>
+                {% elif field.is_hidden %}
+                {{ field }}
+                {% elif field.name == 'numero_cuenta_ponente' %}
+                <div class="sala-form-field" data-ponente-interno-fields hidden>
+                    {{ field.label_tag }}
+                    {{ field }}
+                    <span id="ponenteLookupFeedback" class="sala-field-hint" role="status" aria-live="polite">Busca al ponente por su número de cuenta.</span>
+                    {% for error in field.errors %}<span class="sala-field-error">{{ error }}</span>{% endfor %}
+                </div>
+                {% elif field.name == 'nombre_ponente_externo' %}
+                <div class="sala-form-field" data-ponente-externo-fields hidden>
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {% for error in field.errors %}<span class="sala-field-error">{{ error }}</span>{% endfor %}
+                </div>
+                {% else %}
+                <div class="sala-form-field{% if field.errors %} has-error{% endif %}">
+                {{ field.label_tag }}
+                {{ field }}
+                {% for error in field.errors %}<span class="sala-field-error">{{ error }}</span>{% endfor %}
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        <div class="sala-form-actions">
+            <button class="sala-form-submit" type="submit">
+                <i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Registrar evento
+            </button>
+        </div>
+    </form>
+</section>
+
+<script>
+    (function() {
+        if (window.inicializarCalendariosSala) window.inicializarCalendariosSala();
+
+        const tipoPonente = document.querySelector('[data-ponente-interno]');
+        const camposInternos = document.querySelector('[data-ponente-interno-fields]');
+        const camposExternos = document.querySelector('[data-ponente-externo-fields]');
+        const cuenta = document.querySelector('[data-cuenta-ponente]');
+        const personaId = document.querySelector('[data-persona-ponente]');
+        const feedback = document.getElementById('ponenteLookupFeedback');
+        if (!tipoPonente || !camposInternos || !camposExternos || !cuenta || !personaId || !feedback) return;
+
+        function actualizarTipoPonente() {
+            const esInterno = tipoPonente.value === 'si';
+            const esExterno = tipoPonente.value === 'no';
+            camposInternos.hidden = !esInterno;
+            camposExternos.hidden = !esExterno;
+            cuenta.required = esInterno;
+            camposExternos.querySelector('input').required = esExterno;
+            if (!esInterno) {
+                cuenta.value = '';
+                personaId.value = '';
+            }
+        }
+
+        tipoPonente.addEventListener('change', actualizarTipoPonente);
+        actualizarTipoPonente();
+
+        cuenta.addEventListener('change', async function() {
+            personaId.value = '';
+            const numeroCuenta = cuenta.value.trim();
+            if (!numeroCuenta) {
+                feedback.textContent = 'Busca al ponente por su número de cuenta.';
+                return;
+            }
+            feedback.textContent = 'Buscando ponente...';
+            try {
+                const url = new URL('{% url "buscar_ponente_sala" %}', window.location.origin);
+                url.searchParams.set('cuenta', numeroCuenta);
+                const response = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                const resultado = await response.json();
+                if (!response.ok || !resultado.encontrado) {
+                    feedback.textContent = resultado.error || 'No se encontró un docente con ese número de cuenta.';
+                    return;
+                }
+                personaId.value = resultado.persona_id;
+                feedback.textContent = 'Ponente encontrado: ' + resultado.nombre + '.';
+            } catch (error) {
+                feedback.textContent = 'No fue posible buscar al ponente. Intenta nuevamente.';
+            }
+        });
+    })();
+</script>
