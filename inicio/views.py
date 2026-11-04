@@ -171,3 +171,9 @@ def catalogos_clase_docente_view(request):
     return render(request, 'inicio/catalogos_clase_docente.html')  
 def buscar_ponente_sala_view(request):
     return render(request, 'inicio/buscar_ponente_sala.html')   
+
+@login_required
+@user_passes_test(es_admin_general, login_url='homePage')
+def auditoria_reportes_view(request):
+    # Lógica para la vista de auditoría y reportes
+    return render(request, 'inicio/auditoria_reportes.html')
