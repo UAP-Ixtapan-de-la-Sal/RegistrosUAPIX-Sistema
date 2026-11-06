@@ -110,8 +110,8 @@ def homePage(request):
             
         ultima_actividad = request.session.get('ultima_actividad')
         
-        # Evaluamos si han pasado más de 10 segundos (10 segundos)
-        if (ahora - ultima_actividad) > 10:
+        # Evaluamos si han pasado más de 5 minutos (300 segundos)
+        if (ahora - ultima_actividad) > 300:
             logout(request)
             messages.error(request, "Sesión de administrador cerrada por inactividad de seguridad.")
             return redirect('login')
