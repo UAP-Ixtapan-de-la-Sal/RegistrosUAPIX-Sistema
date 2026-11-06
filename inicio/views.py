@@ -112,8 +112,8 @@ def homePage(request):
             
         ultima_actividad = request.session.get('ultima_actividad')
         
-        # Evaluamos si han pasado más de 10 segundos (10 segundos)
-        if (ahora - ultima_actividad) > 10:
+        # Evaluamos si han pasado más de 300 segundos (5 minutos) desde la última actividad
+        if (ahora - ultima_actividad) > 300:
             logout(request)
             messages.error(request, "Sesión de administrador cerrada por inactividad de seguridad.")
             return redirect('login')
@@ -155,12 +155,14 @@ def logout_view(request):
 
 #6. VISTA DE AUDITORÍA Y REPORTES
 @login_required
+@user_passes_test(es_admin_general, login_url='homePage')
 def auditoria_reportes_view(request):
     # Lógica para la vista de auditoría y reportes
     return render(request, 'inicio/auditoria_reportes.html')
 
 #7. VISTA DE RESPALDOS DE BASE DE DATOS
 @login_required
+@user_passes_test(es_admin_general, login_url='homePage')
 def respaldos_bd_view(request):
     # Lógica para la vista de respaldos de base de datos
     return render(request, 'inicio/respaldos_bd.html')

@@ -16,7 +16,7 @@
 
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'inicio/css/estilos.css' %}?v=20261103-header-buttons">
+    <link rel="stylesheet" href="{% static 'inicio/css/estilos.css' %}?v=20261106-audit-return-button">
 </head>
 <body class="audit-body">
 
@@ -27,7 +27,10 @@
            
         </div>
         <div class="user-links">
-            <a href="{% url 'homePage' %}"><i class="fa-solid fa-arrow-left"></i>  Regresar </a>
+            <a class="header-action" href="{% url 'homePage' %}">
+                <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+                <span>Regresar</span>
+            </a>
         </div>
     </header>
 
@@ -102,13 +105,13 @@
                 </table>
             </div>
 
-           <!-- Botones de Exportación -->
-<div class="export-buttons-row">
-    <!-- Convertimos el enlace en el botón de Excel usando tus clases -->
-    <a href="{% url 'exportar_auditoria' %}" class="btn-export excel">
-        <i class="fa-solid fa-file-excel"></i> EXPORTAR EXCEL
-    </a>
 
+            <!-- Botones de Exportación -->
+<div class="export-buttons-row">
+    <a href="{% url 'exportar_auditoria' %}" class="btn-export excel">
+            <i class="fa-solid fa-file-excel"></i> EXPORTAR EXCEL 
+    </a>   
+    
 </div>
 
     </main>
