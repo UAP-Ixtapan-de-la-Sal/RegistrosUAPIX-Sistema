@@ -266,7 +266,21 @@
             });
         }
 
+        function resetTypeSelection() {
+            selectedType = null;
+            typeButtons.forEach(function (button) {
+                button.classList.remove('is-selected');
+                button.setAttribute('aria-pressed', 'false');
+                button.disabled = false;
+            });
+            typeSections.forEach(function (section) {
+                section.hidden = true;
+            });
+            typeSelectionStatus.textContent = 'Selecciona un tipo de entrada. Una vez seleccionado, no podrás cambiarlo durante esta sesión.';
+        }
+
         function showOperationMenu() {
+            resetTypeSelection();
             operationMenu.hidden = false;
             operationViews.forEach(function (view) {
                 view.hidden = true;
