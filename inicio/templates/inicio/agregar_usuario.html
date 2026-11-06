@@ -6,7 +6,7 @@
     <title>Agregar Nuevo Usuario</title>
     
     <!-- Enlazamos tu archivo de estilos globales -->
-    <link rel="stylesheet" href="{% static 'inicio/css/estilos.css' %}">
+    <link rel="stylesheet" href="{% static 'inicio/css/estilos.css' %}?v=20261103-header-buttons">
 </head>
 <body class="add-user-view">
 
@@ -181,6 +181,10 @@
                         primerCheckbox.setCustomValidity("Por favor, selecciona al menos un módulo a asignar.");
                         primerCheckbox.reportValidity(); // Muestra el tooltip
                         return;
+                    }
+
+                    if (!window.confirm("¿Confirmas que deseas registrar este usuario y guardar sus permisos?")) {
+                        event.preventDefault();
                     }
                 });
             }

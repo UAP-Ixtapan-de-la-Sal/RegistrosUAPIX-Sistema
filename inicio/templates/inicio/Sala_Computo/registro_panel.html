@@ -1,0 +1,340 @@
+<section class="registros-sala-page" aria-label="Registros de entrada y salida">
+    <div class="registros-kiosk-shell">
+        <header class="registros-kiosk-header">
+            <span class="registros-kiosk-badge">ACCESO REGISTROS </span>
+            <span class="registros-kiosk-label">Pantalla de Registros</span>
+            <button type="button" class="registros-operator-button" onclick="regresarDeRegistros()">
+                <i class="fa-solid fa-lock" aria-hidden="true"></i> Panel Operador / Salir
+            </button>
+        </header>
+
+        <main class="registros-kiosk-content">
+            <section class="registros-operation-menu" data-operation-menu aria-label="Selecciona el tipo de registro" tabindex="-1">
+                <p>Selecciona la operación que deseas realizar</p>
+                <div class="registros-operation-grid">
+                    <button class="registros-operation-card registros-operation-entry" type="button" data-open-operation="entrada">
+                        <span class="registros-operation-icon"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i></span>
+                        <strong>REGISTRO DE ENTRADA</strong>
+                        <small>Selecciona Clase, Evento o Visita para registrar tu acceso.</small>
+                    </button>
+                    <button class="registros-operation-card registros-operation-exit" type="button" data-open-operation="salida">
+                        <span class="registros-operation-icon"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i></span>
+                        <strong>REGISTRO DE SALIDA</strong>
+                        <small>Ingresa tu número de cuenta para liberar el equipo.</small>
+                    </button>
+                </div>
+            </section>
+
+            <section class="registros-operation-view" data-operation-view="entrada" hidden aria-labelledby="entrada-title">
+                <button class="registros-view-back" type="button" data-back-menu>
+                    <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Regresar
+                </button>
+                <section class="registros-panel" aria-labelledby="entrada-title">
+        <div class="registros-panel-heading">
+            <div>
+                <p class="sala-computo-eyebrow">NUEVO ACCESO</p>
+                <h2 id="entrada-title">Registro de entrada</h2>
+                <p>Elige el tipo de ingreso para mostrar el formulario correspondiente.</p>
+            </div>
+        </div>
+
+        <div class="registros-type-grid" role="group" aria-label="Tipo de entrada">
+            <button type="button" class="registros-type-card is-selected" data-registro-type="Clase" aria-pressed="true">
+                <span class="registros-type-icon"><i class="fa-solid fa-book-open" aria-hidden="true"></i></span>
+                <strong>Clase</strong>
+                <small>Alumnos que asisten en grupo</small>
+            </button>
+            <button type="button" class="registros-type-card" data-registro-type="Evento" aria-pressed="false">
+                <span class="registros-type-icon"><i class="fa-solid fa-chalkboard-user" aria-hidden="true"></i></span>
+                <strong>Evento</strong>
+                <small>Personas externas al plantel</small>
+            </button>
+            <button type="button" class="registros-type-card" data-registro-type="Visita" aria-pressed="false">
+                <span class="registros-type-icon"><i class="fa-solid fa-person-walking" aria-hidden="true"></i></span>
+                <strong>Visita</strong>
+                <small>Alumno que visita la sala</small>
+            </button>
+        </div>
+
+        <div class="registros-fields" data-registro-fields="Clase">
+            <div class="registros-section-title">
+                <h3>Registro de clase</h3>
+                <p>Selecciona una clase en curso o busca una clase que no aparece en la agenda.</p>
+            </div>
+            <fieldset class="registros-mode-field">
+                <legend>¿La clase está agendada?</legend>
+                <label><input type="radio" name="clase_agendada_demo" value="si" checked> Sí, seleccionar clase</label>
+                <label><input type="radio" name="clase_agendada_demo" value="no"> No, buscar clase</label>
+            </fieldset>
+
+            <div class="registros-form-grid" data-agenda-demo>
+                <label class="sala-form-field">
+                    <span>Clase agendada para este horario</span>
+                    <select class="sala-form-control">
+                        <option>Selecciona una clase</option>
+                        <option selected>Cálculo · Grupo 301 · 10:00–11:00</option>
+                        <option>Programación · Grupo 302 · 10:00–11:00</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="registros-class-search" data-busqueda-demo hidden>
+                <div class="registros-search-form">
+                    <label class="sala-form-field">
+                        <span>Número de cuenta del docente</span>
+                        <input class="sala-form-control" type="search" placeholder="Ej. 1234567">
+                    </label>
+                    <label class="sala-form-field">
+                        <span>No. de grupo</span>
+                        <input class="sala-form-control" type="text" placeholder="Ej. 301">
+                    </label>
+                    <label class="sala-form-field">
+                        <span>Materia</span>
+                        <input class="sala-form-control" type="search" placeholder="Nombre de la materia">
+                    </label>
+                    <button class="sala-form-submit registros-search-submit" type="button" data-demo-search>
+                        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Buscar clase
+                    </button>
+                </div>
+                <p class="registros-demo-feedback" data-demo-feedback role="status" hidden></p>
+                <div class="registros-form-grid registros-manual-class">
+                    <label class="sala-form-field">
+                        <span>Docente</span>
+                        <input class="sala-form-control" type="text" placeholder="Nombre del docente">
+                    </label>
+                    <label class="sala-form-field">
+                        <span>Grupo</span>
+                        <input class="sala-form-control" type="text" placeholder="Número de grupo">
+                    </label>
+                    <label class="sala-form-field">
+                        <span>Materia</span>
+                        <input class="sala-form-control" type="text" placeholder="Nombre de la materia">
+                    </label>
+                </div>
+            </div>
+
+            <div class="registros-section-title registros-roster-heading">
+                <h3>Alumnos de la clase</h3>
+                <p>Marca asistencia y asigna equipo a cada alumno.</p>
+            </div>
+            <div class="registros-table-wrap">
+                <table class="registros-table">
+                    <thead>
+                        <tr><th>No. cuenta</th><th>Nombre</th><th>Asistencia</th><th>No. equipo</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>221001</td><td>Andrea Hernández</td>
+                            <td><label class="registros-attendance"><input type="radio" name="asistencia_demo_1" checked> Asistió</label><label class="registros-attendance"><input type="radio" name="asistencia_demo_1"> Falta</label></td>
+                            <td><select class="sala-form-control"><option>Sin equipo</option><option>Computadora 1</option><option>Computadora 2</option></select></td>
+                        </tr>
+                        <tr>
+                            <td>221002</td><td>Bruno García</td>
+                            <td><label class="registros-attendance"><input type="radio" name="asistencia_demo_2" checked> Asistió</label><label class="registros-attendance"><input type="radio" name="asistencia_demo_2"> Falta</label></td>
+                            <td><select class="sala-form-control"><option>Sin equipo</option><option>Computadora 1</option><option>Computadora 2</option></select></td>
+                        </tr>
+                        <tr>
+                            <td>221003</td><td>Camila Reyes</td>
+                            <td><label class="registros-attendance"><input type="radio" name="asistencia_demo_3"> Asistió</label><label class="registros-attendance"><input type="radio" name="asistencia_demo_3" checked> Falta</label></td>
+                            <td><select class="sala-form-control"><option selected>Sin equipo</option><option>Computadora 1</option><option>Computadora 2</option></select></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="registros-form-actions">
+                <button class="sala-form-submit" type="button" data-demo-save>
+                    <i class="fa-solid fa-check" aria-hidden="true"></i> Registrar entrada de clase
+                </button>
+            </div>
+        </div>
+
+        <div class="registros-fields" data-registro-fields="Evento" hidden>
+            <div class="registros-section-title">
+                <h3>Registro de asistente a evento</h3>
+                <p>Captura los datos de la persona externa y selecciona el evento al que asiste.</p>
+            </div>
+            <div class="registros-form-grid">
+                <label class="sala-form-field"><span>Nombre</span><input class="sala-form-control" type="text" placeholder="Nombre(s)"></label>
+                <label class="sala-form-field"><span>Apellidos</span><input class="sala-form-control" type="text" placeholder="Apellidos"></label>
+                <label class="sala-form-field">
+                    <span>Evento al que asiste</span>
+                    <select class="sala-form-control"><option>Selecciona el evento</option><option>Conferencia de tecnología</option><option>Taller de marketing</option></select>
+                </label>
+                <label class="sala-form-field"><span>Institución de procedencia</span><input class="sala-form-control" type="text" placeholder="Institución (opcional)"></label>
+                <label class="sala-form-field"><span>Hora de entrada</span><input class="sala-form-control" type="time" value="10:00"></label>
+                <label class="sala-form-field"><span>Fecha</span><input class="sala-form-control" type="date"></label>
+                <label class="sala-form-field">
+                    <span>No. de equipo</span>
+                    <select class="sala-form-control"><option>Sin equipo</option><option>Computadora 1</option><option>Computadora 2</option><option>Computadora 3</option></select>
+                </label>
+            </div>
+            <div class="registros-form-actions">
+                <button class="sala-form-submit" type="button" data-demo-save>
+                    <i class="fa-solid fa-check" aria-hidden="true"></i> Registrar asistente
+                </button>
+            </div>
+        </div>
+
+        <div class="registros-fields" data-registro-fields="Visita" hidden>
+            <div class="registros-section-title">
+                <h3>Registro de visita</h3>
+                <p>Busca al alumno del plantel por su número de cuenta.</p>
+            </div>
+            <div class="registros-form-grid">
+                <label class="sala-form-field"><span>No. de cuenta</span><input class="sala-form-control" type="search" placeholder="Número de cuenta"></label>
+                <button class="sala-form-submit registros-lookup-button" type="button" data-demo-lookup><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Buscar alumno</button>
+                <label class="sala-form-field"><span>Nombre</span><input class="sala-form-control" type="text" placeholder="Nombre del alumno" readonly></label>
+                <label class="sala-form-field"><span>Hora de entrada</span><input class="sala-form-control" type="time" value="10:00"></label>
+                <label class="sala-form-field"><span>Fecha</span><input class="sala-form-control" type="date"></label>
+                <label class="sala-form-field">
+                    <span>No. de equipo</span>
+                    <select class="sala-form-control"><option>Sin equipo</option><option>Computadora 1</option><option>Computadora 2</option><option>Computadora 3</option></select>
+                </label>
+            </div>
+            <div class="registros-form-actions">
+                <button class="sala-form-submit" type="button" data-demo-save>
+                    <i class="fa-solid fa-check" aria-hidden="true"></i> Registrar visita
+                </button>
+            </div>
+        </div>
+        <p class="registros-demo-notice" role="status"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> Vista de diseño: los datos todavía no se guardan.</p>
+    </section>
+
+            <section class="registros-operation-view" data-operation-view="salida" hidden aria-labelledby="salida-title">
+                <button class="registros-view-back" type="button" data-back-menu>
+                    <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Regresar
+                </button>
+                <section class="registros-panel registros-exit-panel" aria-labelledby="salida-title">
+        <div class="registros-panel-heading">
+            <div>
+                <p class="sala-computo-eyebrow">LIBERAR EQUIPO</p>
+                <h2 id="salida-title">Registro de salida</h2>
+                <p>Ingresa tu número de cuenta para encontrar tu sesión activa.</p>
+            </div>
+        </div>
+        <div class="registros-exit-lookup">
+            <label class="sala-form-field">
+                <span>Número de cuenta</span>
+                <input class="sala-form-control" type="search" placeholder="Ingresa tu número de cuenta" autocomplete="off">
+            </label>
+            <button type="button" class="sala-form-submit" data-demo-exit-search>
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Buscar registro
+            </button>
+        </div>
+        <div class="registros-exit-result" data-exit-result hidden>
+            <div class="registros-exit-person">
+                <span class="registros-exit-avatar"><i class="fa-solid fa-user" aria-hidden="true"></i></span>
+                <div><strong>Andrea Hernández</strong><small>Cuenta: 221001 · Entrada: 10:02</small></div>
+            </div>
+            <div class="registros-exit-equipment">
+                <span>Equipo asignado</span><strong>Computadora 1</strong>
+            </div>
+            <button class="registros-exit-button" type="button" data-demo-save>
+                <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> Registrar salida
+            </button>
+        </div>
+        <p class="registros-demo-feedback" data-exit-feedback role="status" hidden></p>
+        <p class="registros-demo-notice" role="status"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> Vista de diseño: la búsqueda y el registro todavía no están conectados.</p>
+    </section>
+            </section>
+        </main>
+        <footer class="registros-kiosk-footer">Terminal Autónoma de Alumnos <span aria-hidden="true">•</span> UAPIX</footer>
+    </div>
+    <p class="registros-demo-feedback registros-global-feedback" data-global-feedback role="status" hidden></p>
+</section>
+
+<script>
+    (function () {
+        const typeButtons = document.querySelectorAll('[data-registro-type]');
+        const typeSections = document.querySelectorAll('[data-registro-fields]');
+        const agendaModes = document.querySelectorAll('input[name="clase_agendada_demo"]');
+        const agendaSection = document.querySelector('[data-agenda-demo]');
+        const searchSection = document.querySelector('[data-busqueda-demo]');
+        const globalFeedback = document.querySelector('[data-global-feedback]');
+        const operationMenu = document.querySelector('[data-operation-menu]');
+        const operationViews = document.querySelectorAll('[data-operation-view]');
+
+        function showOperation(operation) {
+            operationMenu.hidden = true;
+            operationViews.forEach(function (view) {
+                view.hidden = view.dataset.operationView !== operation;
+            });
+        }
+
+        function showOperationMenu() {
+            operationMenu.hidden = false;
+            operationViews.forEach(function (view) {
+                view.hidden = true;
+            });
+            operationMenu.focus();
+        }
+
+        document.querySelectorAll('[data-open-operation]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                showOperation(button.dataset.openOperation);
+            });
+        });
+        document.querySelectorAll('[data-back-menu]').forEach(function (button) {
+            button.addEventListener('click', showOperationMenu);
+        });
+
+        function setType(type) {
+            typeButtons.forEach(function (button) {
+                const selected = button.dataset.registroType === type;
+                button.classList.toggle('is-selected', selected);
+                button.setAttribute('aria-pressed', String(selected));
+            });
+            typeSections.forEach(function (section) {
+                section.hidden = section.dataset.registroFields !== type;
+            });
+        }
+
+        typeButtons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                setType(button.dataset.registroType);
+            });
+        });
+
+        function updateAgendaMode() {
+            const isScheduled = document.querySelector('input[name="clase_agendada_demo"]:checked').value === 'si';
+            agendaSection.hidden = !isScheduled;
+            searchSection.hidden = isScheduled;
+        }
+        agendaModes.forEach(function (radio) {
+            radio.addEventListener('change', updateAgendaMode);
+        });
+        updateAgendaMode();
+
+        document.querySelectorAll('[data-demo-save]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const action = button.textContent.trim().replace(/\s+/g, ' ').toLocaleLowerCase('es');
+                if (!window.confirm('Esta acción es una demostración y no guardará información. ¿Deseas continuar con "' + action + '"?')) {
+                    return;
+                }
+                globalFeedback.textContent = 'Vista de diseño: el registro todavía no se guarda.';
+                globalFeedback.hidden = false;
+            });
+        });
+        document.querySelectorAll('[data-demo-search], [data-demo-lookup]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const feedback = button.closest('[data-busqueda-demo]')?.querySelector('[data-demo-feedback]');
+                if (feedback) {
+                    feedback.textContent = 'La búsqueda se conectará cuando se implemente la lógica.';
+                    feedback.hidden = false;
+                } else {
+                    globalFeedback.textContent = 'La búsqueda se conectará cuando se implemente la lógica.';
+                    globalFeedback.hidden = false;
+                }
+            });
+        });
+        const exitSearch = document.querySelector('[data-demo-exit-search]');
+        if (exitSearch) {
+            exitSearch.addEventListener('click', function () {
+                const feedback = document.querySelector('[data-exit-feedback]');
+                feedback.textContent = 'Búsqueda de ejemplo: se conectará cuando se implemente la lógica.';
+                feedback.hidden = false;
+                document.querySelector('[data-exit-result]').hidden = false;
+            });
+        }
+    })();
+</script>
