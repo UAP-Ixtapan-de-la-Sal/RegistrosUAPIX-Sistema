@@ -69,6 +69,24 @@ class HomePageViewTests(TestCase):
         self.assertNotContains(next_home_response, 'id="splash-screen"')
 
 
+class SalaComputoViewTests(TestCase):
+    def test_entry_type_must_be_selected_before_its_form_is_shown(self):
+        response = self.client.get(reverse('sala_computo'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Selecciona un tipo de entrada.')
+        self.assertContains(response, 'data-registro-fields="Clase" hidden')
+        self.assertContains(response, 'data-registro-type="Clase" aria-pressed="false"')
+
+    def test_scheduling_forms_use_native_time_inputs(self):
+        response = self.client.get(reverse('sala_computo'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'type="time" name="hora_inicio"')
+        self.assertContains(response, 'type="time" name="hora_fin"')
+        self.assertNotContains(response, 'data-time-picker')
+
+
 class RegistroUsuarioFormTests(TestCase):
     def test_form_hashes_password_before_saving_user(self):
         form = RegistroUsuarioForm(data={

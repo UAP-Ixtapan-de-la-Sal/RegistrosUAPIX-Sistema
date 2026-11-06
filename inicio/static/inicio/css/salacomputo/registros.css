@@ -419,8 +419,28 @@
     box-shadow: 0 9px 18px rgba(62, 80, 64, 0.12);
 }
 
+.registros-type-card:disabled:not(.is-selected) {
+    background: #f5f6f3;
+    color: #777d76;
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+.registros-type-card:disabled:not(.is-selected):hover {
+    transform: none;
+    border-color: rgba(82, 104, 85, 0.16);
+    box-shadow: none;
+}
+
 .registros-type-card:active {
     transform: translateY(-1px) scale(0.98);
+}
+
+.registros-type-selection-status {
+    margin: -8px 0 22px;
+    color: var(--muted);
+    font-size: 0.9rem;
+    text-align: center;
 }
 
 .registros-type-card.is-selected .registros-type-icon {
