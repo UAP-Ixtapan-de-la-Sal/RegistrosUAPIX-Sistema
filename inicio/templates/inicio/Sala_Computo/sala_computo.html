@@ -7,7 +7,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'inicio/css/salacomputo/salacomputo.css' %}?v=20261104-clock-overflow-fix">
-<link rel="stylesheet" href="{% static 'inicio/css/salacomputo/registros.css' %}?v=20261104-button-microinteractions">
+<link rel="stylesheet" href="{% static 'inicio/css/salacomputo/registros.css' %}?v=20261106-entry-type-lock">
 {% endblock %}
 
 {% block content %}
@@ -903,183 +903,13 @@
 </script>
 <script>
     window.validarHorasSala = function(form) {
-        const missingPicker = Array.from(form.querySelectorAll('[data-time-picker]')).find((picker) => {
-            const input = picker.querySelector('input[type="hidden"]');
-            return !input || !input.value;
-        });
-        if (!missingPicker) return true;
+        const missingTime = Array.from(form.querySelectorAll('input[type="time"]'))
+            .find((input) => !input.value);
+        if (!missingTime) return true;
 
-        missingPicker.classList.add('has-error');
-        let error = missingPicker.querySelector('.sala-time-required-error');
-        if (!error) {
-            error = document.createElement('span');
-            error.className = 'sala-field-error sala-time-required-error';
-            error.textContent = 'Selecciona una hora para continuar.';
-            missingPicker.appendChild(error);
-        }
-        missingPicker.querySelector('[data-time-trigger]').focus();
+        missingTime.focus();
+        missingTime.reportValidity();
         return false;
     };
-
-    document.querySelectorAll('[data-time-picker]').forEach((picker) => {
-        const input = picker.querySelector('input[type="hidden"]');
-        const trigger = picker.querySelector('[data-time-trigger]');
-        const label = picker.querySelector('[data-time-label]');
-        const popover = picker.querySelector('.sala-time-popover');
-        const popoverHome = popover?.parentElement;
-        const face = picker.querySelector('[data-clock-face]');
-        const numbers = picker.querySelector('[data-clock-numbers]');
-        const hand = picker.querySelector('[data-clock-hand]');
-        const instruction = picker.querySelector('[data-clock-instruction]');
-        const hourDisplay = picker.querySelector('[data-clock-value="hours"]');
-        const minuteDisplay = picker.querySelector('[data-clock-value="minutes"]');
-        const periodButtons = Array.from(picker.querySelectorAll('[data-clock-period]'));
-        if (!input || !trigger || !label || !popover || !popoverHome || !face || !numbers || !hand || !instruction || !hourDisplay || !minuteDisplay) return;
-
-        let pendingHour = 9;
-        let pendingMinute = 0;
-        let mode = 'hours';
-
-        function hourOnDial() {
-            return pendingHour % 12 || 12;
-        }
-
-        function renderClock() {
-            const isMinutes = mode === 'minutes';
-            const selectedValue = isMinutes ? pendingMinute : hourOnDial();
-            const values = isMinutes
-                ? Array.from({ length: 12 }, (_, index) => index * 5)
-                : Array.from({ length: 12 }, (_, index) => index === 0 ? 12 : index);
-            numbers.replaceChildren();
-            face.classList.toggle('is-minute-mode', isMinutes);
-            instruction.textContent = isMinutes ? 'Selecciona los minutos' : 'Selecciona la hora';
-            hourDisplay.textContent = String(hourOnDial()).padStart(2, '0');
-            minuteDisplay.textContent = String(pendingMinute).padStart(2, '0');
-            hourDisplay.classList.toggle('is-active', !isMinutes);
-            minuteDisplay.classList.toggle('is-active', isMinutes);
-            hourDisplay.setAttribute('aria-pressed', String(!isMinutes));
-            minuteDisplay.setAttribute('aria-pressed', String(isMinutes));
-            periodButtons.forEach((button) => {
-                button.setAttribute('aria-pressed', String((button.dataset.clockPeriod === 'pm') === (pendingHour >= 12)));
-            });
-
-            values.forEach((value, index) => {
-                const angle = (index / 12) * Math.PI * 2;
-                const radius = 39;
-                const option = document.createElement('button');
-                option.type = 'button';
-                option.className = 'sala-clock-number';
-                option.style.setProperty('--clock-x', `${50 + Math.sin(angle) * radius}%`);
-                option.style.setProperty('--clock-y', `${50 - Math.cos(angle) * radius}%`);
-                option.textContent = isMinutes ? String(value).padStart(2, '0') : String(value);
-                option.setAttribute('aria-label', isMinutes ? `${String(value).padStart(2, '0')} minutos` : `${value} horas`);
-                option.setAttribute('aria-pressed', String(value === selectedValue));
-                if (value === selectedValue) option.classList.add('is-selected');
-                option.addEventListener('click', () => selectClockValue(value));
-                numbers.appendChild(option);
-            });
-
-            const handValue = isMinutes ? pendingMinute : (hourOnDial() % 12) * 5;
-            hand.style.transform = `translate(-50%, -100%) rotate(${handValue * 6}deg)`;
-        }
-
-        function selectClockValue(value) {
-            if (mode === 'hours') {
-                const isPm = pendingHour >= 12;
-                pendingHour = (value % 12) + (isPm ? 12 : 0);
-                mode = 'minutes';
-            } else {
-                pendingMinute = value;
-            }
-            renderClock();
-        }
-
-        function closePicker() {
-            popover.hidden = true;
-            popoverHome.appendChild(popover);
-            trigger.setAttribute('aria-expanded', 'false');
-        }
-
-        function openPicker() {
-            document.querySelectorAll('[data-time-picker]').forEach((otherPicker) => {
-                const other = otherPicker.querySelector('.sala-time-popover');
-                if (!other || other === popover || other.hidden) return;
-                other.hidden = true;
-                otherPicker.querySelector('[data-time-trigger]').setAttribute('aria-expanded', 'false');
-                otherPicker.appendChild(other);
-            });
-            const [currentHour, currentMinute] = (input.value || '09:00').split(':').map(Number);
-            pendingHour = currentHour;
-            pendingMinute = currentMinute;
-            mode = 'hours';
-            renderClock();
-            document.body.appendChild(popover);
-            popover.hidden = false;
-            trigger.setAttribute('aria-expanded', 'true');
-        }
-
-        function syncLabel() {
-            label.textContent = input.value ? `${input.value.slice(0, 5)} h` : 'Selecciona una hora';
-        }
-
-        syncLabel();
-        trigger.addEventListener('click', () => {
-            if (popover.hidden) openPicker();
-            else closePicker();
-        });
-        hourDisplay.addEventListener('click', () => {
-            mode = 'hours';
-            renderClock();
-        });
-        minuteDisplay.addEventListener('click', () => {
-            mode = 'minutes';
-            renderClock();
-        });
-        periodButtons.forEach((button) => {
-            button.addEventListener('click', () => {
-                const hour = pendingHour % 12;
-                pendingHour = hour + (button.dataset.clockPeriod === 'pm' ? 12 : 0);
-                renderClock();
-            });
-        });
-        face.addEventListener('click', (event) => {
-            if (event.target.closest('button')) return;
-            const bounds = face.getBoundingClientRect();
-            const x = event.clientX - (bounds.left + bounds.width / 2);
-            const y = (bounds.top + bounds.height / 2) - event.clientY;
-            const angle = (Math.atan2(x, y) + Math.PI * 2) % (Math.PI * 2);
-            if (mode === 'hours') {
-                const hour = Math.round(angle / (Math.PI / 6)) % 12 || 12;
-                selectClockValue(hour);
-            } else {
-                pendingMinute = Math.round(angle / (Math.PI / 30)) % 60;
-                renderClock();
-            }
-        });
-        picker.querySelector('[data-time-apply]').addEventListener('click', () => {
-            input.value = `${String(pendingHour).padStart(2, '0')}:${String(pendingMinute).padStart(2, '0')}`;
-            syncLabel();
-            input.dispatchEvent(new Event('input', { bubbles: true }));
-            input.dispatchEvent(new Event('change', { bubbles: true }));
-            picker.classList.remove('has-error');
-            picker.querySelector('.sala-time-required-error')?.remove();
-            closePicker();
-            trigger.focus();
-        });
-        picker.querySelector('[data-time-cancel]').addEventListener('click', () => {
-            closePicker();
-            trigger.focus();
-        });
-        picker.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && !popover.hidden) {
-                closePicker();
-                trigger.focus();
-            }
-        });
-        document.addEventListener('click', (event) => {
-            if (!picker.contains(event.target) && !popover.contains(event.target)) closePicker();
-        });
-        input.addEventListener('change', syncLabel);
-    });
 </script>
 {% endblock %}

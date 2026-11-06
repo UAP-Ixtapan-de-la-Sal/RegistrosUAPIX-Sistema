@@ -49,37 +49,9 @@
                 {% elif field.is_hidden %}
                 {{ field }}
                 {% elif field.name == 'hora_inicio' or field.name == 'hora_fin' %}
-                <div class="sala-form-field{% if field.errors %} has-error{% endif %}" data-time-picker>
-                    {{ field.as_hidden }}
-                    <span class="sala-form-label">{{ field.label }}</span>
-                    <button class="sala-time-trigger" type="button" aria-label="{{ field.label }}" aria-haspopup="dialog" aria-expanded="false" aria-controls="time-picker-{{ field.name }}" data-time-trigger>
-                        <span data-time-label>Selecciona una hora</span>
-                        <i class="fa-regular fa-clock" aria-hidden="true"></i>
-                    </button>
-                    <div id="time-picker-{{ field.name }}" class="sala-time-popover" role="dialog" aria-label="Seleccionar {{ field.label|lower }}" hidden>
-                        <div class="sala-time-picker-heading">
-                            <strong>Selecciona la hora</strong>
-                            <span data-clock-instruction>Selecciona la hora</span>
-                        </div>
-                        <div class="sala-clock-display" aria-label="Hora seleccionada">
-                            <button type="button" class="sala-clock-value" data-clock-value="hours" aria-label="Cambiar hora">09</button>
-                            <span aria-hidden="true">:</span>
-                            <button type="button" class="sala-clock-value" data-clock-value="minutes" aria-label="Cambiar minutos">00</button>
-                            <div class="sala-clock-period" role="group" aria-label="Periodo del día">
-                                <button type="button" data-clock-period="am" aria-pressed="true">a. m.</button>
-                                <button type="button" data-clock-period="pm" aria-pressed="false">p. m.</button>
-                            </div>
-                        </div>
-                        <div class="sala-clock-face" role="group" aria-label="Reloj para seleccionar la hora" data-clock-face>
-                            <div class="sala-clock-hand" data-clock-hand aria-hidden="true"></div>
-                            <div class="sala-clock-center" aria-hidden="true"></div>
-                            <div class="sala-clock-numbers" data-clock-numbers></div>
-                        </div>
-                        <div class="sala-time-actions">
-                            <button class="sala-time-cancel" type="button" data-time-cancel>Cancelar</button>
-                            <button class="sala-time-apply" type="button" data-time-apply>Usar hora</button>
-                        </div>
-                    </div>
+                <div class="sala-form-field{% if field.errors %} has-error{% endif %}">
+                    {{ field.label_tag }}
+                    {{ field }}
                     {% for error in field.errors %}<span class="sala-field-error">{{ error }}</span>{% endfor %}
                 </div>
                 {% elif field.name == 'dias_repeticion' %}
