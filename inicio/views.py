@@ -11,6 +11,7 @@ from .models import UsuarioSistema
 from openpyxl.drawing.image import Image  # Para insertar imágenes en Excel
 from .forms import RegistroUsuarioForm  # Importamos tu nuevo escudo de seguridad
 from datetime import datetime
+from .forms import RegistroClaseForm, RegistroEventoForm  # YES -Importamos los formularios de clase y evento 
 from .models import (Registro) #Owen
 
 # AQUI EMPEZO A MODIFICAR OWEN
@@ -85,6 +86,7 @@ def login_view(request):
         
         if user is not None:
             login(request, user)
+            request.session['mostrar_splash_inicio'] = True
             
             # Inicializamos el sello de tiempo estricto para el administrador
             request.session['ultima_actividad'] = datetime.now().timestamp()
@@ -121,7 +123,8 @@ def homePage(request):
         request.session.modified = True
         
     # Los operadores comunes trabajan todo el día sin restricciones
-    return render(request, 'inicio/homePage.html')
+    mostrar_splash = request.session.pop('mostrar_splash_inicio', False)
+    return render(request, 'inicio/homePage.html', {'mostrar_splash': mostrar_splash})
 
 # 3. CANDADO DE SEGURIDAD
 def es_admin_general(user):
@@ -162,13 +165,19 @@ def respaldos_bd_view(request):
     # Lógica para la vista de respaldos de base de datos
     return render(request, 'inicio/respaldos_bd.html')
 
+
+#8. VISTAS DE SALA DE COMPUTO    --YES
 def sala_computo_view(request):
-    return render(request, 'inicio/sala_computo.html')
+    contexto = {
+        'clase_form': RegistroClaseForm(),
+        'evento_form': RegistroEventoForm(),
+    }
+    return render(request, 'inicio/sala_computo/sala_computo.html', contexto)
 
 def buscar_docente_sala_view(request):
-    return render(request, 'inicio/buscar_docente_sala.html')
+    return render(request, 'inicio/sala_computo/buscar_docente_sala.html')
 def catalogos_clase_docente_view(request):
-    return render(request, 'inicio/catalogos_clase_docente.html')  
+    return render(request, 'inicio/sala_computo/catalogos_clase_docente.html')  
 def buscar_ponente_sala_view(request):
     return render(request, 'inicio/buscar_ponente_sala.html')   
 

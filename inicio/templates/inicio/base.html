@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" href="{% static 'inicio/images/icono-pag.png' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'inicio/css/estilos.css' %}?v=20261019-3">
+    <link rel="stylesheet" href="{% static 'inicio/css/estilos.css' %}?v=20261103-header-buttons">
     {% block extra_css %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
@@ -67,6 +67,86 @@
                 if (usersButton) usersButton.setAttribute('aria-expanded', 'false');
             }
         });
+
+        function confirmationFor(form, submitter) {
+            const actionLabel = (submitter?.textContent || form.dataset.confirmAction || 'guardar cambios')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .toLocaleLowerCase('es');
+            const isDelete = form.hasAttribute('data-confirm-delete') || /\b(eliminar|borrar|dar de baja)\b/.test(actionLabel);
+            return form.dataset.confirmMessage || (
+                isDelete
+                    ? '¿Confirmas que deseas eliminar este registro? Esta acción puede ser permanente.'
+                    : `¿Confirmas que deseas ${actionLabel}?`
+            );
+        }
+
+        document.addEventListener('click', (event) => {
+            const target = event.target instanceof Element ? event.target : null;
+            const submitter = target?.closest('button[type="submit"], input[type="submit"], button:not([type])');
+            const form = submitter?.form;
+            if (
+                !form ||
+                form.hasAttribute('data-confirm-exempt') ||
+                (form.method.toLowerCase() !== 'post' && !form.hasAttribute('data-confirm-submit'))
+            ) return;
+
+            if (window.validarHorasSala && !window.validarHorasSala(form)) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                return;
+            }
+
+            if (!window.confirm(confirmationFor(form, submitter))) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                return;
+            }
+            form.dataset.confirmAccepted = 'true';
+        }, true);
+
+        document.addEventListener('invalid', (event) => {
+            const form = event.target instanceof Element ? event.target.closest('form') : null;
+            if (form) delete form.dataset.confirmAccepted;
+        }, true);
+
+        document.addEventListener('submit', (event) => {
+            const form = event.target;
+            if (
+                !(form instanceof HTMLFormElement) ||
+                form.hasAttribute('data-confirm-exempt') ||
+                (form.method.toLowerCase() !== 'post' && !form.hasAttribute('data-confirm-submit'))
+            ) return;
+
+            if (window.validarHorasSala && !window.validarHorasSala(form)) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                return;
+            }
+
+            if (form.dataset.confirmAccepted === 'true') {
+                delete form.dataset.confirmAccepted;
+                return;
+            }
+
+            if (!window.confirm(confirmationFor(form, event.submitter))) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+            }
+        }, true);
+
+        document.addEventListener('click', (event) => {
+            const target = event.target instanceof Element ? event.target : null;
+            const deleteAction = target?.closest('[data-confirm-delete]');
+            if (!deleteAction || deleteAction.closest('form')) return;
+
+            const confirmation = deleteAction.dataset.confirmMessage ||
+                '¿Confirmas que deseas eliminar este registro? Esta acción puede ser permanente.';
+            if (!window.confirm(confirmation)) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+            }
+        }, true);
     </script>
     {% block extra_js %}{% endblock %}
 </body>

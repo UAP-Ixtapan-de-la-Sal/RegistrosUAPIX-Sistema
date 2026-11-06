@@ -52,6 +52,22 @@ class HomePageViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'inicio/homePage.html')
 
+    def test_splash_is_shown_only_once_after_successful_login(self):
+        password = 'Prueba-segura-123'
+        UsuarioSistema.objects.create_user(username='operador', password=password)
+
+        login_response = self.client.post(reverse('login'), {
+            'usuario': 'operador',
+            'contrasena': password,
+        })
+        self.assertRedirects(login_response, reverse('homePage'), fetch_redirect_response=False)
+
+        first_home_response = self.client.get(reverse('homePage'))
+        self.assertContains(first_home_response, 'id="splash-screen"')
+
+        next_home_response = self.client.get(reverse('homePage'))
+        self.assertNotContains(next_home_response, 'id="splash-screen"')
+
 
 class RegistroUsuarioFormTests(TestCase):
     def test_form_hashes_password_before_saving_user(self):

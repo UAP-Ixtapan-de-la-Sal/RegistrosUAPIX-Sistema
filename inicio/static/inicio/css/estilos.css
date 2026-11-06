@@ -127,40 +127,81 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: linear-gradient(135deg, rgba(82, 104, 85, 0.96), rgba(62, 80, 64, 0.98));
+    background: linear-gradient(115deg, #526855 0%, #3e5040 100%);
     color: #fff;
-    padding: 14px 4%;
+    padding: 14px clamp(16px, 4vw, 56px);
     border-bottom: 4px solid var(--color-gold);
-    box-shadow: 0 4px 20px rgba(82, 104, 85, 0.2);
+    box-shadow: 0 8px 24px rgba(34, 48, 36, 0.18);
     z-index: 1000;
     position: relative;
-    min-height: 76px;
+    min-height: 78px;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 16px;
+}
+
+.header-title {
+    color: #fff;
+    font-size: clamp(0.95rem, 1.8vw, 1.1rem);
+    font-weight: 700;
+    letter-spacing: 0.055em;
 }
 
 .user-links {
     display: flex;
     align-items: center;
-    gap: 12px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+    position: relative;
 }
 
-.user-links a {
+.header-action {
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 9px 15px;
+    border: 1px solid rgba(255, 255, 255, 0.32);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.09);
     color: #fff;
     text-decoration: none;
     font-size: 0.9rem;
     font-weight: 500;
-    padding: 9px 14px;
-    border: 1px solid rgba(255, 255, 255, 0.38);
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    transition: background 0.2s ease, border-color 0.2s ease;
+    line-height: 1.2;
+    white-space: nowrap;
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
 }
 
-.user-links a:hover {
+.header-action:hover {
     text-decoration: none;
-    background: rgba(202, 158, 82, 0.26);
-    border-color: var(--color-gold);
+    background: rgba(255, 255, 255, 0.17);
+    border-color: rgba(255, 255, 255, 0.7);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.header-action:focus-visible {
+    outline: 3px solid #f4d28e;
+    outline-offset: 3px;
+}
+
+.header-action--home {
+    background: #f3e5c4;
+    border-color: #f3e5c4;
+    color: #344536;
+    font-weight: 700;
+}
+
+.header-action--home:hover {
+    background: #fff1d2;
+    border-color: #fff1d2;
+    color: #263629;
+}
+
+.header-action--logout:hover {
+    background: rgba(255, 255, 255, 0.17);
 }
 
 
@@ -173,31 +214,28 @@ body {
 }
 
 .admin-btn {
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    color: #fff;
-    padding: 8px 16px;
-    border-radius: 8px;
     cursor: pointer;
-    font-weight: 600;
-    font-size: 0.9rem;
-    display: flex;
-    align-items: center;
-    gap: 8px;
     font-family: 'DM Sans', sans-serif;
-    transition: background 0.2s ease;
 }
 
 .admin-btn:hover {
-    background: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.17);
+}
+
+.admin-btn .admin-caret {
+    font-size: 0.7rem;
+    transition: transform 0.18s ease;
+}
+
+.admin-dropdown.is-open .admin-caret {
+    transform: rotate(180deg);
 }
 
 .dropdown-panel {
     display: none;
     position: absolute;
     top: calc(100% + 10px);
-    left: 50%;
-    transform: translateX(-50%);
+    right: 0;
     background: #ffffff;
     min-width: 260px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
@@ -234,6 +272,11 @@ body {
 .dropdown-item:hover {
     background: rgba(82, 104, 85, 0.1);
     color: var(--color-green-hover) !important;
+}
+
+.user-links .dropdown-item:focus-visible {
+    outline: 2px solid var(--color-green);
+    outline-offset: -2px;
 }
 
 .admin-dropdown.is-open .dropdown-panel {
@@ -719,6 +762,33 @@ body {
 }
 
 @media (max-width: 600px) {
+    .institutional-header {
+        justify-content: center;
+        padding: 14px 16px;
+    }
+
+    .header-title {
+        width: 100%;
+        text-align: center;
+    }
+
+    .user-links {
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .header-action {
+        min-height: 40px;
+        padding: 8px 12px;
+        font-size: 0.84rem;
+    }
+
+    .dropdown-panel {
+        right: 0;
+        left: auto;
+        max-width: calc(100vw - 24px);
+    }
+
     .main-container {
         padding: 16px;
     }
