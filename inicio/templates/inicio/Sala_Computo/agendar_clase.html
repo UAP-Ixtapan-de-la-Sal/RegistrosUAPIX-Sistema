@@ -1,15 +1,17 @@
-<section class="sala-form-panel" aria-labelledby="claseFormTitle">
+<section class="sala-form-panel sala-form-panel--class" aria-labelledby="claseFormTitle">
     <button class="sala-back-btn" type="button" onclick="volverASeleccionAgendar()">
         <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Elegir otra opción
     </button>
 
     <div class="sala-form-heading">
-        <span class="sala-form-heading-icon sala-option-clase" aria-hidden="true">
-            <i class="fa-solid fa-book-open"></i>
-        </span>
         <div>
             <p class="sala-computo-eyebrow">REGISTRO DE CLASE</p>
-            <h2 id="claseFormTitle" tabindex="-1">Agendar clase</h2>
+            <div class="sala-form-title-line">
+                <span class="sala-form-heading-icon sala-option-clase" aria-hidden="true">
+                    <i class="fa-solid fa-book-open"></i>
+                </span>
+                <h2 id="claseFormTitle" tabindex="-1">Agendar clase</h2>
+            </div>
             <p>Selecciona la carrera, materia, grupo y horario que se reservará.</p>
         </div>
     </div>
@@ -50,8 +52,30 @@
                 {{ field }}
                 {% elif field.name == 'hora_inicio' or field.name == 'hora_fin' %}
                 <div class="sala-form-field{% if field.errors %} has-error{% endif %}">
-                    {{ field.label_tag }}
-                    {{ field }}
+                    <span class="sala-form-label">{{ field.label }}</span>
+                    <div class="sala-time-picker" data-time-picker>
+                        {{ field }}
+                        <button class="sala-time-trigger" type="button" aria-label="{{ field.label }}: seleccionar hora" aria-haspopup="dialog" aria-expanded="false" data-time-trigger>
+                            <span data-time-label>Selecciona una hora</span>
+                            <i class="fa-regular fa-clock" aria-hidden="true"></i>
+                        </button>
+                        <div class="sala-time-popover" role="dialog" aria-label="Seleccionar hora" hidden>
+                            <div class="sala-time-picker-heading">
+                                <strong>Selecciona la hora</strong>
+                                <span data-time-preview>Elige hora, minutos y periodo</span>
+                            </div>
+                            <div class="sala-time-columns">
+                                <div class="sala-time-column" role="group" aria-label="Hora" data-time-hours></div>
+                                <div class="sala-time-column" role="group" aria-label="Minutos" data-time-minutes></div>
+                                <div class="sala-time-column sala-time-period" role="group" aria-label="Periodo" data-time-period></div>
+                            </div>
+                            <div class="sala-time-actions">
+                                <button class="sala-time-cancel" type="button" data-time-cancel>Cancelar</button>
+                                <button class="sala-time-apply" type="button" data-time-apply>Aplicar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <span class="sala-field-error" data-time-error hidden>Selecciona una hora.</span>
                     {% for error in field.errors %}<span class="sala-field-error">{{ error }}</span>{% endfor %}
                 </div>
                 {% elif field.name == 'dias_repeticion' %}
@@ -69,10 +93,14 @@
                     {% for error in field.errors %}<span class="sala-field-error">{{ error }}</span>{% endfor %}
                 </fieldset>
                 {% else %}
-                <div class="sala-form-field{% if field.errors %} has-error{% endif %}">
+                <div class="sala-form-field{% if field.name == 'numero_cuenta_docente' %} sala-teacher-lookup-field{% endif %}{% if field.errors %} has-error{% endif %}">
                     {{ field.label_tag }}
                     {{ field }}
                     {% if field.name == 'numero_cuenta_docente' %}
+                    <div class="sala-docente-name-field">
+                        <label for="docenteNombre">Nombre del docente</label>
+                        <input id="docenteNombre" class="sala-form-control" type="text" data-docente-name readonly placeholder="Se completará al buscar por cuenta" aria-live="polite">
+                    </div>
                     <span id="docenteLookupFeedback" class="sala-field-hint" role="status" aria-live="polite">Busca al docente por su número de cuenta.</span>
                     {% endif %}
                     {% for error in field.errors %}<span class="sala-field-error">{{ error }}</span>{% endfor %}
@@ -92,11 +120,12 @@
     (function() {
         const cuentaInput = document.querySelector('[data-docente-lookup]');
         const docenteInput = document.querySelector('[data-docente-id]');
+        const nombreDocenteInput = document.querySelector('[data-docente-name]');
         const carreraSelect = document.querySelector('[data-carrera-select]');
         const materiaSelect = document.querySelector('[data-materia-select]');
         const grupoSelect = document.querySelector('[data-grupo-select]');
         const feedback = document.getElementById('docenteLookupFeedback');
-        if (!cuentaInput || !docenteInput || !carreraSelect || !materiaSelect || !grupoSelect || !feedback) return;
+        if (!cuentaInput || !docenteInput || !nombreDocenteInput || !carreraSelect || !materiaSelect || !grupoSelect || !feedback) return;
 
         let solicitudActual = 0;
         function resetCatalogos() {
@@ -143,6 +172,7 @@
             const cuenta = cuentaInput.value.trim();
             const solicitud = ++solicitudActual;
             docenteInput.value = '';
+            nombreDocenteInput.value = '';
             carreraSelect.value = '';
             resetCatalogos();
             cuentaInput.setCustomValidity('Ingresa el número de cuenta de un docente registrado.');
@@ -166,6 +196,7 @@
                     return;
                 }
 
+                nombreDocenteInput.value = resultado.nombre || '';
                 if (!resultado.carrera_id || !resultado.carrera) {
                     feedback.textContent = 'El docente no tiene una carrera disponible en el catálogo.';
                     return;
@@ -188,6 +219,172 @@
             const carreraId = carreraSelect.value;
             cargarCatalogos(cuenta, carreraId);
         });
+    })();
+</script>
+
+<script>
+    (function() {
+        window.inicializarRelojesSala = function() {
+            document.querySelectorAll('[data-time-picker]').forEach(function(picker) {
+                if (picker.dataset.timeInitialized) return;
+                picker.dataset.timeInitialized = 'true';
+
+                const input = picker.querySelector('input[type="time"]');
+                const trigger = picker.querySelector('[data-time-trigger]');
+                const label = picker.querySelector('[data-time-label]');
+                const popover = picker.querySelector('.sala-time-popover');
+                const preview = picker.querySelector('[data-time-preview]');
+                const hourList = picker.querySelector('[data-time-hours]');
+                const minuteList = picker.querySelector('[data-time-minutes]');
+                const periodList = picker.querySelector('[data-time-period]');
+                const field = picker.closest('.sala-form-field');
+                const error = field && field.querySelector('[data-time-error]');
+                if (!input || !trigger || !label || !popover || !preview || !hourList || !minuteList || !periodList || !field || !error) return;
+
+                popover.id = input.id + '-time-popover';
+                trigger.setAttribute('aria-controls', popover.id);
+                input.required = false;
+                input.tabIndex = -1;
+                input.setAttribute('aria-hidden', 'true');
+                let selectedHour = 12;
+                let selectedMinute = 0;
+                let selectedPeriod = 'AM';
+
+                function updateDisplay() {
+                    preview.textContent = String(selectedHour).padStart(2, '0') + ':' +
+                        String(selectedMinute).padStart(2, '0') + (selectedPeriod === 'AM' ? ' a. m.' : ' p. m.');
+                    hourList.querySelectorAll('[data-time-hour]').forEach(function(option) {
+                        option.setAttribute('aria-pressed', String(Number(option.dataset.timeHour) === selectedHour));
+                    });
+                    minuteList.querySelectorAll('[data-time-minute]').forEach(function(option) {
+                        option.setAttribute('aria-pressed', String(Number(option.dataset.timeMinute) === selectedMinute));
+                    });
+                    periodList.querySelectorAll('[data-time-period-value]').forEach(function(option) {
+                        option.setAttribute('aria-pressed', String(option.dataset.timePeriodValue === selectedPeriod));
+                    });
+                }
+
+                function loadInputValue() {
+                    const match = input.value.match(/^([01]\d|2[0-3]):([0-5]\d)$/);
+                    if (match) {
+                        const hour24 = Number(match[1]);
+                        selectedPeriod = hour24 >= 12 ? 'PM' : 'AM';
+                        selectedHour = hour24 % 12 || 12;
+                        selectedMinute = Number(match[2]);
+                    } else {
+                        selectedHour = 12;
+                        selectedMinute = 0;
+                        selectedPeriod = 'AM';
+                    }
+                    updateDisplay();
+                    label.textContent = match ? preview.textContent : 'Selecciona una hora';
+                }
+
+                function addOption(text, attribute, value, container, onSelect) {
+                    const option = document.createElement('button');
+                    option.type = 'button';
+                    option.className = 'sala-time-option';
+                    option.textContent = text;
+                    option.setAttribute(attribute, value);
+                    option.setAttribute('aria-pressed', 'false');
+                    option.addEventListener('click', onSelect);
+                    container.appendChild(option);
+                }
+
+                for (let hour = 1; hour <= 12; hour += 1) {
+                    addOption(String(hour).padStart(2, '0'), 'data-time-hour', String(hour), hourList, function() {
+                        selectedHour = hour;
+                        updateDisplay();
+                    });
+                }
+                for (let minute = 0; minute < 60; minute += 1) {
+                    addOption(String(minute).padStart(2, '0'), 'data-time-minute', String(minute), minuteList, function() {
+                        selectedMinute = minute;
+                        updateDisplay();
+                    });
+                }
+                ['AM', 'PM'].forEach(function(period) {
+                    addOption(period === 'AM' ? 'a. m.' : 'p. m.', 'data-time-period-value', period, periodList, function() {
+                        selectedPeriod = period;
+                        updateDisplay();
+                    });
+                });
+
+                function positionPopover() {
+                    if (popover.hidden) return;
+                    const triggerRect = trigger.getBoundingClientRect();
+                    const popoverRect = popover.getBoundingClientRect();
+                    const margin = 12;
+                    const gap = 8;
+                    const viewportWidth = document.documentElement.clientWidth;
+                    const viewportHeight = window.innerHeight;
+                    const left = Math.max(margin, Math.min(triggerRect.left, viewportWidth - popoverRect.width - margin));
+                    const belowTop = triggerRect.bottom + gap;
+                    const aboveTop = triggerRect.top - popoverRect.height - gap;
+                    const top = belowTop + popoverRect.height <= viewportHeight - margin
+                        ? belowTop
+                        : aboveTop >= margin
+                            ? aboveTop
+                            : Math.max(margin, viewportHeight - popoverRect.height - margin);
+                    popover.style.left = left + 'px';
+                    popover.style.top = top + 'px';
+                }
+
+                function closePicker(returnFocus) {
+                    popover.hidden = true;
+                    trigger.setAttribute('aria-expanded', 'false');
+                    if (returnFocus) trigger.focus();
+                }
+
+                trigger.addEventListener('click', function() {
+                    if (!popover.hidden) {
+                        closePicker(false);
+                        return;
+                    }
+                    document.querySelectorAll('.sala-time-popover').forEach(function(other) {
+                        if (other !== popover) {
+                            other.hidden = true;
+                            const otherTrigger = document.querySelector('[aria-controls="' + other.id + '"]');
+                            if (otherTrigger) otherTrigger.setAttribute('aria-expanded', 'false');
+                        }
+                    });
+                    loadInputValue();
+                    document.body.appendChild(popover);
+                    popover.hidden = false;
+                    trigger.setAttribute('aria-expanded', 'true');
+                    positionPopover();
+                    popover.querySelector('[aria-pressed="true"]').focus();
+                });
+
+                picker.querySelector('[data-time-cancel]').addEventListener('click', function() {
+                    closePicker(true);
+                });
+                picker.querySelector('[data-time-apply]').addEventListener('click', function() {
+                    const hour24 = selectedHour % 12 + (selectedPeriod === 'PM' ? 12 : 0);
+                    input.value = String(hour24).padStart(2, '0') + ':' + String(selectedMinute).padStart(2, '0');
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                    label.textContent = preview.textContent;
+                    field.classList.remove('has-error');
+                    error.hidden = true;
+                    closePicker(true);
+                });
+
+                window.addEventListener('resize', positionPopover);
+                window.addEventListener('scroll', positionPopover, true);
+                popover.addEventListener('keydown', function(event) {
+                    if (event.key === 'Escape' && !popover.hidden) closePicker(true);
+                });
+                document.addEventListener('click', function(event) {
+                    if (!picker.contains(event.target) && !popover.contains(event.target) && !popover.hidden) {
+                        closePicker(false);
+                    }
+                });
+
+                loadInputValue();
+            });
+        };
+        window.inicializarRelojesSala();
     })();
 </script>
 
@@ -221,6 +418,9 @@
             const trigger = picker.querySelector('[data-date-trigger]');
             const popover = picker.querySelector('.sala-calendar-popover');
             popover.hidden = true;
+            popover.classList.remove('is-viewport-positioned');
+            popover.style.removeProperty('left');
+            popover.style.removeProperty('top');
             trigger.setAttribute('aria-expanded', 'false');
         }
 
@@ -236,6 +436,28 @@
             const days = picker.querySelector('[data-calendar-days]');
             let visibleMonth = parseDate(input.value) || new Date();
             visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
+
+            function positionPopover() {
+                if (popover.hidden) return;
+
+                const triggerRect = trigger.getBoundingClientRect();
+                const popoverRect = popover.getBoundingClientRect();
+                const margin = 12;
+                const gap = 8;
+                const viewportWidth = document.documentElement.clientWidth;
+                const viewportHeight = window.innerHeight;
+                const left = Math.max(margin, Math.min(triggerRect.left, viewportWidth - popoverRect.width - margin));
+                const belowTop = triggerRect.bottom + gap;
+                const aboveTop = triggerRect.top - popoverRect.height - gap;
+                const top = belowTop + popoverRect.height <= viewportHeight - margin
+                    ? belowTop
+                    : aboveTop >= margin
+                        ? aboveTop
+                        : Math.max(margin, viewportHeight - popoverRect.height - margin);
+
+                popover.style.left = left + 'px';
+                popover.style.top = top + 'px';
+            }
 
             function renderCalendar() {
                 title.textContent = monthFormat.format(visibleMonth);
@@ -272,6 +494,8 @@
 
             const initialDate = parseDate(input.value);
             if (initialDate) label.textContent = dateFormat.format(initialDate);
+            window.addEventListener('resize', positionPopover);
+            window.addEventListener('scroll', positionPopover, true);
             picker.querySelector('[data-calendar-prev]').addEventListener('click', function() {
                 visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1);
                 renderCalendar();
@@ -283,14 +507,15 @@
             trigger.addEventListener('click', function() {
                 const isOpening = popover.hidden;
                 document.querySelectorAll('[data-date-picker] .sala-calendar-popover').forEach(function(other) {
-                    other.hidden = true;
-                    other.parentElement.querySelector('[data-date-trigger]').setAttribute('aria-expanded', 'false');
+                    closePicker(other.parentElement);
                 });
                 if (isOpening) {
                     const chosenDate = parseDate(input.value);
                     if (chosenDate) visibleMonth = new Date(chosenDate.getFullYear(), chosenDate.getMonth(), 1);
                     renderCalendar();
+                    popover.classList.add('is-viewport-positioned');
                     popover.hidden = false;
+                    positionPopover();
                     trigger.setAttribute('aria-expanded', 'true');
                 }
             });

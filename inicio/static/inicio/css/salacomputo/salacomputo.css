@@ -380,6 +380,30 @@
     line-height: 1.5;
 }
 
+body.sala-subview-active .sala-form-panel--class .sala-form-heading {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+}
+
+body.sala-subview-active .sala-form-panel:not(.sala-form-panel--class) .sala-form-heading {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+}
+
+body.sala-subview-active .sala-form-panel:not(.sala-form-panel--class) .sala-form-heading > div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.sala-form-panel--class .sala-form-heading > div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 .sala-registration-form {
     border-top: 1px solid rgba(82, 104, 85, 0.13);
     padding-top: 24px;
@@ -418,6 +442,17 @@
     gap: 7px;
 }
 
+.sala-docente-name-field {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.sala-docente-name-field input[readonly] {
+    background-color: #f8fafc;
+}
+
 .sala-form-field label,
 .sala-form-label {
     color: var(--color-green-hover);
@@ -444,19 +479,52 @@
 
 .sala-time-trigger {
     width: 100%;
-    min-height: 50px;
-    padding: 9px 14px;
+    min-height: 46px;
+    padding: 7px 10px 7px 13px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border: 1px solid rgba(82, 104, 85, 0.26);
-    border-radius: 12px;
-    background: linear-gradient(135deg, #fff 0%, #f8faf7 100%);
+    gap: 10px;
+    border: 1px solid rgba(82, 104, 85, 0.24);
+    border-radius: 10px;
+    background: #fff;
     color: #526855;
     font: inherit;
     text-align: left;
     cursor: pointer;
+    box-shadow: 0 3px 10px rgba(62, 80, 64, 0.045);
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.sala-time-picker {
+    position: relative;
+    min-width: 0;
+}
+
+.sala-time-picker > input[type="time"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.sala-time-trigger > span {
+    color: #344638;
+    font-size: inherit;
+}
+
+.sala-time-trigger i {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 9px;
+    background: rgba(82, 104, 85, 0.12);
+    color: var(--color-green);
 }
 
 .sala-time-trigger:hover,
@@ -466,40 +534,88 @@
     box-shadow: 0 0 0 3px rgba(82, 104, 85, 0.1);
 }
 
+.sala-time-trigger[aria-expanded="true"] i {
+    background: var(--color-green);
+    color: #fff;
+}
+
 .sala-form-field.has-error .sala-time-trigger {
     border-color: #b74236;
 }
 
-.sala-time-trigger i {
-    width: 30px;
-    height: 30px;
-    display: grid;
-    place-items: center;
-    border-radius: 9px;
-    background: rgba(82, 104, 85, 0.1);
-    color: var(--color-green);
-}
-
 .sala-time-popover {
     position: fixed;
-    z-index: 1100;
-    top: 50%;
-    left: 50%;
-    width: min(360px, calc(100vw - 24px));
+    z-index: 1200;
+    width: min(350px, calc(100vw - 24px));
     max-height: calc(100vh - 24px);
     max-height: calc(100dvh - 24px);
     overflow-y: auto;
-    padding: clamp(14px, 4vw, 18px);
-    transform: translate(-50%, -50%);
+    padding: 16px;
+    box-sizing: border-box;
     border: 1px solid rgba(82, 104, 85, 0.16);
-    border-radius: 16px;
-    background: #fff;
-    box-shadow: 0 16px 38px rgba(34, 49, 37, 0.18);
+    border-radius: 17px;
+    background: linear-gradient(145deg, #fff, #f8faf7);
+    box-shadow: 0 18px 42px rgba(34, 49, 37, 0.24);
+    animation: sala-calendar-open 0.18s ease both;
     overscroll-behavior: contain;
 }
 
 .sala-time-popover[hidden] {
     display: none;
+}
+
+.sala-time-columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 10px;
+    border: 1px solid rgba(82, 104, 85, 0.12);
+    border-radius: 13px;
+    background: #f1f5f1;
+}
+
+.sala-time-column {
+    min-width: 0;
+    max-height: 192px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow-y: auto;
+    padding: 3px;
+    overscroll-behavior: contain;
+    scrollbar-color: rgba(82, 104, 85, 0.36) transparent;
+    scrollbar-width: thin;
+}
+
+.sala-time-period {
+    justify-content: center;
+}
+
+.sala-time-option {
+    min-width: 0;
+    min-height: 34px;
+    padding: 5px 8px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    color: #46584a;
+    font: inherit;
+    font-size: 0.86rem;
+    cursor: pointer;
+    transition: color 0.16s ease, background-color 0.16s ease, border-color 0.16s ease;
+}
+
+.sala-time-option:hover {
+    border-color: rgba(82, 104, 85, 0.2);
+    background: #fff;
+}
+
+.sala-time-option[aria-pressed="true"] {
+    border-color: var(--color-green);
+    background: var(--color-green);
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 3px 8px rgba(62, 80, 64, 0.18);
 }
 
 .sala-time-picker-heading {
@@ -704,6 +820,14 @@
     margin-top: 13px;
 }
 
+.sala-time-option:focus-visible,
+.sala-time-trigger:focus-visible,
+.sala-time-cancel:focus-visible,
+.sala-time-apply:focus-visible {
+    outline: 3px solid rgba(202, 158, 82, 0.72);
+    outline-offset: 2px;
+}
+
 .sala-time-cancel,
 .sala-time-apply {
     min-height: 36px;
@@ -796,14 +920,25 @@
     display: none;
 }
 
+.sala-calendar-popover.is-viewport-positioned {
+    position: fixed;
+    z-index: 1200;
+    width: min(300px, calc(100vw - 24px));
+    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+    box-sizing: border-box;
+    overscroll-behavior: contain;
+}
+
 .sala-calendar-heading {
-    min-height: 54px;
+    min-height: 44px;
     margin: -12px -12px 12px;
-    padding: 10px 13px;
+    padding: 6px 8px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 8px;
     border-radius: 18px 18px 12px 12px;
     background: linear-gradient(120deg, var(--color-green), var(--color-green-hover));
     color: #fff;
@@ -811,13 +946,17 @@
 }
 
 .sala-calendar-heading strong {
+    min-width: 0;
+    flex: 1;
     font-size: 0.98rem;
     letter-spacing: 0.015em;
+    text-align: center;
 }
 
 .sala-calendar-nav {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
     display: grid;
     place-items: center;
     border: 1px solid rgba(255, 255, 255, 0.28);
@@ -2585,7 +2724,8 @@ body.sala-subview-active .sala-computo-heading {
     .sala-form-heading-icon,
     .sala-scheduler-panel > #salaActivityPicker,
     .sala-form-view,
-    .sala-calendar-popover {
+    .sala-calendar-popover,
+    .sala-time-popover {
         animation: none;
         opacity: 1;
     }
@@ -2741,5 +2881,289 @@ body.sala-subview-active > .main-container > .sala-computo-page > .sala-computo-
         align-items: flex-start;
         flex-direction: column;
         gap: 4px;
+    }
+}
+
+body.sala-class-form-active .institutional-footer,
+body.sala-class-form-active .sala-computo-heading,
+body.sala-class-form-active #agendarSelectorView > .sala-back-btn {
+    display: none;
+}
+
+body.sala-class-form-active .main-container {
+    justify-content: center;
+    padding: 8px clamp(14px, 2vw, 24px);
+}
+
+body.sala-class-form-active .sala-computo-page {
+    width: 100%;
+    margin: auto;
+    padding: 0;
+}
+
+body.sala-class-form-active .sala-form-panel--class {
+    width: 100%;
+    min-height: min(680px, calc(100dvh - 180px));
+    display: flex;
+    flex-direction: column;
+    padding: 8px clamp(14px, 2vw, 22px);
+}
+
+body.sala-class-form-active .sala-form-panel--class > .sala-back-btn {
+    width: fit-content;
+    max-width: 100%;
+    min-height: 30px;
+    align-self: flex-start;
+    margin: 0 0 5px;
+    padding: 3px 10px 3px 4px;
+    gap: 6px;
+    font-size: 0.78rem;
+}
+
+body.sala-class-form-active .sala-form-panel--class > .sala-back-btn > i {
+    width: 22px;
+    height: 22px;
+}
+
+body.sala-class-form-active .sala-form-panel--class .sala-form-heading {
+    width: 100%;
+    margin: 0 auto 8px;
+    display: block;
+    text-align: center;
+}
+
+body.sala-class-form-active .sala-form-panel--class .sala-form-heading > div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+body.sala-class-form-active .sala-form-panel--class .sala-form-heading-icon {
+    width: 30px;
+    height: 30px;
+    flex-basis: 30px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+}
+
+body.sala-class-form-active .sala-form-panel--class .sala-form-title-line {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+body.sala-class-form-active .sala-form-panel--class .sala-form-heading .sala-computo-eyebrow {
+    margin: 0 0 2px;
+    font-size: 0.72rem;
+}
+
+body.sala-class-form-active .sala-form-panel--class .sala-form-heading h2 {
+    font-size: clamp(1.25rem, 2vw, 1.55rem);
+}
+
+body.sala-class-form-active .sala-form-panel--class .sala-form-heading p:last-child {
+    margin-top: 2px;
+    font-size: 0.82rem;
+}
+
+body.sala-class-form-active .sala-form-panel--class .sala-registration-form {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding-top: 8px;
+}
+
+body.sala-class-form-active .sala-form-panel--class .sala-class-type-badge {
+    margin-bottom: 6px;
+    padding: 5px 10px;
+    font-size: 0.8rem;
+}
+
+body.sala-class-form-active .sala-form-panel--class .sala-form-grid {
+    flex: 1;
+    align-content: space-between;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px 12px;
+}
+
+body.sala-class-form-active .sala-form-panel--class .sala-form-field {
+    gap: 4px;
+}
+
+body.sala-class-form-active .sala-form-panel--class .sala-form-field label,
+body.sala-class-form-active .sala-form-panel--class .sala-form-label {
+    font-size: 0.8rem;
+}
+
+body.sala-class-form-active .sala-form-panel--class .sala-form-control {
+    min-height: 38px;
+    padding: 6px 9px;
+    border-radius: 8px;
+    font-size: 0.88rem;
+}
+
+body.sala-class-form-active .sala-form-panel--class .sala-date-trigger,
+body.sala-class-form-active .sala-form-panel--class .sala-time-trigger {
+    min-height: 38px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    border-radius: 8px;
+    font-size: 0.84rem;
+}
+
+body.sala-class-form-active .sala-form-panel--class .sala-time-trigger {
+    min-height: 38px;
+}
+
+body.sala-class-form-active .sala-form-panel--class .sala-time-trigger i {
+    width: 26px;
+    height: 26px;
+    flex-basis: 26px;
+}
+
+body.sala-class-form-active .sala-form-panel--class .sala-date-trigger i {
+    width: 26px;
+    height: 26px;
+    flex-basis: 26px;
+}
+
+body.sala-class-form-active .sala-form-panel--class .sala-teacher-lookup-field {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    column-gap: 8px;
+    row-gap: 4px;
+}
+
+body.sala-class-form-active .sala-teacher-lookup-field > label,
+body.sala-class-form-active .sala-teacher-lookup-field > .sala-field-hint,
+body.sala-class-form-active .sala-teacher-lookup-field > .sala-field-error {
+    grid-column: 1 / -1;
+}
+
+body.sala-class-form-active .sala-teacher-lookup-field > label {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+body.sala-class-form-active .sala-teacher-lookup-field > [data-docente-lookup] {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: start;
+    height: 38px;
+    min-height: 38px;
+}
+
+body.sala-class-form-active .sala-teacher-lookup-field .sala-docente-name-field {
+    display: contents;
+}
+
+body.sala-class-form-active .sala-teacher-lookup-field .sala-docente-name-field label {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+body.sala-class-form-active .sala-teacher-lookup-field .sala-docente-name-field input {
+    grid-column: 2;
+    grid-row: 2;
+    height: 38px;
+    min-height: 38px;
+}
+
+body.sala-class-form-active .sala-teacher-lookup-field > .sala-field-hint,
+body.sala-class-form-active .sala-teacher-lookup-field > .sala-field-error {
+    grid-row: 3;
+}
+
+@media (max-width: 600px) {
+    body.sala-class-form-active .sala-teacher-lookup-field {
+        grid-template-columns: 1fr;
+    }
+
+    body.sala-class-form-active .sala-teacher-lookup-field > label,
+    body.sala-class-form-active .sala-teacher-lookup-field > [data-docente-lookup],
+    body.sala-class-form-active .sala-teacher-lookup-field .sala-docente-name-field label,
+    body.sala-class-form-active .sala-teacher-lookup-field .sala-docente-name-field input,
+    body.sala-class-form-active .sala-teacher-lookup-field > .sala-field-hint,
+    body.sala-class-form-active .sala-teacher-lookup-field > .sala-field-error {
+        grid-column: 1;
+    }
+
+    body.sala-class-form-active .sala-teacher-lookup-field > label,
+    body.sala-class-form-active .sala-teacher-lookup-field .sala-docente-name-field label {
+        grid-row: auto;
+    }
+
+    body.sala-class-form-active .sala-teacher-lookup-field > [data-docente-lookup],
+    body.sala-class-form-active .sala-teacher-lookup-field .sala-docente-name-field input,
+    body.sala-class-form-active .sala-teacher-lookup-field > .sala-field-hint,
+    body.sala-class-form-active .sala-teacher-lookup-field > .sala-field-error {
+        grid-row: auto;
+    }
+}
+
+body.sala-class-form-active .sala-form-panel--class .sala-weekday-field .sala-field-hint {
+    display: none;
+}
+
+body.sala-class-form-active .sala-form-panel--class .sala-weekday-field legend {
+    margin-bottom: 3px;
+}
+
+body.sala-class-form-active .sala-form-panel--class .sala-weekday-options {
+    gap: 5px;
+}
+
+body.sala-class-form-active .sala-form-panel--class .sala-weekday-option span {
+    min-height: 26px;
+    padding: 4px 8px;
+    font-size: 0.76rem;
+}
+
+body.sala-class-form-active .sala-form-panel--class .sala-form-actions {
+    margin-top: 6px;
+}
+
+body.sala-class-form-active .sala-form-panel--class .sala-form-submit {
+    min-height: 40px;
+    padding: 8px 16px;
+}
+
+@media (max-width: 900px) {
+    body.sala-class-form-active .main-container {
+        justify-content: flex-start;
+    }
+
+    body.sala-class-form-active .sala-form-panel--class .sala-form-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1100px) {
+    body.sala-class-form-active .sala-form-panel--class .sala-form-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    body.sala-class-form-active .sala-teacher-lookup-field {
+        grid-column: span 2;
+    }
+
+    body.sala-class-form-active .sala-weekday-field {
+        grid-column: span 3;
+    }
+}
+
+@media (max-width: 600px) {
+    body.sala-class-form-active .sala-form-panel--class .sala-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    body.sala-class-form-active .sala-form-panel--class .sala-form-title-line {
+        flex-wrap: wrap;
+    }
+
+    body.sala-class-form-active .sala-form-panel--class .sala-teacher-lookup-field {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }

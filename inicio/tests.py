@@ -78,13 +78,17 @@ class SalaComputoViewTests(TestCase):
         self.assertContains(response, 'data-registro-fields="Clase" hidden')
         self.assertContains(response, 'data-registro-type="Clase" aria-pressed="false"')
 
-    def test_scheduling_forms_use_native_time_inputs(self):
+    def test_scheduling_forms_use_styled_time_picker_with_native_form_values(self):
         response = self.client.get(reverse('sala_computo'))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'type="time" name="hora_inicio"')
         self.assertContains(response, 'type="time" name="hora_fin"')
-        self.assertNotContains(response, 'data-time-picker')
+        self.assertContains(response, 'data-time-picker')
+        self.assertContains(response, 'Selecciona la hora')
+        self.assertContains(response, 'data-time-apply')
+        self.assertContains(response, 'class="app-confirm-dialog"')
+        self.assertContains(response, 'data-confirm-accept')
 
 
 class RegistroUsuarioFormTests(TestCase):

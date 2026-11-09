@@ -146,6 +146,14 @@ body {
     letter-spacing: 0.055em;
 }
 
+.header-school-logo {
+    display: block;
+    width: clamp(190px, 24vw, 270px);
+    max-height: 42px;
+    object-fit: contain;
+    object-position: left center;
+}
+
 .user-links {
     display: flex;
     align-items: center;
@@ -277,6 +285,13 @@ body {
 .user-links .dropdown-item:focus-visible {
     outline: 2px solid var(--color-green);
     outline-offset: -2px;
+}
+
+@media (max-width: 600px) {
+    .header-school-logo {
+        width: min(220px, 56vw);
+        max-height: 34px;
+    }
 }
 
 .admin-dropdown.is-open .dropdown-panel {
@@ -1382,3 +1397,208 @@ body.add-user-view {
 }
 
 .add-user-view .admin-link:hover { color: var(--color-gold); text-decoration: underline; }
+
+.app-confirm-dialog {
+    position: relative;
+    width: min(440px, calc(100vw - 32px));
+    max-width: none;
+    overflow: hidden;
+    padding: 28px;
+    border: 1px solid rgba(82, 104, 85, 0.2);
+    border-radius: 24px;
+    background:
+        radial-gradient(ellipse at 50% 0, rgba(202, 158, 82, 0.17), transparent 58%),
+        linear-gradient(145deg, #fff, #f8faf7);
+    color: var(--text-main);
+    text-align: center;
+    box-shadow: 0 28px 80px rgba(20, 32, 23, 0.34), 0 0 0 1px rgba(255, 255, 255, 0.7) inset;
+    animation: app-confirm-enter 0.32s cubic-bezier(0.2, 0.85, 0.25, 1) both;
+}
+
+.app-confirm-dialog::before {
+    position: absolute;
+    inset: 0 0 auto;
+    height: 5px;
+    background: linear-gradient(90deg, var(--color-green), var(--color-gold), var(--color-green));
+    content: "";
+}
+
+.app-confirm-dialog::backdrop {
+    background: rgba(23, 34, 26, 0.62);
+    backdrop-filter: blur(5px);
+}
+
+.app-confirm-icon {
+    position: relative;
+    width: 58px;
+    height: 58px;
+    margin: 0 auto 15px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(202, 158, 82, 0.25);
+    border-radius: 18px;
+    background: rgba(202, 158, 82, 0.13);
+    color: var(--color-green);
+    font-size: 1.55rem;
+    box-shadow: 0 0 0 7px rgba(202, 158, 82, 0.07), 0 8px 18px rgba(62, 80, 64, 0.12);
+    animation: app-confirm-icon-pop 0.48s 0.08s cubic-bezier(0.2, 0.85, 0.25, 1) both;
+}
+
+.app-confirm-icon::after {
+    position: absolute;
+    inset: -7px;
+    border: 1px solid rgba(202, 158, 82, 0.35);
+    border-radius: 23px;
+    content: "";
+    animation: app-confirm-icon-ring 1.4s 0.25s ease-out both;
+}
+
+.app-confirm-dialog h2 {
+    margin: 0;
+    color: var(--color-green-hover);
+    font-size: 1.3rem;
+    line-height: 1.35;
+}
+
+.app-confirm-dialog p {
+    margin: 10px 0 24px;
+    color: var(--muted);
+    font-size: 0.96rem;
+    line-height: 1.55;
+}
+
+.app-confirm-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.app-confirm-actions button {
+    position: relative;
+    overflow: hidden;
+    min-width: 118px;
+    min-height: 42px;
+    padding: 9px 16px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(31, 48, 35, 0.08);
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.app-confirm-actions button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(31, 48, 35, 0.16);
+}
+
+.app-confirm-cancel {
+    border-color: rgba(82, 104, 85, 0.2) !important;
+    background: #fff;
+    color: var(--color-green-hover);
+}
+
+.app-confirm-cancel:hover {
+    background: #f1f5f1;
+}
+
+.app-confirm-accept {
+    background: linear-gradient(120deg, var(--color-green), var(--color-green-hover));
+    color: #fff;
+    box-shadow: 0 5px 14px rgba(62, 80, 64, 0.24);
+}
+
+.app-confirm-accept:hover {
+    background: var(--color-green-hover);
+}
+
+.app-confirm-dialog.is-danger .app-confirm-icon {
+    border-color: rgba(183, 66, 54, 0.2);
+    background: rgba(183, 66, 54, 0.1);
+    color: #a23830;
+    box-shadow: 0 0 0 7px rgba(183, 66, 54, 0.07), 0 8px 18px rgba(120, 35, 29, 0.12);
+}
+
+.app-confirm-dialog.is-danger .app-confirm-icon::after {
+    border-color: rgba(183, 66, 54, 0.32);
+}
+
+.app-confirm-dialog.is-danger .app-confirm-accept {
+    background: linear-gradient(120deg, #a23830, #842d27);
+}
+
+.app-confirm-dialog.is-danger .app-confirm-accept:hover {
+    background: #842d27;
+}
+
+.app-confirm-actions button:focus-visible {
+    outline: 3px solid rgba(202, 158, 82, 0.75);
+    outline-offset: 3px;
+}
+
+@keyframes app-confirm-enter {
+    from {
+        opacity: 0;
+        transform: translateY(16px) scale(0.94);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes app-confirm-icon-pop {
+    0% {
+        opacity: 0;
+        transform: scale(0.55) rotate(-12deg);
+    }
+
+    70% {
+        transform: scale(1.1) rotate(3deg);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1) rotate(0);
+    }
+}
+
+@keyframes app-confirm-icon-ring {
+    0% {
+        opacity: 0.8;
+        transform: scale(0.82);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(1.22);
+    }
+}
+
+@media (max-width: 480px) {
+    .app-confirm-dialog {
+        padding: 24px 20px;
+    }
+
+    .app-confirm-actions button {
+        min-width: 0;
+        flex: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .app-confirm-dialog {
+        animation: none;
+    }
+
+    .app-confirm-icon,
+    .app-confirm-icon::after {
+        animation: none;
+    }
+
+    .app-confirm-actions button {
+        transition: none;
+    }
+}

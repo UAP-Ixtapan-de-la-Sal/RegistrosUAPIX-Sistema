@@ -334,11 +334,16 @@
         document.querySelectorAll('[data-demo-save]').forEach(function (button) {
             button.addEventListener('click', function () {
                 const action = button.textContent.trim().replace(/\s+/g, ' ').toLocaleLowerCase('es');
-                if (!window.confirm('Esta acción es una demostración y no guardará información. ¿Deseas continuar con "' + action + '"?')) {
-                    return;
-                }
-                globalFeedback.textContent = 'Vista de diseño: el registro todavía no se guarda.';
-                globalFeedback.hidden = false;
+                window.confirmarAccion('Esta acción es una demostración y no guardará información. ¿Deseas continuar con "' + action + '"?', {
+                    title: 'Confirmar demostración',
+                    acceptText: 'Continuar',
+                }).then(function(accepted) {
+                    if (!accepted) return;
+                    globalFeedback.textContent = 'Vista de diseño: el registro todavía no se guarda.';
+                    globalFeedback.hidden = false;
+                }).catch(function(error) {
+                    console.error('No se pudo mostrar la confirmación de demostración.', error);
+                });
             });
         });
         document.querySelectorAll('[data-demo-search], [data-demo-lookup]').forEach(function (button) {
