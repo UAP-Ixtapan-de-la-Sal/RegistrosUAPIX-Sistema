@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" href="{% static 'inicio/images/icono-pag.png' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'inicio/css/estilos.css' %}?v=20261106-background-paths">
+    <link rel="stylesheet" href="{% static 'inicio/css/estilos.css' %}?v=20261109-confirmation-effects">
     {% block extra_css %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
@@ -33,6 +33,9 @@
 
     <!-- Incluir el Footer -->
     {% include 'inicio/partials/footer.html' %}
+
+    {% include 'inicio/partials/confirmacion_dialog.html' %}
+    <script src="{% static 'inicio/js/confirmaciones.js' %}?v=20261109-designed-confirmations"></script>
 
     <!-- Scripts de Interacción del Menú -->
     <script>
@@ -69,7 +72,7 @@
         });
 
         function confirmationFor(form, submitter) {
-            const actionLabel = (submitter?.textContent || form.dataset.confirmAction || 'guardar cambios')
+            const actionLabel = (submitter?.textContent || submitter?.value || form.dataset.confirmAction || 'guardar cambios')
                 .replace(/\s+/g, ' ')
                 .trim()
                 .toLocaleLowerCase('es');
@@ -96,13 +99,6 @@
                 event.stopImmediatePropagation();
                 return;
             }
-
-            if (!window.confirm(confirmationFor(form, submitter))) {
-                event.preventDefault();
-                event.stopImmediatePropagation();
-                return;
-            }
-            form.dataset.confirmAccepted = 'true';
         }, true);
 
         document.addEventListener('invalid', (event) => {
@@ -129,10 +125,32 @@
                 return;
             }
 
-            if (!window.confirm(confirmationFor(form, event.submitter))) {
-                event.preventDefault();
-                event.stopImmediatePropagation();
-            }
+            event.preventDefault();
+            if (form.dataset.confirmPending === 'true') return;
+
+            const submitter = event.submitter;
+            const submitLabel = (submitter?.textContent || submitter?.value || '')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .toLocaleLowerCase('es');
+            const isDelete = form.hasAttribute('data-confirm-delete') ||
+                /\b(eliminar|borrar|dar de baja)\b/.test(submitLabel);
+            form.dataset.confirmPending = 'true';
+            window.confirmarAccion(confirmationFor(form, submitter), {
+                title: isDelete ? 'Confirmar eliminación' : 'Confirmar registro',
+                acceptText: isDelete ? 'Eliminar' : 'Confirmar',
+                danger: isDelete,
+            }).then((accepted) => {
+                delete form.dataset.confirmPending;
+                if (!accepted || !form.isConnected) return;
+
+                form.dataset.confirmAccepted = 'true';
+                if (submitter && submitter.form === form) form.requestSubmit(submitter);
+                else form.requestSubmit();
+            }).catch((error) => {
+                delete form.dataset.confirmPending;
+                console.error('No se pudo mostrar la confirmación del formulario.', error);
+            });
         }, true);
 
         document.addEventListener('click', (event) => {
@@ -140,12 +158,26 @@
             const deleteAction = target?.closest('[data-confirm-delete]');
             if (!deleteAction || deleteAction.closest('form')) return;
 
+            if (deleteAction.dataset.confirmAccepted === 'true') {
+                delete deleteAction.dataset.confirmAccepted;
+                return;
+            }
+
+            event.preventDefault();
+            event.stopImmediatePropagation();
             const confirmation = deleteAction.dataset.confirmMessage ||
                 '¿Confirmas que deseas eliminar este registro? Esta acción puede ser permanente.';
-            if (!window.confirm(confirmation)) {
-                event.preventDefault();
-                event.stopImmediatePropagation();
-            }
+            window.confirmarAccion(confirmation, {
+                title: 'Confirmar eliminación',
+                acceptText: 'Eliminar',
+                danger: true,
+            }).then((accepted) => {
+                if (!accepted || !deleteAction.isConnected) return;
+                deleteAction.dataset.confirmAccepted = 'true';
+                deleteAction.click();
+            }).catch((error) => {
+                console.error('No se pudo mostrar la confirmación de eliminación.', error);
+            });
         }, true);
     </script>
     {% block extra_js %}{% endblock %}

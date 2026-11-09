@@ -499,6 +499,10 @@
     margin-bottom: 14px;
 }
 
+.registros-fields[data-registro-fields="Evento"] > .registros-section-title {
+    text-align: center;
+}
+
 .registros-section-title h3 {
     margin: 0;
     color: var(--color-green-hover);

@@ -6,7 +6,7 @@
     <title>Agregar Nuevo Usuario</title>
     
     <!-- Enlazamos tu archivo de estilos globales -->
-    <link rel="stylesheet" href="{% static 'inicio/css/estilos.css' %}?v=20261103-header-buttons">
+    <link rel="stylesheet" href="{% static 'inicio/css/estilos.css' %}?v=20261109-confirmation-effects">
 </head>
 <body class="add-user-view">
 
@@ -117,6 +117,9 @@
     <!-- Footer -->
     {% include 'inicio/partials/footer.html' %}
 
+    {% include 'inicio/partials/confirmacion_dialog.html' %}
+    <script src="{% static 'inicio/js/confirmaciones.js' %}?v=20261109-designed-confirmations"></script>
+
     <!-- Script para hacer funcionar el ojito, validación de letras y validación de envío -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -144,6 +147,12 @@
             const form = document.querySelector('form');
             const rolSelect = document.querySelector('select[name="rol"]');
             const checkboxes = document.querySelectorAll('.modules-grid input[type="checkbox"]');
+
+            if (form) {
+                form.addEventListener('invalid', function() {
+                    delete form.dataset.confirmAccepted;
+                }, true);
+            }
             
             // Limpiar el error del select cuando el usuario elija una opción
             if (rolSelect) {
@@ -164,6 +173,11 @@
 
             if (form) {
                 form.addEventListener('submit', function(event) {
+                    if (form.dataset.confirmAccepted === 'true') {
+                        delete form.dataset.confirmAccepted;
+                        return;
+                    }
+
                     // --- Validar Rol ---
                     if (rolSelect && rolSelect.value === "") {
                         event.preventDefault();
@@ -183,9 +197,17 @@
                         return;
                     }
 
-                    if (!window.confirm("¿Confirmas que deseas registrar este usuario y guardar sus permisos?")) {
-                        event.preventDefault();
-                    }
+                    event.preventDefault();
+                    window.confirmarAccion("¿Confirmas que deseas registrar este usuario y guardar sus permisos?", {
+                        title: 'Confirmar registro',
+                        acceptText: 'Registrar',
+                    }).then(function(accepted) {
+                        if (!accepted || !form.isConnected) return;
+                        form.dataset.confirmAccepted = 'true';
+                        form.requestSubmit();
+                    }).catch(function(error) {
+                        console.error('No se pudo mostrar la confirmación del registro.', error);
+                    });
                 });
             }
         });

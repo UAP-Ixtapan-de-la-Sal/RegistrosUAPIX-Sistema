@@ -6,8 +6,8 @@
 {% block body_class %}sala-computo-body{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'inicio/css/salacomputo/salacomputo.css' %}?v=20261104-clock-overflow-fix">
-<link rel="stylesheet" href="{% static 'inicio/css/salacomputo/registros.css' %}?v=20261106-entry-type-lock">
+<link rel="stylesheet" href="{% static 'inicio/css/salacomputo/salacomputo.css' %}?v=20261109-centered-event-heading">
+<link rel="stylesheet" href="{% static 'inicio/css/salacomputo/registros.css' %}?v=20261109-event-heading">
 {% endblock %}
 
 {% block content %}
@@ -128,7 +128,7 @@
                     <h2 id="activeSessionsTitle" tabindex="-1">Historial de uso</h2>
                     <p>Filtra y consulta las actividades registradas en la Sala de Cómputo.</p>
                 </div>
-                <button class="sala-back-btn" type="button" onclick="regresarDeBitacora()" aria-label="Volver al panel operativo">
+                <button class="sala-back-btn" type="button" onclick="regresarDeBitacora()" aria-label="Volver a Sala de Cómputo">
                     <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver al panel
                 </button>
             </div>
@@ -263,7 +263,7 @@
                     <h2 id="incidentTitle" tabindex="-1">Bitácora de fallas</h2>
                     <p>Identifica el equipo afectado aunque la persona que lo utilizó ya se haya retirado.</p>
                 </div>
-                <button class="sala-back-btn" type="button" onclick="regresarDeIncidencias()" aria-label="Volver al panel operativo">
+                <button class="sala-back-btn" type="button" onclick="regresarDeIncidencias()" aria-label="Volver a Sala de Cómputo">
                     <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver al panel
                 </button>
             </div>
@@ -405,7 +405,7 @@
 
     <!-- ================= VISTA DINÁMICA: SELECCIÓN DE TIPO DE AGENDAMIENTO ================= -->
     <div id="agendarSelectorView" class="sala-view-hidden">
-        <button class="sala-back-btn" type="button" onclick="regresarAlPanel()" aria-label="Volver al panel operativo">
+        <button class="sala-back-btn" type="button" onclick="regresarAlPanel()" aria-label="Volver a Sala de Cómputo">
             <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver al panel
         </button>
 
@@ -460,6 +460,7 @@
 <script>
     function mostrarSelectorAgendar() {
         document.body.classList.add('sala-subview-active');
+        document.body.classList.remove('sala-class-form-active');
         document.getElementById('mainOperatorDashboard').classList.add('sala-view-hidden');
         document.getElementById('agendarSelectorView').classList.remove('sala-view-hidden');
         document.getElementById('agendarSelectorView').classList.add('sala-view-active');
@@ -472,6 +473,7 @@
 
     function regresarAlPanel() {
         document.body.classList.remove('sala-subview-active');
+        document.body.classList.remove('sala-class-form-active');
         document.getElementById('agendarSelectorView').classList.remove('sala-view-active');
         document.getElementById('agendarSelectorView').classList.add('sala-view-hidden');
         document.getElementById('mainOperatorDashboard').classList.remove('sala-view-hidden');
@@ -880,6 +882,7 @@
     });
 
     function seleccionarTipoAgendamiento(tipo) {
+        document.body.classList.toggle('sala-class-form-active', tipo === 'clase');
         document.getElementById('salaActivityPicker').classList.add('sala-view-hidden');
         document.getElementById('agendarClaseView').classList.toggle('sala-view-hidden', tipo !== 'clase');
         document.getElementById('agendarEventoView').classList.toggle('sala-view-hidden', tipo !== 'evento');
@@ -888,6 +891,7 @@
     }
 
     function volverASeleccionAgendar() {
+        document.body.classList.remove('sala-class-form-active');
         document.getElementById('agendarClaseView').classList.add('sala-view-hidden');
         document.getElementById('agendarEventoView').classList.add('sala-view-hidden');
         document.getElementById('salaActivityPicker').classList.remove('sala-view-hidden');
@@ -907,8 +911,16 @@
             .find((input) => !input.value);
         if (!missingTime) return true;
 
-        missingTime.focus();
-        missingTime.reportValidity();
+        const picker = missingTime.closest('[data-time-picker]');
+        if (picker) {
+            const field = picker.closest('.sala-form-field');
+            const error = field.querySelector('[data-time-error]');
+            const trigger = picker.querySelector('[data-time-trigger]');
+            field.classList.add('has-error');
+            error.hidden = false;
+            trigger.focus();
+            if (trigger.getAttribute('aria-expanded') !== 'true') trigger.click();
+        }
         return false;
     };
 </script>

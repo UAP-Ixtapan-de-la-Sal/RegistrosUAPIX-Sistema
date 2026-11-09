@@ -47,8 +47,30 @@
                 {{ field }}
                 {% elif field.name == 'hora_inicio' or field.name == 'hora_fin' %}
                 <div class="sala-form-field{% if field.errors %} has-error{% endif %}">
-                    {{ field.label_tag }}
-                    {{ field }}
+                    <span class="sala-form-label">{{ field.label }}</span>
+                    <div class="sala-time-picker" data-time-picker>
+                        {{ field }}
+                        <button class="sala-time-trigger" type="button" aria-label="{{ field.label }}: seleccionar hora" aria-haspopup="dialog" aria-expanded="false" data-time-trigger>
+                            <span data-time-label>Selecciona una hora</span>
+                            <i class="fa-regular fa-clock" aria-hidden="true"></i>
+                        </button>
+                        <div class="sala-time-popover" role="dialog" aria-label="Seleccionar hora" hidden>
+                            <div class="sala-time-picker-heading">
+                                <strong>Selecciona la hora</strong>
+                                <span data-time-preview>Elige hora, minutos y periodo</span>
+                            </div>
+                            <div class="sala-time-columns">
+                                <div class="sala-time-column" role="group" aria-label="Hora" data-time-hours></div>
+                                <div class="sala-time-column" role="group" aria-label="Minutos" data-time-minutes></div>
+                                <div class="sala-time-column sala-time-period" role="group" aria-label="Periodo" data-time-period></div>
+                            </div>
+                            <div class="sala-time-actions">
+                                <button class="sala-time-cancel" type="button" data-time-cancel>Cancelar</button>
+                                <button class="sala-time-apply" type="button" data-time-apply>Aplicar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <span class="sala-field-error" data-time-error hidden>Selecciona una hora.</span>
                     {% for error in field.errors %}<span class="sala-field-error">{{ error }}</span>{% endfor %}
                 </div>
                 {% elif field.name == 'numero_cuenta_ponente' %}
@@ -84,6 +106,7 @@
 <script>
     (function() {
         if (window.inicializarCalendariosSala) window.inicializarCalendariosSala();
+        if (window.inicializarRelojesSala) window.inicializarRelojesSala();
 
         const tipoPonente = document.querySelector('[data-ponente-interno]');
         const camposInternos = document.querySelector('[data-ponente-interno-fields]');
