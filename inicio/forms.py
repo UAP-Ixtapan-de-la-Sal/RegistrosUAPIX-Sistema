@@ -1,6 +1,7 @@
-from datetime import date, timedelta
+from datetime import timedelta
 
 from django import forms
+from django.utils import timezone
 from .models import Persona, UsuarioSistema
 
 class RegistroUsuarioForm(forms.ModelForm):
@@ -63,7 +64,7 @@ class RegistroClaseForm(forms.Form):
     fecha = forms.DateField(widget=forms.HiddenInput(attrs={'data-calendar-value': 'true'}))
     fecha_fin_repeticion = forms.DateField(
         label='Repetir hasta',
-        initial=lambda: date.today() + timedelta(days=90),
+        initial=lambda: timezone.localdate() + timedelta(days=90),
         widget=forms.HiddenInput(attrs={'data-calendar-value': 'true'}),
     )
     hora_inicio = forms.TimeField(widget=forms.TimeInput(attrs={'class': 'sala-form-control', 'type': 'time'}))
@@ -96,7 +97,7 @@ class RegistroClaseForm(forms.Form):
             *[(str(item['id']), item['nombre']) for item in catalogos.get('grupos', [])],
         ]
         if not self.is_bound:
-            self.initial.setdefault('fecha', date.today())
+            self.initial.setdefault('fecha', timezone.localdate())
 
     def clean_numero_cuenta_docente(self):
         numero_cuenta = self.cleaned_data['numero_cuenta_docente'].strip()
@@ -118,6 +119,11 @@ class RegistroClaseForm(forms.Form):
         fecha_inicio = cleaned_data.get('fecha')
         fecha_fin = cleaned_data.get('fecha_fin_repeticion')
         dias = cleaned_data.get('dias_repeticion', [])
+        hoy = timezone.localdate()
+        if fecha_inicio and fecha_inicio < hoy:
+            self.add_error('fecha', 'La fecha de inicio no puede ser anterior a hoy.')
+        if fecha_fin and fecha_fin < hoy:
+            self.add_error('fecha_fin_repeticion', 'La fecha final no puede ser anterior a hoy.')
         if fecha_inicio and fecha_fin and fecha_fin < fecha_inicio:
             self.add_error('fecha_fin_repeticion', 'La fecha final debe ser igual o posterior a la fecha inicial.')
         if not dias:
@@ -134,6 +140,19 @@ class RegistroClaseForm(forms.Form):
         hora_fin = cleaned_data.get('hora_fin')
         if hora_inicio and hora_fin and hora_fin <= hora_inicio:
             self.add_error('hora_fin', 'La hora de término debe ser posterior a la hora de inicio.')
+        elif (
+            hora_inicio
+            and fecha_inicio
+            and fecha_fin
+            and fecha_inicio <= hoy <= fecha_fin
+            and str(hoy.weekday()) in dias
+        ):
+            hora_limite = (timezone.localtime() - timedelta(minutes=5)).time()
+            if hora_inicio < hora_limite:
+                self.add_error(
+                    'hora_inicio',
+                    'La hora de inicio ya pasó para la clase de hoy (fuera del margen de 5 minutos).',
+                )
         return cleaned_data
 
 
@@ -164,6 +183,15 @@ class RegistroEventoForm(forms.Form):
             'data-cuenta-ponente': 'true',
         }),
     )
+    nombre_ponente_interno = forms.CharField(
+        label='Nombre del ponente',
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'sala-form-control',
+            'readonly': True,
+            'data-nombre-ponente-interno': 'true',
+        }),
+    )
     persona_id = forms.IntegerField(
         required=False,
         widget=forms.HiddenInput(attrs={'data-persona-ponente': 'true'}),
@@ -181,7 +209,7 @@ class RegistroEventoForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if not self.is_bound:
-            self.initial.setdefault('fecha', date.today())
+            self.initial.setdefault('fecha', timezone.localdate())
 
     def clean(self):
         cleaned_data = super().clean()
@@ -191,14 +219,23 @@ class RegistroEventoForm(forms.Form):
         nombre_externo = (cleaned_data.get('nombre_ponente_externo') or '').strip()
 
         if es_interno == 'si':
-            try:
-                persona = Persona.objects.get(matricula=cuenta, perfil='Doc')
-            except Persona.DoesNotExist:
-                self.add_error('numero_cuenta_ponente', 'No se encontró un docente con ese número de cuenta.')
+            if not cuenta:
+                self.add_error('numero_cuenta_ponente', 'Ingresa el número de cuenta del ponente.')
             else:
-                if persona.pk != persona_id:
-                    self.add_error('persona_id', 'Vuelve a buscar el número de cuenta del ponente.')
-                cleaned_data['persona'] = persona
+                try:
+                    persona = Persona.objects.get(
+                        matricula=cuenta,
+                        perfil__in=('Administrador', 'Docente'),
+                    )
+                except Persona.DoesNotExist:
+                    self.add_error(
+                        'numero_cuenta_ponente',
+                        'No se encontró un administrador o docente con ese número de cuenta.',
+                    )
+                else:
+                    if persona.pk != persona_id:
+                        self.add_error('persona_id', 'Vuelve a buscar el número de cuenta del ponente.')
+                    cleaned_data['persona'] = persona
         elif es_interno == 'no':
             if not nombre_externo:
                 self.add_error('nombre_ponente_externo', 'Captura el nombre del ponente externo.')
@@ -206,8 +243,19 @@ class RegistroEventoForm(forms.Form):
         else:
             self.add_error('pertenece_al_plantel', 'Indica si el ponente pertenece al plantel.')
 
+        fecha = cleaned_data.get('fecha')
         hora_inicio = cleaned_data.get('hora_inicio')
         hora_fin = cleaned_data.get('hora_fin')
+        hoy = timezone.localdate()
+        if fecha and fecha < hoy:
+            self.add_error('fecha', 'La fecha del evento no puede ser anterior a hoy.')
+        if fecha == hoy and hora_inicio:
+            hora_limite = (timezone.localtime() - timedelta(minutes=5)).time()
+            if hora_inicio < hora_limite:
+                self.add_error(
+                    'hora_inicio',
+                    'La hora de inicio ya pasó para el evento (fuera del margen de 5 minutos).',
+                )
         if hora_inicio and hora_fin and hora_fin <= hora_inicio:
             self.add_error('hora_fin', 'La hora de término debe ser posterior a la hora de inicio.')
         return cleaned_data

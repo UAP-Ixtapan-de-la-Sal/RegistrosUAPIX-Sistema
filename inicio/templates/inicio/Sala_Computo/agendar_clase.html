@@ -46,6 +46,7 @@
                         </div>
                         <div class="sala-calendar-days" data-calendar-days></div>
                     </div>
+                    <span class="sala-field-error" data-date-error hidden></span>
                     {% for error in field.errors %}<span class="sala-field-error">{{ error }}</span>{% endfor %}
                 </div>
                 {% elif field.is_hidden %}
@@ -75,7 +76,7 @@
                             </div>
                         </div>
                     </div>
-                    <span class="sala-field-error" data-time-error hidden>Selecciona una hora.</span>
+                    <span class="sala-field-error" data-time-error hidden></span>
                     {% for error in field.errors %}<span class="sala-field-error">{{ error }}</span>{% endfor %}
                 </div>
                 {% elif field.name == 'dias_repeticion' %}
@@ -434,6 +435,7 @@
             const popover = picker.querySelector('.sala-calendar-popover');
             const title = picker.querySelector('[data-calendar-title]');
             const days = picker.querySelector('[data-calendar-days]');
+            const fieldName = input.name;
             let visibleMonth = parseDate(input.value) || new Date();
             visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
 
@@ -459,13 +461,24 @@
                 popover.style.top = top + 'px';
             }
 
+            function minimumDate() {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                if (fieldName !== 'fecha_fin_repeticion') return today;
+
+                const startDate = parseDate(picker.closest('form').querySelector('input[name="fecha"]').value);
+                return startDate && startDate > today ? startDate : today;
+            }
+
             function renderCalendar() {
                 title.textContent = monthFormat.format(visibleMonth);
                 days.replaceChildren();
                 const firstDay = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
                 const offset = (firstDay.getDay() + 6) % 7;
                 const selected = parseDate(input.value);
+                const minDate = minimumDate();
                 const today = new Date();
+                today.setHours(0, 0, 0, 0);
 
                 for (let index = 0; index < 42; index += 1) {
                     const date = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), index - offset + 1);
@@ -476,14 +489,22 @@
                     button.setAttribute('aria-label', dateFormat.format(date));
                     if (date.getMonth() !== visibleMonth.getMonth()) button.classList.add('is-outside-month');
                     if (date.toDateString() === today.toDateString()) button.classList.add('is-today');
+                    if (date < minDate) {
+                        button.disabled = true;
+                        button.setAttribute('aria-disabled', 'true');
+                    }
                     if (selected && date.toDateString() === selected.toDateString()) {
                         button.classList.add('is-selected');
                         button.setAttribute('aria-pressed', 'true');
                     }
 
                     button.addEventListener('click', function() {
+                        if (button.disabled) return;
                         input.value = formatIso(date);
                         label.textContent = dateFormat.format(date);
+                        const field = picker.closest('.sala-form-field');
+                        field.classList.remove('has-error');
+                        field.querySelector('[data-date-error]').hidden = true;
                         input.dispatchEvent(new Event('change', { bubbles: true }));
                         closePicker(picker);
                         trigger.focus();

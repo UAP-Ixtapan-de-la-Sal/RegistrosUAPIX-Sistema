@@ -5,9 +5,9 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.utils import timezone #Owen
 from django.conf import settings #Owen
-from django.http import HttpResponse #Owen
+from django.http import HttpResponse, JsonResponse #Owen
 from openpyxl import load_workbook #Owen
-from .models import UsuarioSistema
+from .models import Persona, UsuarioSistema
 from openpyxl.drawing.image import Image  # Para insertar imágenes en Excel
 from .forms import RegistroUsuarioForm  # Importamos tu nuevo escudo de seguridad
 from datetime import datetime
@@ -170,9 +170,25 @@ def respaldos_bd_view(request):
 
 #8. VISTAS DE SALA DE COMPUTO    --YES
 def sala_computo_view(request):
+    es_envio_clase = request.method == 'POST' and request.POST.get('categoria') == 'clase'
+    es_envio_evento = request.method == 'POST' and request.POST.get('categoria') == 'evento'
+    clase_form = RegistroClaseForm(request.POST if es_envio_clase else None)
+    evento_form = RegistroEventoForm(request.POST if es_envio_evento else None)
+    if es_envio_clase and clase_form.is_valid():
+        messages.info(
+            request,
+            'Las fechas y el horario son válidos. El registro de clases aún no se guarda desde este formulario.',
+        )
+    if es_envio_evento and evento_form.is_valid():
+        messages.info(
+            request,
+            'La fecha y el horario son válidos. El registro de eventos aún no se guarda desde este formulario.',
+        )
+
     contexto = {
-        'clase_form': RegistroClaseForm(),
-        'evento_form': RegistroEventoForm(),
+        'clase_form': clase_form,
+        'evento_form': evento_form,
+        'active_schedule_view': 'clase' if es_envio_clase else 'evento' if es_envio_evento else '',
     }
     return render(request, 'inicio/sala_computo/sala_computo.html', contexto)
 
@@ -181,7 +197,28 @@ def buscar_docente_sala_view(request):
 def catalogos_clase_docente_view(request):
     return render(request, 'inicio/sala_computo/catalogos_clase_docente.html')  
 def buscar_ponente_sala_view(request):
-    return render(request, 'inicio/buscar_ponente_sala.html')   
+    if request.method != 'GET':
+        return JsonResponse({'encontrado': False, 'error': 'Método no permitido.'}, status=405)
+
+    cuenta = request.GET.get('cuenta', '').strip()
+    if not cuenta:
+        return JsonResponse({'encontrado': False, 'error': 'Ingresa el número de cuenta del ponente.'}, status=400)
+
+    persona = Persona.objects.filter(
+        matricula=cuenta,
+        perfil__in=('Administrador', 'Docente'),
+    ).first()
+    if persona is None:
+        return JsonResponse({
+            'encontrado': False,
+            'error': 'No se encontró un administrador o docente con ese número de cuenta.',
+        }, status=404)
+
+    return JsonResponse({
+        'encontrado': True,
+        'persona_id': persona.pk,
+        'nombre': f'{persona.nombre} {persona.apellidos}'.strip(),
+    })
 
 @login_required
 @user_passes_test(es_admin_general, login_url='homePage')

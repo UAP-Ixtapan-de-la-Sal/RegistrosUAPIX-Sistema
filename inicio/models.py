@@ -96,13 +96,13 @@ class Clase(models.Model):
         if not self.fecha or not self.hora_inicio or not self.hora_fin:
             return
 
-        fecha_actual = timezone.now().date()
+        fecha_actual = timezone.localdate()
         if self.fecha < fecha_actual:
             raise ValidationError({'fecha': 'Error: No puedes agendar una clase en una fecha pasada.'})
 
         # Margen de tolerancia de 5 minutos
         if self.fecha == fecha_actual:
-            hora_limite = (timezone.now() - timedelta(minutes=5)).time()
+            hora_limite = (timezone.localtime() - timedelta(minutes=5)).time()
             if self.hora_inicio < hora_limite:
                 raise ValidationError({'hora_inicio': 'Error: La hora de inicio ya pasó (fuera del margen de 5 minutos).'})
 

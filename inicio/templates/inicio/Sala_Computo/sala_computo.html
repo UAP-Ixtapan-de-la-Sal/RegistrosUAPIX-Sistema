@@ -907,21 +907,113 @@
 </script>
 <script>
     window.validarHorasSala = function(form) {
-        const missingTime = Array.from(form.querySelectorAll('input[type="time"]'))
-            .find((input) => !input.value);
-        if (!missingTime) return true;
+        const claseForm = form.querySelector('input[name="categoria"][value="clase"]');
+        const eventoForm = form.querySelector('input[name="categoria"][value="evento"]');
+        form.querySelectorAll('[data-date-error], [data-time-error]').forEach(function(error) {
+            error.hidden = true;
+            error.textContent = '';
+        });
+        form.querySelectorAll('[data-date-picker], [data-time-picker]').forEach(function(picker) {
+            picker.closest('.sala-form-field').classList.remove('has-error');
+        });
 
-        const picker = missingTime.closest('[data-time-picker]');
-        if (picker) {
+        function mostrarErrorFecha(input, mensaje) {
+            const picker = input.closest('[data-date-picker]');
             const field = picker.closest('.sala-form-field');
-            const error = field.querySelector('[data-time-error]');
-            const trigger = picker.querySelector('[data-time-trigger]');
+            const trigger = picker.querySelector('[data-date-trigger]');
+            const error = field.querySelector('[data-date-error]');
             field.classList.add('has-error');
+            error.textContent = mensaje;
             error.hidden = false;
             trigger.focus();
             if (trigger.getAttribute('aria-expanded') !== 'true') trigger.click();
+            return false;
         }
-        return false;
+
+        if (claseForm) {
+            const fechaInicioInput = form.querySelector('input[name="fecha"]');
+            const fechaFinInput = form.querySelector('input[name="fecha_fin_repeticion"]');
+            const fechaInicio = fechaInicioInput.value ? new Date(fechaInicioInput.value + 'T00:00:00') : null;
+            const fechaFin = fechaFinInput.value ? new Date(fechaFinInput.value + 'T00:00:00') : null;
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+
+            if (!fechaInicio) return mostrarErrorFecha(fechaInicioInput, 'Selecciona la fecha de inicio.');
+            if (fechaInicio < hoy) return mostrarErrorFecha(fechaInicioInput, 'La fecha de inicio no puede ser anterior a hoy.');
+            if (!fechaFin) return mostrarErrorFecha(fechaFinInput, 'Selecciona la fecha final.');
+            if (fechaFin < hoy) return mostrarErrorFecha(fechaFinInput, 'La fecha final no puede ser anterior a hoy.');
+            if (fechaFin < fechaInicio) {
+                return mostrarErrorFecha(fechaFinInput, 'La fecha final debe ser igual o posterior a la fecha inicial.');
+            }
+        } else if (eventoForm) {
+            const fechaInput = form.querySelector('input[name="fecha"]');
+            const fecha = fechaInput.value ? new Date(fechaInput.value + 'T00:00:00') : null;
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+
+            if (!fecha) return mostrarErrorFecha(fechaInput, 'Selecciona la fecha del evento.');
+            if (fecha < hoy) return mostrarErrorFecha(fechaInput, 'La fecha del evento no puede ser anterior a hoy.');
+        }
+
+        const missingTime = Array.from(form.querySelectorAll('input[type="time"]'))
+            .find((input) => !input.value);
+        if (missingTime) {
+            const picker = missingTime.closest('[data-time-picker]');
+            if (picker) {
+                const field = picker.closest('.sala-form-field');
+                const error = field.querySelector('[data-time-error]');
+                const trigger = picker.querySelector('[data-time-trigger]');
+                field.classList.add('has-error');
+                error.textContent = 'Selecciona una hora.';
+                error.hidden = false;
+                trigger.focus();
+                if (trigger.getAttribute('aria-expanded') !== 'true') trigger.click();
+            }
+            return false;
+        }
+
+        const horaInicioInput = form.querySelector('input[name="hora_inicio"]');
+        const horaFinInput = form.querySelector('input[name="hora_fin"]');
+        if ((claseForm || eventoForm) && horaInicioInput && horaFinInput) {
+            if (horaFinInput.value <= horaInicioInput.value) {
+                const picker = horaFinInput.closest('[data-time-picker]');
+                const field = picker.closest('.sala-form-field');
+                const error = field.querySelector('[data-time-error]');
+                const trigger = picker.querySelector('[data-time-trigger]');
+                field.classList.add('has-error');
+                error.textContent = 'La hora de término debe ser posterior a la hora de inicio.';
+                error.hidden = false;
+                trigger.focus();
+                if (trigger.getAttribute('aria-expanded') !== 'true') trigger.click();
+                return false;
+            }
+        }
+
+        if (eventoForm) {
+            const fechaInput = form.querySelector('input[name="fecha"]');
+            const fecha = fechaInput.value ? new Date(fechaInput.value + 'T00:00:00') : null;
+            const ahora = new Date();
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+            if (fecha && fecha.getTime() === hoy.getTime()) {
+                const inicioEvento = new Date(fechaInput.value + 'T' + horaInicioInput.value + ':00');
+                const horaLimite = new Date(ahora.getTime() - 5 * 60 * 1000);
+                if (inicioEvento < horaLimite) {
+                    const picker = horaInicioInput.closest('[data-time-picker]');
+                    const field = picker.closest('.sala-form-field');
+                    const error = field.querySelector('[data-time-error]');
+                    const trigger = picker.querySelector('[data-time-trigger]');
+                    field.classList.add('has-error');
+                    error.textContent = 'La hora de inicio ya pasó para el evento (fuera del margen de 5 minutos).';
+                    error.hidden = false;
+                    trigger.focus();
+                    if (trigger.getAttribute('aria-expanded') !== 'true') trigger.click();
+                    return false;
+                }
+            }
+        }
+
+        return true;
     };
 </script>
 {% endblock %}
