@@ -1,9 +1,23 @@
-from django.db import models
+from django.db import models, router, transaction
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from datetime import timedelta
 from simple_history.models import HistoricalRecords
+
+
+PERFILES_PERSONA = (
+    ('Administrador', 'Administrador'),
+    ('Docente', 'Docente'),
+    ('Alumno', 'Alumno'),
+)
+
+
+class PersonaQuerySet(models.QuerySet):
+    def con_perfiles(self, *perfiles):
+        return self.filter(
+            models.Q(perfil__in=perfiles) | models.Q(perfiles__perfil__in=perfiles),
+        ).distinct()
 
 class UsuarioSistema(AbstractUser):
     # 1. Definimos el Rol (Operador o Visualizador)
@@ -33,6 +47,7 @@ class Carrera(models.Model):
         return self.nombre_carrera
 
 class Persona(models.Model):
+    objects = PersonaQuerySet.as_manager()
     id_persona = models.AutoField(primary_key=True)
     grupo = models.ForeignKey(
         'Grupo', on_delete=models.SET_NULL, null=True, blank=True,
@@ -42,11 +57,8 @@ class Persona(models.Model):
     # CORRECCIÓN: Vinculamos formalmente a la tabla Carrera para evitar el número suelto
     carrera = models.ForeignKey(Carrera, on_delete=models.SET_NULL, null=True, blank=True, db_column='id_carrera', verbose_name="Carrera")
     
-    perfil = models.CharField(max_length=50, choices=[
-        ('Administrador', 'Administrador'),
-        ('Docente', 'Docente'),
-        ('Alumno', 'Alumno')
-    ])
+    # Perfil principal conservado para compatibilidad con los módulos existentes.
+    perfil = models.CharField(max_length=50, choices=PERFILES_PERSONA)
     matricula = models.CharField(max_length=20, unique=True, null=True, blank=True)
     nombre = models.CharField(max_length=100)
     apellidos = models.CharField(max_length=100)
@@ -56,8 +68,49 @@ class Persona(models.Model):
         if self.grupo_id and self.carrera_id != self.grupo.carrera_id:
             raise ValidationError({'grupo': 'El grupo debe pertenecer a la carrera de la persona.'})
 
+    @property
+    def perfiles_actuales(self):
+        perfiles = {item.perfil for item in self.perfiles.all()} if self.pk else set()
+        if self.perfil:
+            perfiles.add(self.perfil)
+        return perfiles
+
+    def tiene_perfil(self, *perfiles):
+        return bool(self.perfiles_actuales.intersection(perfiles))
+
+    def save(self, *args, **kwargs):
+        using = kwargs.get('using') or router.db_for_write(type(self), instance=self)
+        with transaction.atomic(using=using):
+            super().save(*args, **kwargs)
+            if self.perfil in dict(PERFILES_PERSONA):
+                # Serializa la sincronización del perfil principal al editar una
+                # persona existente. Los perfiles adicionales nunca se eliminan.
+                type(self).objects.using(using).select_for_update().get(pk=self.pk)
+                if not PersonaPerfil.objects.using(using).filter(persona_id=self.pk, perfil=self.perfil).exists():
+                    membership = PersonaPerfil(persona_id=self.pk, perfil=self.perfil)
+                    membership._history_user = getattr(self, '_history_user', None)
+                    membership._change_reason = getattr(self, '_change_reason', None)
+                    membership.save(using=using)
+
     def __str__(self):
         return f"{self.matricula or 'S/N'} {self.nombre} {self.apellidos}"
+
+
+class PersonaPerfil(models.Model):
+    persona = models.ForeignKey(Persona, on_delete=models.CASCADE, related_name='perfiles')
+    perfil = models.CharField(max_length=50, choices=PERFILES_PERSONA)
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = 'perfil institucional'
+        verbose_name_plural = 'perfiles institucionales'
+        constraints = [
+            models.UniqueConstraint(fields=('persona', 'perfil'), name='inicio_persona_perfil_unico'),
+            models.CheckConstraint(condition=models.Q(perfil__in=[p for p, _ in PERFILES_PERSONA]), name='inicio_persona_perfil_valido'),
+        ]
+
+    def __str__(self):
+        return f'{self.persona} - {self.get_perfil_display()}'
 
 
 class Externo(models.Model):

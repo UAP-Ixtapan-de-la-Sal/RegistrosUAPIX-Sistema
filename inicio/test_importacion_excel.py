@@ -3,6 +3,7 @@
 from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import hashlib
 import time
 from unittest.mock import patch
 
@@ -125,16 +126,11 @@ class ExcelServiceTests(TestCase):
             confirm(data, self.user)
         self.assertEqual(Persona.objects.get().nombre, 'Luis')
 
-    def test_contradictory_rows_and_cross_sheet_profiles_block(self):
-        for sheets in (
-            {'Docentes': [COLUMNAS['Docentes'], ['D01', 'Luis', 'Pérez', ''], ['D01', 'Otro', 'Pérez', '']]},
-            {'Docentes': [COLUMNAS['Docentes'], ['D01', 'Luis', 'Pérez', '']],
-             'Administrativos': [COLUMNAS['Administrativos'], ['D01', 'Luis', 'Pérez', '']]},
-        ):
-            with self.subTest(sheets=sheets):
-                self.assertFalse(preview(workbook(sheets)).valid)
-                with self.assertRaises(ExcelError):
-                    confirm(workbook(sheets), self.user)
+    def test_contradictory_identity_rows_still_block(self):
+        sheets = {'Docentes': [COLUMNAS['Docentes'], ['D01', 'Luis', 'Pérez', ''], ['D01', 'Otro', 'Pérez', '']]}
+        self.assertFalse(preview(workbook(sheets)).valid)
+        with self.assertRaises(ExcelError):
+            confirm(workbook(sheets), self.user)
         self.assertFalse(Persona.objects.exists())
 
     def test_nonunique_name_is_never_resolved_arbitrarily(self):
@@ -338,7 +334,7 @@ class IntegratedSchemaTests(TestCase):
         self.assertTrue(any(c['foreign_key'] == (Grupo._meta.db_table, 'id_grupo') for c in constraints.values()))
 
 
-class ExcelAdminTests(TestCase):
+class ExcelAdminFixture:
     def setUp(self):
         self.user = UsuarioSistema.objects.create_superuser(username='adminexcel', password='prueba')
         self.client.force_login(self.user)
@@ -355,6 +351,7 @@ class ExcelAdminTests(TestCase):
             'accion': 'validar', 'archivo': SimpleUploadedFile(filename, data),
         })
 
+class ExcelAdminTests(ExcelAdminFixture, TestCase):
     def test_global_header_link_and_upload_page_preserve_admin_navigation(self):
         response = self.client.get(reverse('admin:index'))
         self.assertContains(response, self.url)
@@ -362,6 +359,33 @@ class ExcelAdminTests(TestCase):
         self.assertContains(response, reverse('admin:inicio_persona_changelist'))
         response = self.client.get(self.url)
         self.assertContains(response, 'Cargar y validar')
+        self.assertContains(response, reverse('descargar_plantilla_excel'))
+        self.assertContains(response, 'Descargar plantilla Excel')
+
+    def test_downloaded_template_is_the_exact_approved_excel_attachment(self):
+        response = self.client.get(reverse('descargar_plantilla_excel'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        self.assertEqual(response['Content-Disposition'], 'attachment; filename="Plantilla.xlsx"')
+        data = b''.join(response.streaming_content)
+        response.close()
+        self.assertEqual(hashlib.sha256(data).hexdigest(), '191d5350c75565d90f241d122c7c83f71447f5027147ea67696847e5a273621b')
+
+    def test_template_download_requires_staff_and_import_permissions(self):
+        url = reverse('descargar_plantilla_excel')
+        self.client.logout()
+        self.assertEqual(self.client.get(url).status_code, 302)
+        for staff in (False, True):
+            user = UsuarioSistema.objects.create_user(username=f'descarga{staff}', is_staff=staff)
+            self.client.force_login(user)
+            self.assertEqual(self.client.get(url).status_code, 403 if staff else 302)
+
+    def test_template_download_rejects_post(self):
+        self.assertEqual(self.client.post(reverse('descargar_plantilla_excel')).status_code, 405)
+
+    def test_missing_template_returns_404(self):
+        with patch('inicio.views_importacion.EXCEL_TEMPLATE_PATH', Path(self.temp.name) / 'inexistente.xlsx'):
+            self.assertEqual(self.client.get(reverse('descargar_plantilla_excel')).status_code, 404)
 
     def test_anonymous_nonstaff_and_staff_without_permissions_are_denied(self):
         self.client.logout()
@@ -378,6 +402,9 @@ class ExcelAdminTests(TestCase):
         user.user_permissions.set(Permission.objects.filter(content_type__app_label='inicio', codename__in=[p.split('.')[1] for p in IMPORT_PERMISSIONS]))
         self.client.force_login(user)
         self.assertEqual(self.client.get(self.url).status_code, 200)
+        response = self.client.get(reverse('descargar_plantilla_excel'))
+        self.assertEqual(response.status_code, 200)
+        response.close()
         response = self.upload()
         response = self.client.post(self.url, {'accion': 'confirmar', 'token': response.context['token']})
         self.assertTrue(response.context['completed'])

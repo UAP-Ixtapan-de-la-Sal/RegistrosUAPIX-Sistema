@@ -15,6 +15,7 @@ class ExcelMigrationTests(TransactionTestCase):
         original = [('inicio', '0001_initial')]
         integrated = [('inicio', '0002_integrar_esquema_excel')]
         executor = MigrationExecutor(connection)
+        latest = executor.loader.graph.leaf_nodes()
         executor.migrate(original)
         try:
             old_apps = executor.loader.project_state(original).apps
@@ -34,7 +35,7 @@ class ExcelMigrationTests(TransactionTestCase):
             self.assertIsNone(new_subject.semestre)
             self.assertEqual((new_group.semestre, new_group.turno), (2, 'Matutino'))
         finally:
-            MigrationExecutor(connection).migrate(integrated)
+            MigrationExecutor(connection).migrate(latest)
 
 
 class ConcurrentExcelTests(TransactionTestCase):

@@ -1,7 +1,7 @@
 """Importador conservador, adaptado de PRUEBAS-EXCEL.
 
 Se reutilizan el orden de catálogos, encabezados, normalización y mapeos de
-la referencia. La planificación es de solo lectura: nunca actualiza datos.
+la referencia. La planificación es de solo lectura; se guarda al confirmar.
 """
 
 from dataclasses import dataclass, field
@@ -16,13 +16,14 @@ from openpyxl.utils.exceptions import InvalidFileException
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
-from inicio.models import Carrera, Equipo, Grupo, Materia, Persona
+from inicio.models import Carrera, Equipo, Grupo, Materia, Persona, PersonaPerfil
 
 
 MAX_FILE_SIZE = 5 * 1024 * 1024
 MAX_EXPANDED_SIZE = 50 * 1024 * 1024
 MAX_ROWS = 20000
 MAX_COLUMNS = 64
+PREVIEW_LIMIT = 100
 COLUMNAS = {
     'Carreras': ['Carrera'],
     'Grupos': ['Grupo', 'Carrera', 'Semestre', 'Turno'],
@@ -65,12 +66,18 @@ class Sheet:
     rows: list = field(default_factory=list)
     new: int = 0
     existing: int = 0
+    profiles: int = 0
+    relationships: int = 0
     errors: list = field(default_factory=list)
     samples: list = field(default_factory=list)
 
     @property
     def error_count(self):
         return len({error['row'] for error in self.errors})
+
+    @property
+    def valid_count(self):
+        return self.new + self.existing
 
 
 @dataclass
@@ -79,6 +86,8 @@ class Plan:
     ignored: list = field(default_factory=list)
     errors: list = field(default_factory=list)
     entries: list = field(default_factory=list)
+    profile_entries: list = field(default_factory=list)
+    relationship_updates: list = field(default_factory=list)
 
     @property
     def valid(self):
@@ -155,12 +164,20 @@ def read_workbook(data):
 
 
 class Planner:
-    def __init__(self, plan):
+    def __init__(self, plan, *, lock=False):
         self.plan = plan
         self.index = {model: {} for model in MODELOS}
+        self.profiles = {}
         for model in MODELOS:
-            for obj in model.objects.all():
+            queryset = model.objects.all()
+            if lock:
+                queryset = queryset.select_for_update()
+            if model is Persona:
+                queryset = queryset.prefetch_related('perfiles')
+            for obj in queryset:
                 self.index[model].setdefault(self.identity(obj), []).append(obj)
+                if model is Persona:
+                    self.profiles[self.identity(obj)] = obj.perfiles_actuales
 
     @staticmethod
     def identity(obj):
@@ -240,6 +257,13 @@ class Planner:
         conflicts = []
         for name, value in values.items():
             old = getattr(obj, name)
+            if isinstance(obj, Persona):
+                if name == 'perfil':
+                    continue
+                # Incorporar una relación académica ausente no sustituye una
+                # relación existente. Los valores no vacíos deben coincidir.
+                if name in ('grupo', 'carrera') and old is None:
+                    continue
             if hasattr(value, '_meta') or hasattr(old, '_meta'):
                 same = self.related_key(old) == self.related_key(value)
             elif isinstance(value, str):
@@ -267,11 +291,20 @@ class Planner:
                     if len(matches) > 1:
                         raise ValidationError({'Identidad': 'Existen varias coincidencias en la base de datos; no se seleccionará una automáticamente.'})
                     if matches:
-                        conflicts = self.compare(matches[0], values)
+                        target = matches[0]
+                        conflicts = self.compare(target, values)
                         if conflicts:
                             raise ValidationError({name: 'La información contradice un registro existente o una fila anterior. No se sobrescribirá.' for name in conflicts})
                         sheet.existing += 1
                         status = 'Existente / repetido, se conserva'
+                        if model is Persona:
+                            changes = {name: value for name, value in values.items() if name in ('grupo', 'carrera') and getattr(target, name) is None}
+                            if changes:
+                                for name, value in changes.items():
+                                    setattr(target, name, value)
+                                self.plan.relationship_updates.append((target, changes))
+                                sheet.relationships += 1
+                                status = 'Existente; agregar relación académica ausente'
                     else:
                         if model is Materia and self.index[Materia].get((*key[:2], None)):
                             raise ValidationError({'semestre': 'Hay una materia existente sin semestre con este nombre y carrera. Resuelve esa ambigüedad antes de importar; no se actualizará ni duplicará.'})
@@ -280,9 +313,17 @@ class Planner:
                         candidate.validate_unique(exclude=exclude)
                         self.index[model].setdefault(key, []).append(candidate)
                         self.plan.entries.append((candidate, values, sheet.name, number))
+                        target = candidate
                         sheet.new += 1
                         status = 'Nuevo'
-                    if len(sheet.samples) < 100:
+                    if model is Persona:
+                        profiles = self.profiles.setdefault(key, set())
+                        if values['perfil'] not in profiles:
+                            profiles.add(values['perfil'])
+                            self.plan.profile_entries.append((target, values['perfil'], sheet.name, number))
+                            sheet.profiles += 1
+                            status += f'; agregar perfil {values["perfil"]}'
+                    if len(sheet.samples) < PREVIEW_LIMIT:
                         sheet.samples.append(dict(row=number, status=status, values=' · '.join(str(v) for v in values.values())))
                 except ValidationError as exc:
                     errors = exc.message_dict if hasattr(exc, 'message_dict') else {'Registro': exc.messages}
@@ -297,7 +338,7 @@ def preview(data):
 
 
 def confirm(data, user):
-    """Revalidar y crear únicamente registros nuevos en una sola transacción."""
+    """Revalidar y agregar registros, perfiles y relaciones ausentes de forma atómica."""
     if not user.is_active or not user.is_staff or not user.has_perms(IMPORT_PERMISSIONS):
         raise ExcelError('No tienes permisos para importar estos catálogos.')
     from django.contrib.contenttypes.models import ContentType
@@ -306,7 +347,9 @@ def confirm(data, user):
         # Punto común de serialización entre confirmaciones del importador.
         # No crea ni modifica ContentType. La fila ya existe tras migrate.
         ContentType.objects.select_for_update().get(app_label='inicio', model='carrera')
-        plan = preview(data)
+        # Bloquear registros existentes mientras se revalidan también protege
+        # la incorporación de relaciones ausentes frente a ediciones paralelas.
+        plan = Planner(read_workbook(data), lock=True).build()
         if not plan.valid:
             raise ExcelError('La revalidación detectó errores o cambios desde la vista previa. Vuelve a cargar el archivo para revisar los detalles.')
         for obj, values, sheet, number in plan.entries:
@@ -314,8 +357,21 @@ def confirm(data, user):
                 if hasattr(value, '_meta'):
                     setattr(obj, name, value)
             obj.full_clean()
-            if hasattr(obj, 'history'):
+            if hasattr(obj, 'history') or isinstance(obj, Persona):
                 obj._history_user = user
                 obj._change_reason = f'Importación Excel: {sheet}, fila {number}'
             obj.save(force_insert=True)
+        for obj, changes in plan.relationship_updates:
+            for name, value in changes.items():
+                setattr(obj, name, value)
+            obj._history_user = user
+            obj.full_clean()
+            obj.save(update_fields=list(changes))
+        for person, perfil, sheet, number in plan.profile_entries:
+            if not PersonaPerfil.objects.filter(persona=person, perfil=perfil).exists():
+                membership = PersonaPerfil(persona=person, perfil=perfil)
+                membership._history_user = user
+                membership._change_reason = f'Importación Excel: {sheet}, fila {number}'
+                membership.full_clean()
+                membership.save()
         return plan
