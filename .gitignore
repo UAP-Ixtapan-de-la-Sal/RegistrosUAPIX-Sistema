@@ -220,6 +220,9 @@ __marimo__/
 # Archivos generados
 /staticfiles/
 
+# Archivos privados de vista previa del importador (caducan en 15 minutos)
+/.importaciones/
+
 # Configuración local y secretos
 .env.*
 !.env.example

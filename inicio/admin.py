@@ -35,9 +35,9 @@ class UsuarioSistemaAdmin(UserAdmin):
 # Dejamos la tabla Persona lista por si quieren ir agregando alumnos manuales después
 @admin.register(Persona)
 class PersonaAdmin(admin.ModelAdmin):
-    list_display = ('matricula', 'nombre', 'apellidos', 'perfil')
+    list_display = ('matricula', 'nombre', 'apellidos', 'perfil', 'carrera', 'grupo')
     search_fields = ('matricula', 'nombre', 'apellidos')
-    list_filter = ('perfil',)
+    list_filter = ('perfil', 'carrera', 'grupo')
 
 
 # ==========================================
@@ -52,9 +52,9 @@ class CarreraAdmin(admin.ModelAdmin):
 @admin.register(Materia)
 class MateriaAdmin(admin.ModelAdmin):
     # Cambiamos 'id_carrera' por 'carrera' en list_display
-    list_display = ('id_materia', 'nombre_materia', 'carrera') 
+    list_display = ('id_materia', 'nombre_materia', 'carrera', 'semestre')
     search_fields = ('nombre_materia',)
-    list_filter = ('carrera',) 
+    list_filter = ('carrera', 'semestre')
 
 @admin.register(Grupo)
 class GrupoAdmin(admin.ModelAdmin):

@@ -34,6 +34,10 @@ class Carrera(models.Model):
 
 class Persona(models.Model):
     id_persona = models.AutoField(primary_key=True)
+    grupo = models.ForeignKey(
+        'Grupo', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='alumnos', verbose_name='Grupo',
+    )
     
     # CORRECCIÓN: Vinculamos formalmente a la tabla Carrera para evitar el número suelto
     carrera = models.ForeignKey(Carrera, on_delete=models.SET_NULL, null=True, blank=True, db_column='id_carrera', verbose_name="Carrera")
@@ -46,6 +50,11 @@ class Persona(models.Model):
     matricula = models.CharField(max_length=20, unique=True, null=True, blank=True)
     nombre = models.CharField(max_length=100)
     apellidos = models.CharField(max_length=100)
+
+    def clean(self):
+        super().clean()
+        if self.grupo_id and self.carrera_id != self.grupo.carrera_id:
+            raise ValidationError({'grupo': 'El grupo debe pertenecer a la carrera de la persona.'})
 
     def __str__(self):
         return f"{self.matricula or 'S/N'} {self.nombre} {self.apellidos}"
@@ -65,6 +74,7 @@ class Externo(models.Model):
 class Materia(models.Model):
     id_materia = models.AutoField(primary_key=True)
     nombre_materia = models.CharField(max_length=100)
+    semestre = models.IntegerField(null=True, blank=True)
     carrera = models.ForeignKey(Carrera, on_delete=models.CASCADE, db_column='id_carrera', verbose_name="Carrera")
 
     def __str__(self):
@@ -74,12 +84,19 @@ class Materia(models.Model):
 class Grupo(models.Model):
     id_grupo = models.AutoField(primary_key=True)
     nombre_grupo = models.CharField(max_length=20)
-    semestre = models.IntegerField()
-    turno = models.CharField(max_length=20)
+    semestre = models.IntegerField(null=True, blank=True)
+    turno = models.CharField(max_length=20, blank=True)
     carrera = models.ForeignKey(Carrera, on_delete=models.CASCADE, db_column='id_carrera', verbose_name="Carrera")
 
     def __str__(self):
-        return f"{self.nombre_grupo} - Semestre {self.semestre} ({self.turno})"
+        if self.semestre is not None and self.turno:
+            return f"{self.nombre_grupo} - Semestre {self.semestre} ({self.turno})"
+        partes = [self.nombre_grupo]
+        if self.semestre is not None:
+            partes.append(f'Semestre {self.semestre}')
+        if self.turno:
+            partes.append(self.turno)
+        return ' - '.join(partes)
 
 
 class Clase(models.Model):

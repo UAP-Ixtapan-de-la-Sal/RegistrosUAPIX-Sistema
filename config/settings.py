@@ -165,6 +165,17 @@ JAZZMIN_SETTINGS = {
     "show_sidebar": True,
     "navigation_expanded": True,
 
+    "topmenu_links": [
+        {
+            "name": "Importar Excel",
+            "url": "importar_excel",
+            "permissions": [
+                "inicio.add_carrera", "inicio.add_grupo", "inicio.add_persona",
+                "inicio.add_materia", "inicio.add_equipo",
+            ],
+        },
+    ],
+
     # Iconos para los modelos en la barra lateral (usa FontAwesome)
     "icons": {
         "auth.group": "fas fa-users-cog",
