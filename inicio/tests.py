@@ -340,6 +340,14 @@ class RegistroEventoFormValidationTests(TestCase):
             form.errors['numero_cuenta_ponente'],
         )
 
+    def test_scheduling_forms_include_compact_classes_and_footer(self):
+        response = self.client.get(reverse('sala_computo'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'sala-form-panel--schedule')
+        self.assertContains(response, 'institutional-footer')
+        self.assertContains(response, 'sala-schedule-form-active')
+
+
 class RegistroUsuarioFormTests(TestCase):
     def test_form_hashes_password_before_saving_user(self):
         form = RegistroUsuarioForm(data={

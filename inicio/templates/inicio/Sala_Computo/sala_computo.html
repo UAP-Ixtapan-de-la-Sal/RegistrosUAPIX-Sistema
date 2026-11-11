@@ -6,7 +6,7 @@
 {% block body_class %}sala-computo-body{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'inicio/css/salacomputo/salacomputo.css' %}?v=20261109-centered-event-heading">
+<link rel="stylesheet" href="{% static 'inicio/css/salacomputo/salacomputo.css' %}?v=20261110-compact-schedule-footer">
 <link rel="stylesheet" href="{% static 'inicio/css/salacomputo/registros.css' %}?v=20261109-event-heading">
 {% endblock %}
 
@@ -461,6 +461,7 @@
     function mostrarSelectorAgendar() {
         document.body.classList.add('sala-subview-active');
         document.body.classList.remove('sala-class-form-active');
+        document.body.classList.remove('sala-schedule-form-active');
         document.getElementById('mainOperatorDashboard').classList.add('sala-view-hidden');
         document.getElementById('agendarSelectorView').classList.remove('sala-view-hidden');
         document.getElementById('agendarSelectorView').classList.add('sala-view-active');
@@ -474,6 +475,7 @@
     function regresarAlPanel() {
         document.body.classList.remove('sala-subview-active');
         document.body.classList.remove('sala-class-form-active');
+        document.body.classList.remove('sala-schedule-form-active');
         document.getElementById('agendarSelectorView').classList.remove('sala-view-active');
         document.getElementById('agendarSelectorView').classList.add('sala-view-hidden');
         document.getElementById('mainOperatorDashboard').classList.remove('sala-view-hidden');
@@ -883,6 +885,7 @@
 
     function seleccionarTipoAgendamiento(tipo) {
         document.body.classList.toggle('sala-class-form-active', tipo === 'clase');
+        document.body.classList.add('sala-schedule-form-active');
         document.getElementById('salaActivityPicker').classList.add('sala-view-hidden');
         document.getElementById('agendarClaseView').classList.toggle('sala-view-hidden', tipo !== 'clase');
         document.getElementById('agendarEventoView').classList.toggle('sala-view-hidden', tipo !== 'evento');
@@ -892,6 +895,7 @@
 
     function volverASeleccionAgendar() {
         document.body.classList.remove('sala-class-form-active');
+        document.body.classList.remove('sala-schedule-form-active');
         document.getElementById('agendarClaseView').classList.add('sala-view-hidden');
         document.getElementById('agendarEventoView').classList.add('sala-view-hidden');
         document.getElementById('salaActivityPicker').classList.remove('sala-view-hidden');
