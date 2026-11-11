@@ -1,4 +1,4 @@
-<section class="sala-form-panel sala-form-panel--class" aria-labelledby="claseFormTitle">
+<section class="sala-form-panel sala-form-panel--class sala-form-panel--schedule" aria-labelledby="claseFormTitle">
     <button class="sala-back-btn" type="button" onclick="volverASeleccionAgendar()">
         <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Elegir otra opción
     </button>
@@ -416,13 +416,23 @@
         }
 
         function closePicker(picker) {
-            const trigger = picker.querySelector('[data-date-trigger]');
-            const popover = picker.querySelector('.sala-calendar-popover');
+            const popover = picker.matches('.sala-calendar-popover')
+                ? picker
+                : document.getElementById(picker.dataset.calendarPopoverId) ||
+                    picker.querySelector('.sala-calendar-popover');
+            if (!popover) return;
+            const pickerField = picker.matches('.sala-calendar-popover')
+                ? document.querySelector('[data-date-picker][data-calendar-popover-id="' + popover.id + '"]')
+                : picker;
+            const trigger = document.querySelector('[aria-controls="' + popover.id + '"]');
             popover.hidden = true;
+            popover.setAttribute('hidden', '');
+            popover.style.setProperty('display', 'none', 'important');
             popover.classList.remove('is-viewport-positioned');
             popover.style.removeProperty('left');
             popover.style.removeProperty('top');
-            trigger.setAttribute('aria-expanded', 'false');
+            if (pickerField && popover.parentElement !== pickerField) pickerField.appendChild(popover);
+            if (trigger) trigger.setAttribute('aria-expanded', 'false');
         }
 
         window.inicializarCalendariosSala = function() {
@@ -435,6 +445,9 @@
             const popover = picker.querySelector('.sala-calendar-popover');
             const title = picker.querySelector('[data-calendar-title]');
             const days = picker.querySelector('[data-calendar-days]');
+            popover.id = input.id + '-calendar-popover';
+            picker.dataset.calendarPopoverId = popover.id;
+            trigger.setAttribute('aria-controls', popover.id);
             const fieldName = input.name;
             let visibleMonth = parseDate(input.value) || new Date();
             visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
@@ -498,16 +511,27 @@
                         button.setAttribute('aria-pressed', 'true');
                     }
 
-                    button.addEventListener('click', function() {
+                    button.addEventListener('click', function(event) {
                         if (button.disabled) return;
+                        event.preventDefault();
                         input.value = formatIso(date);
                         label.textContent = dateFormat.format(date);
                         const field = picker.closest('.sala-form-field');
                         field.classList.remove('has-error');
                         field.querySelector('[data-date-error]').hidden = true;
-                        input.dispatchEvent(new Event('change', { bubbles: true }));
-                        closePicker(picker);
+                        popover.hidden = true;
+                        popover.setAttribute('hidden', '');
+                        popover.style.setProperty('display', 'none', 'important');
+                        popover.classList.remove('is-viewport-positioned');
+                        popover.style.removeProperty('left');
+                        popover.style.removeProperty('top');
+                        if (popover.parentElement !== picker) picker.appendChild(popover);
+                        trigger.setAttribute('aria-expanded', 'false');
+                        document.querySelectorAll('[data-date-picker]').forEach(function(otherPicker) {
+                            if (otherPicker !== picker) closePicker(otherPicker);
+                        });
                         trigger.focus();
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
                     });
                     days.appendChild(button);
                 }
@@ -527,20 +551,23 @@
             });
             trigger.addEventListener('click', function() {
                 const isOpening = popover.hidden;
-                document.querySelectorAll('[data-date-picker] .sala-calendar-popover').forEach(function(other) {
-                    closePicker(other.parentElement);
+                document.querySelectorAll('[data-date-picker]').forEach(function(otherPicker) {
+                    closePicker(otherPicker);
                 });
                 if (isOpening) {
                     const chosenDate = parseDate(input.value);
                     if (chosenDate) visibleMonth = new Date(chosenDate.getFullYear(), chosenDate.getMonth(), 1);
                     renderCalendar();
+                    document.body.appendChild(popover);
                     popover.classList.add('is-viewport-positioned');
                     popover.hidden = false;
+                    popover.removeAttribute('hidden');
+                    popover.style.removeProperty('display');
                     positionPopover();
                     trigger.setAttribute('aria-expanded', 'true');
                 }
             });
-            picker.addEventListener('keydown', function(event) {
+            popover.addEventListener('keydown', function(event) {
                 if (event.key === 'Escape' && !popover.hidden) {
                     closePicker(picker);
                     trigger.focus();
@@ -552,7 +579,8 @@
 
         document.addEventListener('click', function(event) {
             document.querySelectorAll('[data-date-picker]').forEach(function(picker) {
-                if (!picker.contains(event.target)) closePicker(picker);
+                const popover = document.getElementById(picker.dataset.calendarPopoverId);
+                if (popover && !picker.contains(event.target) && !popover.contains(event.target)) closePicker(picker);
             });
         });
     })();
