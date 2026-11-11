@@ -2,7 +2,7 @@ from django.db import models, router, transaction
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from datetime import timedelta
+from datetime import time as time_type, timedelta
 from simple_history.models import HistoricalRecords
 
 
@@ -18,6 +18,98 @@ class PersonaQuerySet(models.QuerySet):
         return self.filter(
             models.Q(perfil__in=perfiles) | models.Q(perfiles__perfil__in=perfiles),
         ).distinct()
+
+
+def normalizar_hora(valor):
+    if valor is None or valor == '':
+        return valor
+    if hasattr(valor, 'resolve_expression'):
+        raise ValueError('Los horarios no admiten expresiones ORM sin normalizar.')
+    if not isinstance(valor, time_type):
+        valor = models.TimeField().to_python(valor)
+    return valor.replace(second=0, microsecond=0)
+
+
+class HorarioQuerySet(models.QuerySet):
+    CAMPOS_HORARIO = {'hora_inicio', 'hora_fin'}
+
+    def _chain(self):
+        clone = super()._chain()
+        clone._bulk_update_in_progress = getattr(self, '_bulk_update_in_progress', False)
+        return clone
+
+    def bulk_create(self, objs, batch_size=None, ignore_conflicts=False,
+                    update_conflicts=False, update_fields=None, unique_fields=None):
+        objs = list(objs)
+        audited = hasattr(self.model, 'history')
+        if audited and (ignore_conflicts or update_conflicts):
+            raise ValueError('Los eventos con historial no admiten omitir o sobrescribir conflictos en bulk_create.')
+        for obj in objs:
+            obj.hora_inicio = normalizar_hora(obj.hora_inicio)
+            obj.hora_fin = normalizar_hora(obj.hora_fin)
+            obj.full_clean()
+        with transaction.atomic(using=self.db):
+            result = super().bulk_create(
+                objs, batch_size=batch_size, ignore_conflicts=ignore_conflicts,
+                update_conflicts=update_conflicts, update_fields=update_fields,
+                unique_fields=unique_fields,
+            )
+            if audited:
+                if any(obj.pk is None for obj in result):
+                    raise ValueError('El motor debe devolver los identificadores para registrar el historial de eventos.')
+                self.model.history.bulk_history_create(result, batch_size=batch_size)
+            return result
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        objs = list(objs)
+        if self.CAMPOS_HORARIO.intersection(fields):
+            for obj in objs:
+                obj.hora_inicio = normalizar_hora(obj.hora_inicio)
+                obj.hora_fin = normalizar_hora(obj.hora_fin)
+                obj.full_clean()
+        with transaction.atomic(using=self.db):
+            audited = hasattr(self.model, 'history')
+            if audited:
+                affected = list(self.select_for_update().filter(pk__in=[obj.pk for obj in objs]).values_list('pk', flat=True))
+            self._bulk_update_in_progress = True
+            try:
+                updated = super().bulk_update(objs, fields, batch_size=batch_size)
+            finally:
+                self._bulk_update_in_progress = False
+            if audited:
+                # Leer el estado realmente guardado respeta los filtros del
+                # queryset y los campos indicados en bulk_update.
+                saved = list(self.model._base_manager.using(self.db).filter(pk__in=affected))
+                original = {obj.pk: obj for obj in objs}
+                for obj in saved:
+                    source = original[obj.pk]
+                    for attr in ('_history_user', '_change_reason', '_history_date'):
+                        if hasattr(source, attr):
+                            setattr(obj, attr, getattr(source, attr))
+                self.model.history.bulk_history_create(saved, batch_size=batch_size, update=True)
+            return updated
+
+    def update(self, **kwargs):
+        if getattr(self, '_bulk_update_in_progress', False):
+            return super().update(**kwargs)
+        campos_horario = self.CAMPOS_HORARIO.intersection(kwargs)
+        audited = hasattr(self.model, 'history')
+        if not kwargs or not (campos_horario or audited):
+            return super().update(**kwargs)
+        for campo in campos_horario:
+            kwargs[campo] = normalizar_hora(kwargs[campo])
+        with transaction.atomic(using=self.db):
+            affected = list(self.select_for_update().values_list('pk', flat=True))
+            updated = super().update(**kwargs)
+            if campos_horario:
+                for obj in self.model._base_manager.using(self.db).filter(pk__in=affected):
+                    # Validar el resultado completo incluye otros cambios de la
+                    # misma actualización; cualquier error revierte el conjunto.
+                    obj.full_clean()
+            if audited:
+                saved = list(self.model._base_manager.using(self.db).filter(pk__in=affected))
+                self.model.history.bulk_history_create(saved, update=True)
+            return updated
 
 class UsuarioSistema(AbstractUser):
     # 1. Definimos el Rol (Operador o Visualizador)
@@ -153,6 +245,8 @@ class Grupo(models.Model):
 
 
 class Clase(models.Model):
+    objects = HorarioQuerySet.as_manager()
+
     id_clase = models.AutoField(primary_key=True)
     materia = models.ForeignKey(Materia, on_delete=models.CASCADE, db_column='id_materia', verbose_name="Materia")
     grupo = models.ForeignKey(Grupo, on_delete=models.CASCADE, db_column='id_grupo', verbose_name="Grupo")
@@ -163,6 +257,8 @@ class Clase(models.Model):
     hora_fin = models.TimeField()
 
     def clean(self):
+        self.hora_inicio = normalizar_hora(self.hora_inicio)
+        self.hora_fin = normalizar_hora(self.hora_fin)
         if not self.fecha or not self.hora_inicio or not self.hora_fin:
             return
 
@@ -188,6 +284,8 @@ class Clase(models.Model):
 
 
 class EventoTallerConferencia(models.Model):
+    objects = HorarioQuerySet.as_manager()
+
     TIPO_EVENTO_CHOICES = [
         ('Taller', 'Taller'),
         ('Conferencia', 'Conferencia'),
@@ -214,6 +312,8 @@ class EventoTallerConferencia(models.Model):
     history = HistoricalRecords()  # Para el historial de cambios
     
     def clean(self):
+        self.hora_inicio = normalizar_hora(self.hora_inicio)
+        self.hora_fin = normalizar_hora(self.hora_fin)
         if not self.fecha or not self.hora_inicio or not self.hora_fin:
             return
 

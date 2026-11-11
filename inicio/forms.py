@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from django import forms
 from django.utils import timezone
-from .models import Persona, UsuarioSistema
+from .models import Persona, UsuarioSistema, normalizar_hora
 
 class RegistroUsuarioForm(forms.ModelForm):
     class Meta:
@@ -138,6 +138,10 @@ class RegistroClaseForm(forms.Form):
 
         hora_inicio = cleaned_data.get('hora_inicio')
         hora_fin = cleaned_data.get('hora_fin')
+        if hora_inicio is not None:
+            hora_inicio = cleaned_data['hora_inicio'] = normalizar_hora(hora_inicio)
+        if hora_fin is not None:
+            hora_fin = cleaned_data['hora_fin'] = normalizar_hora(hora_fin)
         if hora_inicio and hora_fin and hora_fin <= hora_inicio:
             self.add_error('hora_fin', 'La hora de término debe ser posterior a la hora de inicio.')
         elif (
@@ -245,6 +249,10 @@ class RegistroEventoForm(forms.Form):
         fecha = cleaned_data.get('fecha')
         hora_inicio = cleaned_data.get('hora_inicio')
         hora_fin = cleaned_data.get('hora_fin')
+        if hora_inicio is not None:
+            hora_inicio = cleaned_data['hora_inicio'] = normalizar_hora(hora_inicio)
+        if hora_fin is not None:
+            hora_fin = cleaned_data['hora_fin'] = normalizar_hora(hora_fin)
         hoy = timezone.localdate()
         if fecha and fecha < hoy:
             self.add_error('fecha', 'La fecha del evento no puede ser anterior a hoy.')
