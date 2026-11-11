@@ -109,7 +109,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'es-mex'
 
 TIME_ZONE = 'UTC'
 
@@ -159,11 +159,22 @@ JAZZMIN_SETTINGS = {
     "welcome_sign": "Bienvenido al Sistema de Gestión UAPIX",
 
     # Copyright al pie de página
-    "copyright": "TESVG - Registros UAPIX",
+    "copyright": "Registros UAPIX",
 
     # Habilitar barra lateral y menú desplegable limpio
     "show_sidebar": True,
     "navigation_expanded": True,
+
+    "topmenu_links": [
+        {
+            "name": "Importar Excel",
+            "url": "importar_excel",
+            "permissions": [
+                "inicio.add_carrera", "inicio.add_grupo", "inicio.add_persona",
+                "inicio.add_materia", "inicio.add_equipo",
+            ],
+        },
+    ],
 
     # Iconos para los modelos en la barra lateral (usa FontAwesome)
     "icons": {

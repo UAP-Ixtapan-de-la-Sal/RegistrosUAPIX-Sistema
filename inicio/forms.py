@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from django import forms
 from django.utils import timezone
-from .models import Persona, UsuarioSistema
+from .models import Persona, UsuarioSistema, normalizar_hora
 
 class RegistroUsuarioForm(forms.ModelForm):
     class Meta:
@@ -102,7 +102,7 @@ class RegistroClaseForm(forms.Form):
     def clean_numero_cuenta_docente(self):
         numero_cuenta = self.cleaned_data['numero_cuenta_docente'].strip()
         try:
-            return Persona.objects.get(matricula=numero_cuenta, perfil='Doc')
+            return Persona.objects.con_perfiles('Docente').get(matricula=numero_cuenta)
         except Persona.DoesNotExist:
             raise forms.ValidationError('No se encontró un docente con ese número de cuenta.')
 
@@ -111,7 +111,7 @@ class RegistroClaseForm(forms.Form):
         docente = cleaned_data.get('numero_cuenta_docente')
         carrera_id = cleaned_data.get('carrera')
         if docente:
-            if str(docente.id_carrera or '') != str(carrera_id or ''):
+            if str(docente.carrera_id or '') != str(carrera_id or ''):
                 self.add_error('carrera', 'La carrera seleccionada no corresponde al docente.')
             if str(cleaned_data.get('docente_id') or '') != str(docente.pk):
                 self.add_error('docente_id', 'Vuelve a buscar el número de cuenta del docente.')
@@ -138,6 +138,10 @@ class RegistroClaseForm(forms.Form):
 
         hora_inicio = cleaned_data.get('hora_inicio')
         hora_fin = cleaned_data.get('hora_fin')
+        if hora_inicio is not None:
+            hora_inicio = cleaned_data['hora_inicio'] = normalizar_hora(hora_inicio)
+        if hora_fin is not None:
+            hora_fin = cleaned_data['hora_fin'] = normalizar_hora(hora_fin)
         if hora_inicio and hora_fin and hora_fin <= hora_inicio:
             self.add_error('hora_fin', 'La hora de término debe ser posterior a la hora de inicio.')
         elif (
@@ -223,9 +227,8 @@ class RegistroEventoForm(forms.Form):
                 self.add_error('numero_cuenta_ponente', 'Ingresa el número de cuenta del ponente.')
             else:
                 try:
-                    persona = Persona.objects.get(
+                    persona = Persona.objects.con_perfiles('Administrador', 'Docente').get(
                         matricula=cuenta,
-                        perfil__in=('Administrador', 'Docente'),
                     )
                 except Persona.DoesNotExist:
                     self.add_error(
@@ -246,6 +249,10 @@ class RegistroEventoForm(forms.Form):
         fecha = cleaned_data.get('fecha')
         hora_inicio = cleaned_data.get('hora_inicio')
         hora_fin = cleaned_data.get('hora_fin')
+        if hora_inicio is not None:
+            hora_inicio = cleaned_data['hora_inicio'] = normalizar_hora(hora_inicio)
+        if hora_fin is not None:
+            hora_fin = cleaned_data['hora_fin'] = normalizar_hora(hora_fin)
         hoy = timezone.localdate()
         if fecha and fecha < hoy:
             self.add_error('fecha', 'La fecha del evento no puede ser anterior a hoy.')

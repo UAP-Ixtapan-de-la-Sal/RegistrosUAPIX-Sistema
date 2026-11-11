@@ -204,9 +204,8 @@ def buscar_ponente_sala_view(request):
     if not cuenta:
         return JsonResponse({'encontrado': False, 'error': 'Ingresa el número de cuenta del ponente.'}, status=400)
 
-    persona = Persona.objects.filter(
+    persona = Persona.objects.con_perfiles('Administrador', 'Docente').filter(
         matricula=cuenta,
-        perfil__in=('Administrador', 'Docente'),
     ).first()
     if persona is None:
         return JsonResponse({

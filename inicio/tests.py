@@ -1,12 +1,22 @@
 from datetime import date, datetime, time, timedelta
 from unittest.mock import patch
 
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
 from .forms import RegistroClaseForm, RegistroEventoForm, RegistroUsuarioForm
-from .models import Persona, UsuarioSistema
+from .models import (
+    Carrera,
+    Clase,
+    EventoTallerConferencia,
+    Grupo,
+    Materia,
+    Persona,
+    UsuarioSistema,
+    normalizar_hora,
+)
 
 
 class LoginViewTests(TestCase):
@@ -362,3 +372,137 @@ class RegistroUsuarioFormTests(TestCase):
         self.assertTrue(user.check_password('Prueba-segura-123'))
         self.assertNotEqual(user.password, 'Prueba-segura-123')
         self.assertEqual(user.rol, 'operador')
+
+
+class HorarioNormalizacionTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.carrera = Carrera.objects.create(nombre_carrera='Sistemas')
+        cls.materia = Materia.objects.create(
+            nombre_materia='Programación',
+            carrera=cls.carrera,
+        )
+        cls.grupo = Grupo.objects.create(
+            nombre_grupo='A',
+            semestre=1,
+            turno='Matutino',
+            carrera=cls.carrera,
+        )
+        cls.persona = Persona.objects.create(
+            perfil='Docente',
+            matricula='DOC-001',
+            nombre='Ana',
+            apellidos='Prueba',
+            carrera=cls.carrera,
+        )
+
+    def nueva_clase(self, **horarios):
+        return Clase(
+            materia=self.materia,
+            grupo=self.grupo,
+            docente=self.persona,
+            fecha=timezone.localdate() + timedelta(days=1),
+            hora_inicio=horarios.get('hora_inicio', time(9, 30)),
+            hora_fin=horarios.get('hora_fin', time(10, 30)),
+        )
+
+    def test_model_save_normalizes_and_round_trips_class_times(self):
+        clase = self.nueva_clase(
+            hora_inicio=time(9, 30, 45, 123456),
+            hora_fin=time(10, 30, 45, 654321),
+        )
+        clase.save()
+
+        guardada = Clase.objects.get(pk=clase.pk)
+        self.assertEqual(guardada.hora_inicio, time(9, 30))
+        self.assertEqual(guardada.hora_fin, time(10, 30))
+
+    def test_event_model_save_normalizes_both_schedule_fields(self):
+        evento = EventoTallerConferencia(
+            nombre_evento='Conferencia de prueba',
+            fecha=timezone.localdate() + timedelta(days=1),
+            hora_inicio=time(9, 30, 45, 123456),
+            hora_fin=time(10, 30, 45, 654321),
+            ponente_interno=self.persona,
+        )
+        evento.save()
+
+        guardado = EventoTallerConferencia.objects.get(pk=evento.pk)
+        self.assertEqual(guardado.hora_inicio, time(9, 30))
+        self.assertEqual(guardado.hora_fin, time(10, 30))
+
+    def test_bulk_create_bulk_update_and_queryset_update_normalize_times(self):
+        primera = self.nueva_clase(
+            hora_inicio=time(9, 30, 45, 123456),
+            hora_fin=time(10, 30, 45, 654321),
+        )
+        Clase.objects.bulk_create([primera])
+        primera.refresh_from_db()
+        self.assertEqual(primera.hora_inicio, time(9, 30))
+        self.assertEqual(primera.hora_fin, time(10, 30))
+
+        primera.hora_inicio = time(11, 15, 59, 999999)
+        primera.hora_fin = time(12, 15, 59, 999999)
+        Clase.objects.bulk_update([primera], ['hora_inicio', 'hora_fin'])
+        primera.refresh_from_db()
+        self.assertEqual(primera.hora_inicio, time(11, 15))
+        self.assertEqual(primera.hora_fin, time(12, 15))
+
+        Clase.objects.filter(pk=primera.pk).update(
+            hora_inicio=time(13, 45, 59, 123456),
+            hora_fin=time(14, 45, 59, 654321),
+        )
+        primera.refresh_from_db()
+        self.assertEqual(primera.hora_inicio, time(13, 45))
+        self.assertEqual(primera.hora_fin, time(14, 45))
+
+    def test_validation_compares_normalized_start_and_end(self):
+        clase = self.nueva_clase(
+            hora_inicio=time(9, 30, 45, 123456),
+            hora_fin=time(9, 30, 30, 654321),
+        )
+
+        with self.assertRaises(ValidationError) as error:
+            clase.save()
+
+        self.assertIn('hora_fin', error.exception.message_dict)
+
+    def test_empty_optional_values_are_left_unchanged(self):
+        self.assertIsNone(normalizar_hora(None))
+        self.assertEqual(normalizar_hora(''), '')
+
+    def test_scheduling_forms_normalize_before_comparing(self):
+        clase_form = RegistroClaseForm(data={
+            'tipo_actividad': 'regular',
+            'numero_cuenta_docente': self.persona.matricula,
+            'docente_id': str(self.persona.pk),
+            'carrera': str(self.carrera.pk),
+            'materia': str(self.materia.pk),
+            'grupo': str(self.grupo.pk),
+            'fecha': (timezone.localdate() + timedelta(days=1)).isoformat(),
+            'fecha_fin_repeticion': (timezone.localdate() + timedelta(days=7)).isoformat(),
+            'hora_inicio': '09:30:45.123456',
+            'hora_fin': '09:30:30.654321',
+            'dias_repeticion': ['0'],
+        }, catalogos={
+            'carreras': [{'id': self.carrera.pk, 'nombre': self.carrera.nombre_carrera}],
+            'materias': [{'id': self.materia.pk, 'nombre': self.materia.nombre_materia}],
+            'grupos': [{'id': self.grupo.pk, 'nombre': str(self.grupo)}],
+        })
+
+        self.assertFalse(clase_form.is_valid())
+        self.assertIn('hora_fin', clase_form.errors)
+
+        evento_form = RegistroEventoForm(data={
+            'tipo_evento': 'Conferencia',
+            'nombre_evento': 'Conferencia de prueba',
+            'pertenece_al_plantel': 'si',
+            'numero_cuenta_ponente': self.persona.matricula,
+            'persona_id': str(self.persona.pk),
+            'fecha': (timezone.localdate() + timedelta(days=1)).isoformat(),
+            'hora_inicio': '09:30:45.123456',
+            'hora_fin': '10:30:15.654321',
+        })
+        self.assertTrue(evento_form.is_valid(), evento_form.errors)
+        self.assertEqual(evento_form.cleaned_data['hora_inicio'], time(9, 30))
+        self.assertEqual(evento_form.cleaned_data['hora_fin'], time(10, 30))
