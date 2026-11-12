@@ -9,6 +9,7 @@ from .forms_persona_admin import PersonaAdminForm
 from .models import (
     UsuarioSistema, Persona, Carrera, Materia, 
     Grupo, Clase, EventoTallerConferencia, Equipo, Registro, Externo, PersonaPerfil,
+    Asistencia, Incidencia,
     PERFILES_PERSONA,
 )
 
@@ -151,3 +152,16 @@ class RegistroAdmin(SimpleHistoryAdmin):
     
     # También le ponemos su barra de fechas para que Jaz pueda buscar rápido
     date_hierarchy = 'fecha'
+
+@admin.register(Asistencia)
+class AsistenciaAdmin(SimpleHistoryAdmin):
+    list_display = ('clase', 'alumno', 'estado', 'equipo', 'registro')
+    list_filter = ('estado', 'clase__fecha')
+    search_fields = ('alumno__matricula', 'alumno__nombre', 'alumno__apellidos')
+
+@admin.register(Incidencia)
+class IncidenciaAdmin(SimpleHistoryAdmin):
+    list_display = ('equipo', 'momento_deteccion', 'estado', 'reportada_por', 'creada_en')
+    list_filter = ('estado', 'momento_deteccion', 'creada_en')
+    search_fields = ('equipo__no_equipo', 'equipo__no_bien_patrimonial', 'descripcion')
+    date_hierarchy = 'creada_en'

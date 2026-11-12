@@ -51,7 +51,7 @@
             {% endif %}
 
             {% if request.user.mod_auto_acceso or request.user.is_superuser %}
-                <a class="bento-card" href="#">
+                <a class="bento-card" href="{% url 'auto_acceso' %}">
                     <div class="card-icon-slot">
                         <i class="fa-solid fa-chalkboard-user"></i>
                     </div>

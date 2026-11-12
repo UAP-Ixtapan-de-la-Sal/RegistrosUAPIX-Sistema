@@ -27,6 +27,47 @@ class RegistroUsuarioForm(forms.ModelForm):
             user.save()
         return user
 
+
+class AutoAccesoForm(forms.Form):
+    numero_cuenta = forms.CharField(
+        label='Número de cuenta',
+        max_length=20,
+        widget=forms.TextInput(attrs={
+            'class': 'sala-form-control',
+            'autocomplete': 'off',
+            'inputmode': 'numeric',
+            'placeholder': 'Ingresa el número de cuenta',
+            'data-auto-access-account': 'true',
+        }),
+    )
+    motivo_uso = forms.ChoiceField(
+        label='Motivo de acceso',
+        choices=(
+            ('', 'Selecciona el motivo'),
+            ('Visita', 'Visita'),
+            ('Conversacion', 'Conversación'),
+        ),
+        widget=forms.Select(attrs={
+            'class': 'sala-form-control',
+            'data-auto-access-reason': 'true',
+        }),
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        numero_cuenta = (cleaned_data.get('numero_cuenta') or '').strip()
+        if numero_cuenta:
+            alumno = Persona.objects.con_perfiles('Alumno').filter(
+                matricula=numero_cuenta,
+            ).select_related('carrera', 'grupo').first()
+            if alumno is None:
+                self.add_error('numero_cuenta', 'No se encontró un alumno con ese número de cuenta.')
+            else:
+                cleaned_data['numero_cuenta'] = numero_cuenta
+                cleaned_data['alumno'] = alumno
+        return cleaned_data
+
+
 #FUNCIONES PARA REGISTRO DE ACTIVIDADES EN SALA DE CÓMPUTO
 class RegistroClaseForm(forms.Form):
     tipo_actividad = forms.ChoiceField(
@@ -111,7 +152,7 @@ class RegistroClaseForm(forms.Form):
         docente = cleaned_data.get('numero_cuenta_docente')
         carrera_id = cleaned_data.get('carrera')
         if docente:
-            if str(docente.carrera_id or '') != str(carrera_id or ''):
+            if docente.carrera_id and str(docente.carrera_id) != str(carrera_id or ''):
                 self.add_error('carrera', 'La carrera seleccionada no corresponde al docente.')
             if str(cleaned_data.get('docente_id') or '') != str(docente.pk):
                 self.add_error('docente_id', 'Vuelve a buscar el número de cuenta del docente.')
@@ -168,8 +209,8 @@ class RegistroEventoForm(forms.Form):
     )
     nombre_evento = forms.CharField(
         label='Nombre del evento',
-        max_length=150,
-        widget=forms.TextInput(attrs={'class': 'sala-form-control', 'maxlength': 150}),
+        max_length=100,
+        widget=forms.TextInput(attrs={'class': 'sala-form-control', 'maxlength': 100}),
     )
     pertenece_al_plantel = forms.ChoiceField(
         label='¿El ponente pertenece al plantel?',
@@ -201,10 +242,22 @@ class RegistroEventoForm(forms.Form):
         widget=forms.HiddenInput(attrs={'data-persona-ponente': 'true'}),
     )
     nombre_ponente_externo = forms.CharField(
-        label='Nombre del ponente externo',
+        label='Nombre(s) del ponente externo',
         max_length=150,
         required=False,
         widget=forms.TextInput(attrs={'class': 'sala-form-control', 'maxlength': 150}),
+    )
+    apellidos_ponente_externo = forms.CharField(
+        label='Apellidos del ponente externo',
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'sala-form-control', 'maxlength': 100}),
+    )
+    institucion_ponente_externo = forms.CharField(
+        label='Institución del ponente externo',
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'sala-form-control', 'maxlength': 100}),
     )
     fecha = forms.DateField(widget=forms.HiddenInput(attrs={'data-calendar-value': 'true'}))
     hora_inicio = forms.TimeField(widget=forms.TimeInput(attrs={'class': 'sala-form-control', 'type': 'time'}))
@@ -221,6 +274,7 @@ class RegistroEventoForm(forms.Form):
         cuenta = (cleaned_data.get('numero_cuenta_ponente') or '').strip()
         persona_id = cleaned_data.get('persona_id')
         nombre_externo = (cleaned_data.get('nombre_ponente_externo') or '').strip()
+        apellidos_externo = (cleaned_data.get('apellidos_ponente_externo') or '').strip()
 
         if es_interno == 'si':
             if not cuenta:
@@ -242,6 +296,8 @@ class RegistroEventoForm(forms.Form):
         elif es_interno == 'no':
             if not nombre_externo:
                 self.add_error('nombre_ponente_externo', 'Captura el nombre del ponente externo.')
+            if not apellidos_externo:
+                self.add_error('apellidos_ponente_externo', 'Captura los apellidos del ponente externo.')
             cleaned_data['persona'] = None
         else:
             self.add_error('pertenece_al_plantel', 'Indica si el ponente pertenece al plantel.')
