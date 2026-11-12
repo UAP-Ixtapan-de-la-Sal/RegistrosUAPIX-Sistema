@@ -1222,10 +1222,19 @@ body.sala-subview-active .sala-form-panel--class .sala-form-heading {
     outline-offset: 3px;
 }
 
-#agendarSelectorView > .sala-back-btn {
-    display: flex;
-    width: fit-content;
-    margin-left: auto;
+#agendarSelectorView #salaActivityPicker {
+    position: relative;
+}
+
+#agendarSelectorView .sala-scheduler-actions {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 1;
+}
+
+#agendarSelectorView .sala-scheduler-actions > .sala-back-btn {
+    margin: 0;
 }
 
 .sala-selection-feedback {
@@ -2771,8 +2780,33 @@ body.sala-subview-active .sala-incident-search {
     padding-top: 8px;
 }
 
+body.sala-scheduler-selector-active .main-container {
+    justify-content: flex-start;
+}
+
 .sala-computo-page {
     padding-top: 0;
+}
+
+body.sala-scheduler-selector-active .sala-computo-heading {
+    margin-bottom: clamp(8px, 1.5vh, 16px);
+}
+
+body.sala-scheduler-selector-active .sala-computo-page {
+    display: flex;
+    flex: 1 0 auto;
+    flex-direction: column;
+}
+
+body.sala-scheduler-selector-active #agendarSelectorView.sala-view-active {
+    width: 100%;
+    flex: 1 0 auto;
+    display: flex !important;
+    align-items: center;
+}
+
+body.sala-scheduler-selector-active #agendarSelectorView > .sala-scheduler-panel {
+    width: 100%;
 }
 
 body.sala-subview-active > .main-container > .sala-computo-page > .sala-computo-heading {

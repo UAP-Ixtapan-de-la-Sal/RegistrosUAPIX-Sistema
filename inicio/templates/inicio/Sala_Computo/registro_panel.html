@@ -215,16 +215,17 @@
                 <p>Ingresa tu número de cuenta para encontrar tu sesión activa.</p>
             </div>
         </div>
-        <div class="registros-exit-lookup">
+        <form class="registros-exit-lookup" data-exit-search-form novalidate>
             <label class="sala-form-field">
                 <span>Número de cuenta</span>
                 <input class="sala-form-control" type="search" placeholder="Ingresa tu número de cuenta" autocomplete="off">
             </label>
-            <button type="button" class="sala-form-submit" data-demo-exit-search>
+            <button type="submit" class="sala-form-submit">
                 <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Buscar registro
             </button>
-        </div>
-        <div class="registros-exit-result" data-exit-result hidden>
+        </form>
+        <p class="registros-exit-hint">Cuenta de ejemplo con sesión activa: <strong>221001</strong>.</p>
+        <div class="registros-exit-result" data-exit-result hidden aria-live="polite">
             <div class="registros-exit-person">
                 <span class="registros-exit-avatar"><i class="fa-solid fa-user" aria-hidden="true"></i></span>
                 <div><strong>Andrea Hernández</strong><small>Cuenta: 221001 · Entrada: 10:02</small></div>
@@ -232,7 +233,7 @@
             <div class="registros-exit-equipment">
                 <span>Equipo asignado</span><strong>Computadora 1</strong>
             </div>
-            <button class="registros-exit-button" type="button" data-demo-save>
+            <button class="registros-exit-button" type="button" data-confirm-exit>
                 <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> Registrar salida
             </button>
         </div>
@@ -330,6 +331,47 @@
             radio.addEventListener('change', updateAgendaMode);
         });
         updateAgendaMode();
+
+        const exitSearchForm = document.querySelector('[data-exit-search-form]');
+        const exitAccountInput = exitSearchForm.querySelector('input');
+        const exitResult = document.querySelector('[data-exit-result]');
+        const exitFeedback = document.querySelector('[data-exit-feedback]');
+        const exitConfirmButton = document.querySelector('[data-confirm-exit]');
+
+        exitSearchForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+            const account = exitAccountInput.value.trim();
+            exitResult.hidden = true;
+            exitFeedback.hidden = false;
+
+            if (!account) {
+                exitFeedback.textContent = 'Ingresa tu número de cuenta para buscar una sesión activa.';
+                exitAccountInput.focus();
+                return;
+            }
+
+            if (account === '221001') {
+                exitResult.hidden = false;
+                exitFeedback.hidden = true;
+                return;
+            }
+
+            exitFeedback.textContent = 'No encontramos una sesión activa para esa cuenta. Verifica el número e inténtalo de nuevo.';
+        });
+
+        exitConfirmButton.addEventListener('click', function () {
+            window.confirmarAccion('Esta demostración no guardará cambios. ¿Deseas continuar con el registro de salida?', {
+                title: 'Confirmar salida',
+                acceptText: 'Registrar salida',
+            }).then(function (accepted) {
+                if (!accepted) return;
+                exitResult.hidden = true;
+                exitFeedback.textContent = 'Salida registrada en la demostración. El equipo quedó disponible.';
+                exitFeedback.hidden = false;
+            }).catch(function (error) {
+                console.error('No se pudo mostrar la confirmación de salida.', error);
+            });
+        });
 
         document.querySelectorAll('[data-demo-save]').forEach(function (button) {
             button.addEventListener('click', function () {

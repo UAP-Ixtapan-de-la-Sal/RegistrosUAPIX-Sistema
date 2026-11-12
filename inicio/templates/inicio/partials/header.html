@@ -1,11 +1,7 @@
 {% load static %}
 <header class="institutional-header">
     <div class="header-title">
-        {% if request.resolver_match.url_name == 'sala_computo' %}
-            <img class="header-school-logo" src="{% static 'inicio/images/BANNER-UAP/banner-uap-blanco.png' %}" alt="Unidad Académica Profesional Ixtapan de la Sal">
-        {% else %}
-            PORTAL DE GESTIÓN UAPIX
-        {% endif %}
+        <img class="header-school-logo" src="{% static 'inicio/images/BANNER-UAP/banner-uap-blanco.png' %}" alt="Unidad Académica Profesional Ixtapan de la Sal">
     </div>
 
     <nav class="user-links" aria-label="Navegación de usuario">

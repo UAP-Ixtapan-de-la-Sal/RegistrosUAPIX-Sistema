@@ -405,10 +405,6 @@
 
     <!-- ================= VISTA DINÁMICA: SELECCIÓN DE TIPO DE AGENDAMIENTO ================= -->
     <div id="agendarSelectorView" class="sala-view-hidden">
-        <button class="sala-back-btn" type="button" onclick="regresarAlPanel()" aria-label="Volver a Sala de Cómputo">
-            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver al panel
-        </button>
-
         <section class="sala-tools-panel sala-scheduler-panel" aria-labelledby="scheduleTitle">
             <div id="salaActivityPicker">
                 <div class="sala-tools-heading">
@@ -444,6 +440,11 @@
                         </span>
                     </button>
                 </div>
+                <div class="sala-scheduler-actions">
+                    <button class="sala-back-btn" type="button" onclick="regresarAlPanel()" aria-label="Volver a Sala de Cómputo">
+                        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver al panel
+                    </button>
+                </div>
             </div>
 
             <div id="agendarClaseView" class="sala-form-view sala-view-hidden">
@@ -460,6 +461,7 @@
 <script>
     function mostrarSelectorAgendar() {
         document.body.classList.add('sala-subview-active');
+        document.body.classList.add('sala-scheduler-selector-active');
         document.body.classList.remove('sala-class-form-active');
         document.body.classList.remove('sala-schedule-form-active');
         document.getElementById('mainOperatorDashboard').classList.add('sala-view-hidden');
@@ -474,6 +476,7 @@
 
     function regresarAlPanel() {
         document.body.classList.remove('sala-subview-active');
+        document.body.classList.remove('sala-scheduler-selector-active');
         document.body.classList.remove('sala-class-form-active');
         document.body.classList.remove('sala-schedule-form-active');
         document.getElementById('agendarSelectorView').classList.remove('sala-view-active');
