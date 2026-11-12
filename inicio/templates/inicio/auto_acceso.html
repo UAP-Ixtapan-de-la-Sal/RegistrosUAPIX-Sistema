@@ -1,0 +1,187 @@
+{% extends 'inicio/base.html' %}
+{% load static %}
+
+{% block title %}Auto Acceso | UAPIX{% endblock %}
+{% block body_class %}sala-computo-body{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'inicio/css/salacomputo/salacomputo.css' %}?v=20261112-auto-access">
+{% endblock %}
+
+{% block content %}
+<section class="sala-computo-page">
+    <header class="sala-computo-heading">
+        <div>
+            <p class="sala-computo-eyebrow">Módulo operativo</p>
+            <h1>Auto Acceso</h1>
+            <p class="sala-computo-subtitle">Registra la entrada de alumnos por visita o conversación.</p>
+        </div>
+        <a class="sala-back-btn" href="{% url 'homePage' %}">
+            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver a módulos
+        </a>
+    </header>
+
+    {% if messages %}
+    <div class="sala-page-messages" aria-live="polite">
+        {% for message in messages %}
+        <p class="sala-form-success" role="status">
+            <i class="fa-solid fa-circle-check" aria-hidden="true"></i> {{ message }}
+        </p>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <section class="sala-form-panel" aria-labelledby="autoAccessTitle">
+        <div class="sala-form-heading">
+            <div>
+                <p class="sala-computo-eyebrow">REGISTRO DE ENTRADA</p>
+                <h2 id="autoAccessTitle">Datos del acceso</h2>
+                <p>Selecciona el motivo e ingresa la cuenta para consultar los datos del alumno.</p>
+            </div>
+        </div>
+
+        <form id="autoAccessForm" class="sala-registration-form" method="post">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+            <div class="sala-form-errors" role="alert">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="sala-form-grid">
+                <div class="sala-form-field{% if form.motivo_uso.errors %} has-error{% endif %}">
+                    <label class="sala-form-label" for="{{ form.motivo_uso.id_for_label }}">{{ form.motivo_uso.label }}</label>
+                    {{ form.motivo_uso }}
+                    {% for error in form.motivo_uso.errors %}<span class="sala-field-hint" role="alert">{{ error }}</span>{% endfor %}
+                </div>
+                <div class="sala-form-field{% if form.numero_cuenta.errors %} has-error{% endif %}">
+                    <label class="sala-form-label" for="{{ form.numero_cuenta.id_for_label }}">{{ form.numero_cuenta.label }}</label>
+                    <div class="sala-form-search">
+                        {{ form.numero_cuenta }}
+                        <button class="sala-form-submit" type="button" data-auto-access-lookup>
+                            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Buscar alumno
+                        </button>
+                    </div>
+                    {% for error in form.numero_cuenta.errors %}<span class="sala-field-hint" role="alert">{{ error }}</span>{% endfor %}
+                </div>
+            </div>
+
+            <fieldset class="sala-incident-readonly" data-auto-access-student hidden>
+                <legend>Datos del alumno encontrados</legend>
+                <div>
+                    <label for="autoAccessStudentName">Nombre</label>
+                    <input id="autoAccessStudentName" class="sala-form-control" type="text" data-student-name readonly>
+                </div>
+                <div>
+                    <label for="autoAccessStudentLastName">Apellidos</label>
+                    <input id="autoAccessStudentLastName" class="sala-form-control" type="text" data-student-last-name readonly>
+                </div>
+                <div>
+                    <label for="autoAccessStudentCareer">Carrera</label>
+                    <input id="autoAccessStudentCareer" class="sala-form-control" type="text" data-student-career readonly>
+                </div>
+                <div>
+                    <label for="autoAccessStudentGroup">Grupo</label>
+                    <input id="autoAccessStudentGroup" class="sala-form-control" type="text" data-student-group readonly>
+                </div>
+            </fieldset>
+
+            <p class="sala-field-hint" data-auto-access-feedback role="status" aria-live="polite"></p>
+            <div class="sala-form-actions">
+                <button class="sala-form-submit" type="submit" data-auto-access-submit disabled>
+                    <i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> Registrar entrada
+                </button>
+            </div>
+        </form>
+    </section>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    (function () {
+        const form = document.getElementById('autoAccessForm');
+        const account = document.querySelector('[data-auto-access-account]');
+        const reason = document.querySelector('[data-auto-access-reason]');
+        const lookupButton = document.querySelector('[data-auto-access-lookup]');
+        const submitButton = document.querySelector('[data-auto-access-submit]');
+        const studentDetails = document.querySelector('[data-auto-access-student]');
+        const feedback = document.querySelector('[data-auto-access-feedback]');
+        const fields = {
+            name: document.querySelector('[data-student-name]'),
+            lastName: document.querySelector('[data-student-last-name]'),
+            career: document.querySelector('[data-student-career]'),
+            group: document.querySelector('[data-student-group]'),
+        };
+        let verifiedAccount = '';
+        let lookupTimer;
+        let lookupVersion = 0;
+
+        function clearStudent() {
+            lookupVersion += 1;
+            verifiedAccount = '';
+            Object.values(fields).forEach(function (field) { field.value = ''; });
+            studentDetails.hidden = true;
+            submitButton.disabled = true;
+        }
+
+        async function lookupStudent() {
+            window.clearTimeout(lookupTimer);
+            clearStudent();
+            const cuenta = account.value.trim();
+            if (!cuenta || !reason.value) {
+                feedback.textContent = !reason.value
+                    ? 'Selecciona si el acceso es por visita o conversación.'
+                    : 'Ingresa el número de cuenta del alumno.';
+                return;
+            }
+            const version = ++lookupVersion;
+            feedback.textContent = 'Buscando alumno...';
+            const url = new URL('{% url "buscar_alumno_auto_acceso" %}', window.location.origin);
+            url.searchParams.set('cuenta', cuenta);
+            try {
+                const response = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                const result = await response.json();
+                if (version !== lookupVersion) return;
+                if (!response.ok) throw new Error(result.error || 'No se encontró al alumno.');
+                fields.name.value = result.nombre;
+                fields.lastName.value = result.apellidos;
+                fields.career.value = result.carrera || 'Sin carrera asignada';
+                fields.group.value = result.grupo || 'Sin grupo asignado';
+                verifiedAccount = cuenta;
+                studentDetails.hidden = false;
+                submitButton.disabled = false;
+                feedback.textContent = 'Alumno verificado. Revisa sus datos y registra la entrada.';
+            } catch (error) {
+                if (version !== lookupVersion) return;
+                feedback.textContent = error.message || 'No fue posible consultar al alumno.';
+            }
+        }
+
+        account.addEventListener('input', function () {
+            clearStudent();
+            feedback.textContent = '';
+            if (account.value.trim() && reason.value) {
+                lookupTimer = window.setTimeout(lookupStudent, 350);
+            }
+        });
+        account.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                lookupStudent();
+            }
+        });
+        reason.addEventListener('change', function () {
+            clearStudent();
+            feedback.textContent = '';
+            if (account.value.trim()) lookupStudent();
+        });
+        lookupButton.addEventListener('click', lookupStudent);
+        form.addEventListener('submit', function (event) {
+            if (!verifiedAccount || verifiedAccount !== account.value.trim()) {
+                event.preventDefault();
+                feedback.textContent = 'Busca y verifica al alumno antes de registrar la entrada.';
+                submitButton.disabled = true;
+            }
+        });
+    })();
+</script>
+{% endblock %}

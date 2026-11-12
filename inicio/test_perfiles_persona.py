@@ -1,6 +1,7 @@
-from datetime import timedelta
+from datetime import time, timedelta
 from unittest.mock import patch
 
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError, connection, transaction
 from django.db.migrations.executor import MigrationExecutor
 from django.test import TestCase, TransactionTestCase
@@ -9,7 +10,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .forms import RegistroClaseForm, RegistroEventoForm
-from .models import Carrera, Grupo, Persona, PersonaPerfil, UsuarioSistema
+from .models import Carrera, Clase, Grupo, Materia, Persona, PersonaPerfil, UsuarioSistema
 from .services.importacion_excel import COLUMNAS, ExcelError, confirm, preview
 from .test_importacion_excel import ExcelAdminFixture, workbook
 
@@ -215,6 +216,37 @@ class MultipleProfilesAdminTests(TestCase):
             'hora_inicio': '09:00', 'hora_fin': '10:00', 'dias_repeticion': [str(day.weekday())],
         }, catalogos={'carreras': [{'id': career.pk, 'nombre': 'Informática'}], 'materias': [{'id': 1, 'nombre': 'Programación'}], 'grupos': [{'id': 1, 'nombre': 'X1'}]})
         self.assertTrue(form.is_valid(), form.errors)
+
+    def test_class_admin_responsible_field_only_lists_teachers(self):
+        student = Persona.objects.create(matricula='A1', nombre='Luis', apellidos='López', perfil='Alumno')
+        teacher = Persona.objects.create(matricula='D1', nombre='Ana', apellidos='Pérez', perfil='Docente')
+        additional_teacher = Persona.objects.create(
+            matricula='D2', nombre='Eva', apellidos='Ruiz', perfil='Alumno',
+        )
+        PersonaPerfil.objects.create(persona=additional_teacher, perfil='Docente')
+        Persona.objects.create(matricula='AD1', nombre='Mario', apellidos='Díaz', perfil='Administrador')
+
+        response = self.client.get(reverse('admin:inicio_clase_add'))
+
+        queryset = response.context['adminform'].form.fields['docente'].queryset
+        self.assertSetEqual(set(queryset.values_list('pk', flat=True)), {teacher.pk, additional_teacher.pk})
+        self.assertNotIn(student.pk, queryset.values_list('pk', flat=True))
+
+    def test_class_rejects_a_student_as_responsible(self):
+        career = Carrera.objects.create(nombre_carrera='Informática')
+        subject = Materia.objects.create(nombre_materia='Programación', carrera=career)
+        group = Grupo.objects.create(nombre_grupo='X1', carrera=career)
+        student = Persona.objects.create(matricula='A1', nombre='Luis', apellidos='López', perfil='Alumno')
+
+        with self.assertRaises(ValidationError):
+            Clase.objects.create(
+                materia=subject,
+                grupo=group,
+                docente=student,
+                fecha=timezone.localdate() + timedelta(days=1),
+                hora_inicio=time(9),
+                hora_fin=time(10),
+            )
 
     def test_speaker_form_accepts_additional_profile(self):
         person = Persona.objects.create(matricula='0001', nombre='Ana', apellidos='Pérez', perfil='Alumno')
