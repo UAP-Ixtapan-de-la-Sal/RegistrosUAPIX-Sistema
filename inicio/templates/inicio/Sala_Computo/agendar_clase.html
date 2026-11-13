@@ -51,6 +51,27 @@
                 </div>
                 {% elif field.is_hidden %}
                 {{ field }}
+                {% elif field.name == 'carrera' or field.name == 'grupo' %}
+                <div class="sala-form-field{% if field.errors %} has-error{% endif %}">
+                    <label for="{{ field.name }}Busqueda">{{ field.label }}</label>
+                    <div class="sala-search-select" data-search-select>
+                        <input id="{{ field.name }}Busqueda" class="sala-form-control" type="search" placeholder="Primero busca al docente" autocomplete="off" disabled required role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="{{ field.name }}Opciones">
+                        <div id="{{ field.name }}Opciones" class="sala-search-select-options" role="listbox" hidden></div>
+                    </div>
+                    <div hidden aria-hidden="true">{{ field }}</div>
+                    {% for error in field.errors %}<span class="sala-field-error">{{ error }}</span>{% endfor %}
+                </div>
+                {% elif field.name == 'materia' %}
+                <div class="sala-form-field{% if field.errors %} has-error{% endif %}">
+                    <label for="materiaBusqueda">{{ field.label }}</label>
+                    <div class="sala-search-select" data-materia-search-select>
+                        <input id="materiaBusqueda" class="sala-form-control" type="search" placeholder="Primero busca al docente" autocomplete="off" disabled required role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="materiasDisponibles" aria-describedby="materiaBusquedaAyuda">
+                        <div id="materiasDisponibles" class="sala-search-select-options" role="listbox" hidden></div>
+                    </div>
+                    <span id="materiaBusquedaAyuda" class="sala-field-hint">Escribe para buscar y selecciona una materia.</span>
+                    <div hidden aria-hidden="true">{{ field }}</div>
+                    {% for error in field.errors %}<span class="sala-field-error">{{ error }}</span>{% endfor %}
+                </div>
                 {% elif field.name == 'hora_inicio' or field.name == 'hora_fin' %}
                 <div class="sala-form-field{% if field.errors %} has-error{% endif %}">
                     <span class="sala-form-label">{{ field.label }}</span>
@@ -96,8 +117,13 @@
                 {% else %}
                 <div class="sala-form-field{% if field.name == 'numero_cuenta_docente' %} sala-teacher-lookup-field{% endif %}{% if field.errors %} has-error{% endif %}">
                     {{ field.label_tag }}
+                    {% if field.name == 'numero_cuenta_docente' %}<div class="sala-account-search-row">{% endif %}
                     {{ field }}
                     {% if field.name == 'numero_cuenta_docente' %}
+                    <button class="sala-search-teacher-btn" type="button" data-buscar-docente aria-label="Buscar docente" title="Buscar docente">
+                        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                    </button>
+                    </div>
                     <div class="sala-docente-name-field">
                         <label for="docenteNombre">Nombre del docente</label>
                         <input id="docenteNombre" class="sala-form-control" type="text" data-docente-name readonly placeholder="Se completará al buscar por cuenta" aria-live="polite">
@@ -120,19 +146,221 @@
 <script>
     (function() {
         const cuentaInput = document.querySelector('[data-docente-lookup]');
+        const buscarDocenteButton = document.querySelector('[data-buscar-docente]');
         const docenteInput = document.querySelector('[data-docente-id]');
         const nombreDocenteInput = document.querySelector('[data-docente-name]');
         const carreraSelect = document.querySelector('[data-carrera-select]');
+        const carreraBusqueda = document.getElementById('carreraBusqueda');
+        const carreraOpciones = document.getElementById('carreraOpciones');
         const materiaSelect = document.querySelector('[data-materia-select]');
+        const materiaBusqueda = document.getElementById('materiaBusqueda');
+        const materiasDisponibles = document.getElementById('materiasDisponibles');
         const grupoSelect = document.querySelector('[data-grupo-select]');
+        const grupoBusqueda = document.getElementById('grupoBusqueda');
+        const grupoOpciones = document.getElementById('grupoOpciones');
         const feedback = document.getElementById('docenteLookupFeedback');
         if (!cuentaInput || !docenteInput || !nombreDocenteInput || !carreraSelect || !materiaSelect || !grupoSelect || !feedback) return;
 
+        materiaSelect.required = false;
+        materiaSelect.tabIndex = -1;
+        materiaSelect.setAttribute('aria-hidden', 'true');
+
+        function crearBuscador(select, input, lista, placeholder, textoBusqueda) {
+            select.required = false;
+            select.tabIndex = -1;
+            select.setAttribute('aria-hidden', 'true');
+            function cerrar() {
+                lista.hidden = true;
+                input.setAttribute('aria-expanded', 'false');
+            }
+            function actualizar() {
+                const valorSeleccionado = select.value;
+                lista.replaceChildren();
+                Array.from(select.options).forEach(function(option) {
+                    if (!option.value) return;
+                    const boton = document.createElement('button');
+                    boton.type = 'button';
+                    boton.className = 'sala-search-select-option';
+                    boton.setAttribute('role', 'option');
+                    boton.dataset.value = option.value;
+                    boton.textContent = option.textContent;
+                    boton.addEventListener('mousedown', function(event) { event.preventDefault(); });
+                    boton.addEventListener('click', function() {
+                        select.value = boton.dataset.value;
+                        input.value = boton.textContent;
+                        input.setCustomValidity('');
+                        cerrar();
+                        select.dispatchEvent(new Event('change', { bubbles: true }));
+                    });
+                    lista.appendChild(boton);
+                });
+                input.disabled = !Array.from(select.options).some(function(option) { return option.value; });
+                input.placeholder = input.disabled ? placeholder : textoBusqueda;
+                select.value = valorSeleccionado;
+                const seleccion = Array.from(select.options).find(function(option) {
+                    return option.value && option.value === select.value;
+                });
+                input.value = seleccion ? seleccion.textContent : '';
+                filtrar();
+            }
+            function filtrar() {
+                const consulta = input.value.trim().toLocaleLowerCase();
+                let visibles = 0;
+                lista.querySelectorAll('[role="option"]').forEach(function(option) {
+                    option.hidden = !option.textContent.toLocaleLowerCase().includes(consulta);
+                    if (!option.hidden) visibles += 1;
+                });
+                let vacio = lista.querySelector('[data-no-results]');
+                if (!vacio) {
+                    vacio = document.createElement('div');
+                    vacio.dataset.noResults = 'true';
+                    vacio.className = 'sala-search-select-empty';
+                    vacio.textContent = 'No se encontraron opciones.';
+                    lista.appendChild(vacio);
+                }
+                vacio.hidden = visibles > 0;
+            }
+            function abrir() {
+                if (input.disabled) return;
+                lista.hidden = false;
+                input.setAttribute('aria-expanded', 'true');
+                filtrar();
+            }
+            input.addEventListener('focus', abrir);
+            input.addEventListener('click', abrir);
+            input.addEventListener('input', function() {
+                abrir();
+                filtrar();
+                const match = Array.from(select.options).find(function(option) {
+                    return option.value && option.textContent === input.value;
+                });
+                select.value = match ? match.value : '';
+                input.setCustomValidity(input.value && !match ? 'Selecciona una opción de la lista.' : '');
+            });
+            input.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') cerrar();
+                if (event.key === 'ArrowDown' && lista.hidden) abrir();
+                if (event.key === 'Enter' && !lista.hidden) {
+                    const primera = lista.querySelector('[role="option"]:not([hidden])');
+                    if (primera) {
+                        event.preventDefault();
+                        primera.click();
+                    }
+                }
+            });
+            document.addEventListener('click', function(event) {
+                if (!event.target.closest('[data-search-select]')) cerrar();
+            });
+            return actualizar;
+        }
+
+        const actualizarCarrera = crearBuscador(carreraSelect, carreraBusqueda, carreraOpciones, 'Primero busca al docente', 'Busca una carrera');
+        const actualizarGrupo = crearBuscador(grupoSelect, grupoBusqueda, grupoOpciones, 'Primero busca al docente', 'Busca un grupo');
+
+        function sincronizarBuscadorMateria() {
+            materiasDisponibles.replaceChildren();
+            Array.from(materiaSelect.options).forEach(function(option) {
+                if (!option.value) return;
+                const opcion = document.createElement('button');
+                opcion.type = 'button';
+                opcion.className = 'sala-search-select-option';
+                opcion.setAttribute('role', 'option');
+                opcion.dataset.value = option.value;
+                opcion.textContent = option.textContent;
+                opcion.addEventListener('mousedown', function(event) { event.preventDefault(); });
+                opcion.addEventListener('click', function() {
+                    materiaSelect.value = opcion.dataset.value;
+                    materiaBusqueda.value = opcion.textContent;
+                    materiaBusqueda.setCustomValidity('');
+                    cerrarOpcionesMateria();
+                });
+                materiasDisponibles.appendChild(opcion);
+            });
+            materiaBusqueda.disabled = materiaSelect.options.length < 2;
+            materiaBusqueda.value = '';
+            materiaSelect.value = '';
+            materiaBusqueda.placeholder = materiaBusqueda.disabled ? 'Primero busca al docente' : 'Busca una materia';
+            filtrarOpcionesMateria();
+        }
+
+        function abrirOpcionesMateria() {
+            if (materiaBusqueda.disabled) return;
+            materiasDisponibles.hidden = false;
+            materiaBusqueda.setAttribute('aria-expanded', 'true');
+            filtrarOpcionesMateria();
+        }
+
+        function cerrarOpcionesMateria() {
+            materiasDisponibles.hidden = true;
+            materiaBusqueda.setAttribute('aria-expanded', 'false');
+        }
+
+        function filtrarOpcionesMateria() {
+            const consulta = materiaBusqueda.value.trim().toLocaleLowerCase();
+            let visibles = 0;
+            materiasDisponibles.querySelectorAll('[role="option"]').forEach(function(opcion) {
+                const coincide = opcion.textContent.toLocaleLowerCase().includes(consulta);
+                opcion.hidden = !coincide;
+                if (coincide) visibles += 1;
+            });
+            let vacio = materiasDisponibles.querySelector('[data-no-results]');
+            if (!vacio) {
+                vacio = document.createElement('div');
+                vacio.dataset.noResults = 'true';
+                vacio.className = 'sala-search-select-empty';
+                vacio.textContent = 'No se encontraron materias.';
+                materiasDisponibles.appendChild(vacio);
+            }
+            vacio.hidden = visibles > 0;
+        }
+
+        materiaBusqueda.addEventListener('focus', abrirOpcionesMateria);
+        materiaBusqueda.addEventListener('click', abrirOpcionesMateria);
+        materiaBusqueda.addEventListener('input', function() {
+            abrirOpcionesMateria();
+            filtrarOpcionesMateria();
+            const opcion = Array.from(materiaSelect.options).find(function(item) {
+                return item.value && item.textContent === materiaBusqueda.value;
+            });
+            materiaSelect.value = opcion ? opcion.value : '';
+            materiaBusqueda.setCustomValidity(materiaBusqueda.value && !opcion ? 'Selecciona una materia de la lista.' : '');
+        });
+
+        materiaBusqueda.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') cerrarOpcionesMateria();
+            if (event.key === 'ArrowDown' && materiasDisponibles.hidden) abrirOpcionesMateria();
+            if (event.key === 'Enter' && !materiasDisponibles.hidden) {
+                const primeraOpcion = materiasDisponibles.querySelector('[role="option"]:not([hidden])');
+                if (primeraOpcion) {
+                    event.preventDefault();
+                    primeraOpcion.click();
+                }
+            }
+        });
+
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('[data-materia-search-select]')) cerrarOpcionesMateria();
+        });
+
+        const carrerasDisponibles = Array.from(carreraSelect.options)
+            .filter(function(option) { return option.value; })
+            .map(function(option) { return { id: option.value, nombre: option.textContent }; });
+        actualizarGrupo();
         let solicitudActual = 0;
+
+        function restaurarCarrerasDisponibles() {
+            carreraSelect.replaceChildren(new Option('Selecciona la carrera', ''));
+            carrerasDisponibles.forEach(function(carrera) {
+                carreraSelect.add(new Option(carrera.nombre, carrera.id));
+            });
+            actualizarCarrera();
+        }
+
         function resetCatalogos() {
-            carreraSelect.replaceChildren(new Option('Busca primero al docente', ''));
             materiaSelect.replaceChildren(new Option('Primero busca al docente', ''));
+            sincronizarBuscadorMateria();
             grupoSelect.replaceChildren(new Option('Primero busca al docente', ''));
+            actualizarGrupo();
         }
 
         async function cargarCatalogos(cuenta, carreraId) {
@@ -154,10 +382,12 @@
                 resultado.materias.forEach(function(materia) {
                     materiaSelect.add(new Option(materia.nombre, materia.id));
                 });
+                sincronizarBuscadorMateria();
                 grupoSelect.replaceChildren(new Option('Selecciona un grupo', ''));
                 resultado.grupos.forEach(function(grupo) {
                     grupoSelect.add(new Option(grupo.nombre, grupo.id));
                 });
+                actualizarGrupo();
 
                 if (!resultado.materias.length || !resultado.grupos.length) {
                     feedback.textContent = 'El catálogo de esta carrera aún no tiene materias o grupos registrados.';
@@ -174,6 +404,7 @@
             const solicitud = ++solicitudActual;
             docenteInput.value = '';
             nombreDocenteInput.value = '';
+            restaurarCarrerasDisponibles();
             carreraSelect.value = '';
             resetCatalogos();
             cuentaInput.setCustomValidity('Ingresa el número de cuenta de un docente registrado.');
@@ -198,21 +429,26 @@
                 }
 
                 nombreDocenteInput.value = resultado.nombre || '';
+                docenteInput.value = resultado.persona_id;
+                cuentaInput.setCustomValidity('');
                 if (!resultado.carrera_id || !resultado.carrera) {
-                    feedback.textContent = 'El docente no tiene una carrera disponible en el catálogo.';
+                    feedback.textContent = 'Docente encontrado. Selecciona una carrera para cargar sus materias y grupos.';
                     return;
                 }
 
-                docenteInput.value = resultado.persona_id;
                 carreraSelect.replaceChildren(new Option(resultado.carrera, resultado.carrera_id));
                 carreraSelect.value = String(resultado.carrera_id);
-                cuentaInput.setCustomValidity('');
+                actualizarCarrera();
                 feedback.textContent = 'Docente encontrado: ' + resultado.nombre + '. Cargando su carrera...';
                 await cargarCatalogos(cuenta, resultado.carrera_id);
             } catch (error) {
                 if (solicitud !== solicitudActual) return;
                 feedback.textContent = 'No fue posible buscar el docente. Intenta nuevamente.';
             }
+        });
+
+        buscarDocenteButton.addEventListener('click', function() {
+            cuentaInput.dispatchEvent(new Event('change', { bubbles: true }));
         });
 
         carreraSelect.addEventListener('change', function() {
@@ -226,6 +462,13 @@
 <script>
     (function() {
         window.inicializarRelojesSala = function() {
+            window.cerrarRelojesSala = function() {
+                document.querySelectorAll('.sala-time-popover').forEach(function(popover) {
+                    popover.hidden = true;
+                    const trigger = document.querySelector('[aria-controls="' + popover.id + '"]');
+                    if (trigger) trigger.setAttribute('aria-expanded', 'false');
+                });
+            };
             document.querySelectorAll('[data-time-picker]').forEach(function(picker) {
                 if (picker.dataset.timeInitialized) return;
                 picker.dataset.timeInitialized = 'true';
@@ -265,6 +508,16 @@
                     });
                 }
 
+                function guardarHoraSeleccionada() {
+                    const hora24 = selectedHour % 12 + (selectedPeriod === 'PM' ? 12 : 0);
+                    input.value = String(hora24).padStart(2, '0') + ':' + String(selectedMinute).padStart(2, '0');
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                    label.textContent = preview.textContent;
+                    field.classList.remove('has-error');
+                    error.hidden = true;
+                }
+
                 function loadInputValue() {
                     const match = input.value.match(/^([01]\d|2[0-3]):([0-5]\d)$/);
                     if (match) {
@@ -296,18 +549,21 @@
                     addOption(String(hour).padStart(2, '0'), 'data-time-hour', String(hour), hourList, function() {
                         selectedHour = hour;
                         updateDisplay();
+                        guardarHoraSeleccionada();
                     });
                 }
                 for (let minute = 0; minute < 60; minute += 1) {
                     addOption(String(minute).padStart(2, '0'), 'data-time-minute', String(minute), minuteList, function() {
                         selectedMinute = minute;
                         updateDisplay();
+                        guardarHoraSeleccionada();
                     });
                 }
                 ['AM', 'PM'].forEach(function(period) {
                     addOption(period === 'AM' ? 'a. m.' : 'p. m.', 'data-time-period-value', period, periodList, function() {
                         selectedPeriod = period;
                         updateDisplay();
+                        guardarHoraSeleccionada();
                     });
                 });
 
@@ -342,6 +598,7 @@
                         closePicker(false);
                         return;
                     }
+                    if (window.cerrarCalendariosSala) window.cerrarCalendariosSala();
                     document.querySelectorAll('.sala-time-popover').forEach(function(other) {
                         if (other !== popover) {
                             other.hidden = true;
@@ -386,6 +643,7 @@
             });
         };
         window.inicializarRelojesSala();
+
     })();
 </script>
 
@@ -434,6 +692,10 @@
             if (pickerField && popover.parentElement !== pickerField) pickerField.appendChild(popover);
             if (trigger) trigger.setAttribute('aria-expanded', 'false');
         }
+
+        window.cerrarCalendariosSala = function() {
+            document.querySelectorAll('[data-date-picker]').forEach(closePicker);
+        };
 
         window.inicializarCalendariosSala = function() {
         document.querySelectorAll('[data-date-picker]').forEach(function(picker) {
@@ -551,6 +813,7 @@
             });
             trigger.addEventListener('click', function() {
                 const isOpening = popover.hidden;
+                if (isOpening && window.cerrarRelojesSala) window.cerrarRelojesSala();
                 document.querySelectorAll('[data-date-picker]').forEach(function(otherPicker) {
                     closePicker(otherPicker);
                 });
@@ -583,5 +846,26 @@
                 if (popover && !picker.contains(event.target) && !popover.contains(event.target)) closePicker(picker);
             });
         });
+
+        document.addEventListener('click', function(event) {
+            const dateTrigger = event.target.closest('[data-date-trigger]');
+            const timeTrigger = event.target.closest('[data-time-trigger]');
+            if (!dateTrigger && !timeTrigger) return;
+
+            document.querySelectorAll('.sala-calendar-popover').forEach(function(popover) {
+                const trigger = document.querySelector('[aria-controls="' + popover.id + '"]');
+                if ((dateTrigger && trigger === dateTrigger) || popover.hidden) return;
+                const picker = document.querySelector('[data-date-picker][data-calendar-popover-id="' + popover.id + '"]');
+                if (picker) closePicker(picker);
+            });
+
+            document.querySelectorAll('.sala-time-popover').forEach(function(popover) {
+                const trigger = document.querySelector('[aria-controls="' + popover.id + '"]');
+                if ((timeTrigger && trigger === timeTrigger) || popover.hidden) return;
+                popover.hidden = true;
+                if (trigger) trigger.setAttribute('aria-expanded', 'false');
+            });
+        }, true);
+
     })();
 </script>

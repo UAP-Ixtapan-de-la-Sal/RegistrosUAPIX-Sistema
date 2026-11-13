@@ -1,0 +1,76 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+<ol class="breadcrumb float-sm-right">
+  <li class="breadcrumb-item"><a href="{% url 'admin:index' %}">Inicio</a></li>
+  <li class="breadcrumb-item active">Importar Excel</li>
+</ol>
+{% endblock %}
+
+{% block content %}
+<div class="col-12">
+  {% if error %}<div class="alert alert-danger" role="alert">{{ error }}</div>{% endif %}
+  {% if completed %}
+    <div class="alert alert-success" role="status"><strong>Importación completada.</strong> Los registros existentes se conservaron.</div>
+  {% else %}
+    <div class="card">
+      <div class="card-header"><h2 class="card-title">1. Cargar y validar</h2></div>
+      <div class="card-body">
+        <p><a href="{% url 'descargar_plantilla_excel' %}" class="btn btn-outline-success">Descargar plantilla Excel</a></p>
+        <p>Hojas admitidas: Carreras, Grupos, Alumnos, Docentes, Administrativos, Materias y Equipos. Las hojas ausentes o vacías se omiten; las relaciones pueden existir previamente en el sistema.</p>
+        <p>Los perfiles se asignan según las hojas Alumnos, Docentes y Administrativos. Una misma cuenta puede tener varios perfiles; no necesitas una columna Perfil en el Excel.</p>
+        <p>Se admiten hasta {{ max_import_rows }} registros por archivo.</p>
+        <p>La validación no guarda registros. Si hay datos contradictorios, corrige el archivo antes de confirmar.</p>
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <input type="hidden" name="accion" value="validar">
+          {{ form.as_p }}
+          <button type="submit" class="btn btn-primary">Cargar y validar</button>
+        </form>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if plan %}
+    <div class="card">
+      <div class="card-header"><h2 class="card-title">{% if completed %}Resultado{% else %}2. Vista previa{% endif %}</h2></div>
+      <div class="card-body">
+        {% for message in plan.errors %}<p class="text-danger" role="alert">{{ message }}</p>{% endfor %}
+        {% if not completed %}<p>La vista previa muestra hasta {{ max_preview_rows }} registros por hoja. Al confirmar se procesan todos los registros del archivo, incluidos los que no aparecen en la muestra.</p>{% endif %}
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead><tr><th>Hoja</th><th>Leídos</th><th>Nuevos</th><th>Existentes / repetidos</th><th>Perfiles {% if completed %}agregados{% else %}por agregar{% endif %}</th><th>Personas con relaciones académicas {% if completed %}agregadas{% else %}por agregar{% endif %}</th><th>Registros con errores</th></tr></thead>
+            <tbody>{% for sheet in plan.sheets %}<tr><td>{{ sheet.name }}</td><td>{{ sheet.rows|length }}</td><td>{{ sheet.new }}</td><td>{{ sheet.existing }}</td><td>{{ sheet.profiles }}</td><td>{{ sheet.relationships }}</td><td>{{ sheet.error_count }}</td></tr>{% endfor %}</tbody>
+          </table>
+        </div>
+        {% if plan.ignored %}<p>Hojas ignoradas por estar vacías: {{ plan.ignored|join:", " }}.</p>{% endif %}
+        {% for sheet in plan.sheets %}
+          {% if sheet.errors %}
+            <h3>Errores en {{ sheet.name }}</h3>
+            <ul>{% for problem in sheet.errors %}<li>Hoja {{ sheet.name }}, fila {{ problem.row }}, campo {{ problem.field }}: {{ problem.message }}</li>{% endfor %}</ul>
+          {% endif %}
+          {% if sheet.samples and not completed %}
+            <details><summary>{{ sheet.name }}: muestra de {{ sheet.samples|length }} de {{ sheet.valid_count }} registros válidos</summary>
+              <div class="table-responsive"><table class="table table-sm">
+                <thead><tr><th>Fila</th><th>Acción</th><th>Datos</th></tr></thead>
+                <tbody>{% for sample in sheet.samples %}<tr><td>{{ sample.row }}</td><td>{{ sample.status }}</td><td>{{ sample.values }}</td></tr>{% endfor %}</tbody>
+              </table></div>
+            </details>
+          {% endif %}
+        {% endfor %}
+        {% if token and plan.valid and not completed %}
+          <p>La vista previa vence en 15 minutos. Al confirmar se validará nuevamente el archivo completo.</p>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="accion" value="confirmar">
+            <input type="hidden" name="token" value="{{ token }}">
+            <button type="submit" class="btn btn-success">Confirmar importación</button>
+          </form>
+        {% elif not completed %}<p class="text-danger">La confirmación está bloqueada hasta corregir los errores.</p>{% endif %}
+      </div>
+    </div>
+  {% endif %}
+  <a href="{% url 'admin:index' %}">Volver al administrador</a>
+</div>
+{% endblock %}

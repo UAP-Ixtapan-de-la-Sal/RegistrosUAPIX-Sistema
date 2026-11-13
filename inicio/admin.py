@@ -2,11 +2,15 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from simple_history.admin import SimpleHistoryAdmin
+from django.db.models import Q
+from .forms_persona_admin import PersonaAdminForm
 
 # MODIFICACIÓN: Importamos todos los nuevos modelos creados para la Sala de Cómputo
 from .models import (
     UsuarioSistema, Persona, Carrera, Materia, 
-    Grupo, Clase, EventoTallerConferencia, Equipo, Registro, Externo
+    Grupo, Clase, EventoTallerConferencia, Equipo, Registro, Externo, PersonaPerfil,
+    Asistencia, Incidencia,
+    PERFILES_PERSONA,
 )
 
 @admin.register(UsuarioSistema)
@@ -33,11 +37,52 @@ class UsuarioSistemaAdmin(UserAdmin):
     )
 
 # Dejamos la tabla Persona lista por si quieren ir agregando alumnos manuales después
+class PerfilPersonaFilter(admin.SimpleListFilter):
+    title = 'perfil institucional'
+    parameter_name = 'perfil_institucional'
+
+    def lookups(self, request, model_admin):
+        return PERFILES_PERSONA
+
+    def queryset(self, request, queryset):
+        if self.value() in dict(PERFILES_PERSONA):
+            return queryset.filter(Q(perfil=self.value()) | Q(perfiles__perfil=self.value())).distinct()
+        return queryset
+
+
 @admin.register(Persona)
 class PersonaAdmin(admin.ModelAdmin):
-    list_display = ('matricula', 'nombre', 'apellidos', 'perfil')
+    form = PersonaAdminForm
+    list_display = ('matricula', 'nombre', 'apellidos', 'perfiles_institucionales', 'carrera', 'grupo')
     search_fields = ('matricula', 'nombre', 'apellidos')
-    list_filter = ('perfil',)
+    list_filter = (PerfilPersonaFilter, 'carrera', 'grupo')
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related('perfiles')
+
+    @admin.display(description='Perfiles institucionales')
+    def perfiles_institucionales(self, obj):
+        return ', '.join(sorted(obj.perfiles_actuales))
+
+    def save_model(self, request, obj, form, change):
+        obj._history_user = request.user
+        obj._change_reason = 'Gestión de perfiles en Django Admin'
+        super().save_model(request, obj, form, change)
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        selected = form.cleaned_data['perfiles_institucionales']
+        for membership in form.instance.perfiles.exclude(perfil__in=selected):
+            membership._history_user = request.user
+            membership._change_reason = 'Gestión de perfiles en Django Admin'
+            membership.delete()
+        existing = set(form.instance.perfiles.values_list('perfil', flat=True))
+        for perfil in selected - existing:
+            membership = PersonaPerfil(persona=form.instance, perfil=perfil)
+            membership._history_user = request.user
+            membership._change_reason = 'Gestión de perfiles en Django Admin'
+            membership.full_clean()
+            membership.save()
 
 
 # ==========================================
@@ -52,9 +97,9 @@ class CarreraAdmin(admin.ModelAdmin):
 @admin.register(Materia)
 class MateriaAdmin(admin.ModelAdmin):
     # Cambiamos 'id_carrera' por 'carrera' en list_display
-    list_display = ('id_materia', 'nombre_materia', 'carrera') 
+    list_display = ('id_materia', 'nombre_materia', 'carrera', 'semestre')
     search_fields = ('nombre_materia',)
-    list_filter = ('carrera',) 
+    list_filter = ('carrera', 'semestre')
 
 @admin.register(Grupo)
 class GrupoAdmin(admin.ModelAdmin):
@@ -107,3 +152,16 @@ class RegistroAdmin(SimpleHistoryAdmin):
     
     # También le ponemos su barra de fechas para que Jaz pueda buscar rápido
     date_hierarchy = 'fecha'
+
+@admin.register(Asistencia)
+class AsistenciaAdmin(SimpleHistoryAdmin):
+    list_display = ('clase', 'alumno', 'estado', 'equipo', 'registro')
+    list_filter = ('estado', 'clase__fecha')
+    search_fields = ('alumno__matricula', 'alumno__nombre', 'alumno__apellidos')
+
+@admin.register(Incidencia)
+class IncidenciaAdmin(SimpleHistoryAdmin):
+    list_display = ('equipo', 'momento_deteccion', 'estado', 'reportada_por', 'creada_en')
+    list_filter = ('estado', 'momento_deteccion', 'creada_en')
+    search_fields = ('equipo__no_equipo', 'equipo__no_bien_patrimonial', 'descripcion')
+    date_hierarchy = 'creada_en'

@@ -94,7 +94,14 @@
                     {{ field.label_tag }}
                     {{ field }}
                     {% for error in field.errors %}<span class="sala-field-error">{{ error }}</span>{% endfor %}
+                    {{ evento_form.apellidos_ponente_externo.label_tag }}
+                    {{ evento_form.apellidos_ponente_externo }}
+                    {% for error in evento_form.apellidos_ponente_externo.errors %}<span class="sala-field-error">{{ error }}</span>{% endfor %}
+                    {{ evento_form.institucion_ponente_externo.label_tag }}
+                    {{ evento_form.institucion_ponente_externo }}
+                    {% for error in evento_form.institucion_ponente_externo.errors %}<span class="sala-field-error">{{ error }}</span>{% endfor %}
                 </div>
+                {% elif field.name == 'apellidos_ponente_externo' or field.name == 'institucion_ponente_externo' %}
                 {% else %}
                 <div class="sala-form-field{% if field.errors %} has-error{% endif %}">
                 {{ field.label_tag }}
@@ -126,6 +133,7 @@
         const personaId = document.querySelector('[data-persona-ponente]');
         const feedback = document.getElementById('ponenteLookupFeedback');
         if (!tipoPonente || !camposInternos || !camposExternos || !campoNombreInterno || !cuenta || !nombreInterno || !personaId || !feedback) return;
+        const camposExternosInput = Array.from(camposExternos.querySelectorAll('input'));
         let solicitudActual = 0;
 
         function limpiarPonenteInterno() {
@@ -143,8 +151,15 @@
             camposInternos.hidden = !esInterno;
             campoNombreInterno.hidden = !esInterno || !nombreInterno.value;
             camposExternos.hidden = !esExterno;
+            cuenta.disabled = !esInterno;
             cuenta.required = esInterno;
-            camposExternos.querySelector('input').required = esExterno;
+            nombreInterno.disabled = !esInterno;
+            personaId.disabled = !esInterno;
+            camposExternosInput.forEach(function(input) {
+                input.disabled = !esExterno;
+                input.required = esExterno
+                    && (input.name === 'nombre_ponente_externo' || input.name === 'apellidos_ponente_externo');
+            });
             if (!esInterno) {
                 limpiarPonenteInterno();
             }

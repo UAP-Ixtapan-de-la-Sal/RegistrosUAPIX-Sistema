@@ -1,9 +1,115 @@
-from django.db import models
+from django.db import models, router, transaction
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from datetime import timedelta
+from datetime import time as time_type, timedelta
 from simple_history.models import HistoricalRecords
+
+
+PERFILES_PERSONA = (
+    ('Administrador', 'Administrador'),
+    ('Docente', 'Docente'),
+    ('Alumno', 'Alumno'),
+)
+
+
+class PersonaQuerySet(models.QuerySet):
+    def con_perfiles(self, *perfiles):
+        return self.filter(
+            models.Q(perfil__in=perfiles) | models.Q(perfiles__perfil__in=perfiles),
+        ).distinct()
+
+
+def normalizar_hora(valor):
+    if valor is None or valor == '':
+        return valor
+    if hasattr(valor, 'resolve_expression'):
+        raise ValueError('Los horarios no admiten expresiones ORM sin normalizar.')
+    if not isinstance(valor, time_type):
+        valor = models.TimeField().to_python(valor)
+    return valor.replace(second=0, microsecond=0)
+
+
+class HorarioQuerySet(models.QuerySet):
+    CAMPOS_HORARIO = {'hora_inicio', 'hora_fin'}
+
+    def _chain(self):
+        clone = super()._chain()
+        clone._bulk_update_in_progress = getattr(self, '_bulk_update_in_progress', False)
+        return clone
+
+    def bulk_create(self, objs, batch_size=None, ignore_conflicts=False,
+                    update_conflicts=False, update_fields=None, unique_fields=None):
+        objs = list(objs)
+        audited = hasattr(self.model, 'history')
+        if audited and (ignore_conflicts or update_conflicts):
+            raise ValueError('Los eventos con historial no admiten omitir o sobrescribir conflictos en bulk_create.')
+        for obj in objs:
+            obj.hora_inicio = normalizar_hora(obj.hora_inicio)
+            obj.hora_fin = normalizar_hora(obj.hora_fin)
+            obj.full_clean()
+        with transaction.atomic(using=self.db):
+            result = super().bulk_create(
+                objs, batch_size=batch_size, ignore_conflicts=ignore_conflicts,
+                update_conflicts=update_conflicts, update_fields=update_fields,
+                unique_fields=unique_fields,
+            )
+            if audited:
+                if any(obj.pk is None for obj in result):
+                    raise ValueError('El motor debe devolver los identificadores para registrar el historial de eventos.')
+                self.model.history.bulk_history_create(result, batch_size=batch_size)
+            return result
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        objs = list(objs)
+        if self.CAMPOS_HORARIO.intersection(fields):
+            for obj in objs:
+                obj.hora_inicio = normalizar_hora(obj.hora_inicio)
+                obj.hora_fin = normalizar_hora(obj.hora_fin)
+                obj.full_clean()
+        with transaction.atomic(using=self.db):
+            audited = hasattr(self.model, 'history')
+            if audited:
+                affected = list(self.select_for_update().filter(pk__in=[obj.pk for obj in objs]).values_list('pk', flat=True))
+            self._bulk_update_in_progress = True
+            try:
+                updated = super().bulk_update(objs, fields, batch_size=batch_size)
+            finally:
+                self._bulk_update_in_progress = False
+            if audited:
+                # Leer el estado realmente guardado respeta los filtros del
+                # queryset y los campos indicados en bulk_update.
+                saved = list(self.model._base_manager.using(self.db).filter(pk__in=affected))
+                original = {obj.pk: obj for obj in objs}
+                for obj in saved:
+                    source = original[obj.pk]
+                    for attr in ('_history_user', '_change_reason', '_history_date'):
+                        if hasattr(source, attr):
+                            setattr(obj, attr, getattr(source, attr))
+                self.model.history.bulk_history_create(saved, batch_size=batch_size, update=True)
+            return updated
+
+    def update(self, **kwargs):
+        if getattr(self, '_bulk_update_in_progress', False):
+            return super().update(**kwargs)
+        campos_horario = self.CAMPOS_HORARIO.intersection(kwargs)
+        audited = hasattr(self.model, 'history')
+        if not kwargs or not (campos_horario or audited):
+            return super().update(**kwargs)
+        for campo in campos_horario:
+            kwargs[campo] = normalizar_hora(kwargs[campo])
+        with transaction.atomic(using=self.db):
+            affected = list(self.select_for_update().values_list('pk', flat=True))
+            updated = super().update(**kwargs)
+            if campos_horario:
+                for obj in self.model._base_manager.using(self.db).filter(pk__in=affected):
+                    # Validar el resultado completo incluye otros cambios de la
+                    # misma actualización; cualquier error revierte el conjunto.
+                    obj.full_clean()
+            if audited:
+                saved = list(self.model._base_manager.using(self.db).filter(pk__in=affected))
+                self.model.history.bulk_history_create(saved, update=True)
+            return updated
 
 class UsuarioSistema(AbstractUser):
     # 1. Definimos el Rol (Operador o Visualizador)
@@ -33,22 +139,70 @@ class Carrera(models.Model):
         return self.nombre_carrera
 
 class Persona(models.Model):
+    objects = PersonaQuerySet.as_manager()
     id_persona = models.AutoField(primary_key=True)
+    grupo = models.ForeignKey(
+        'Grupo', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='alumnos', verbose_name='Grupo',
+    )
     
     # CORRECCIÓN: Vinculamos formalmente a la tabla Carrera para evitar el número suelto
     carrera = models.ForeignKey(Carrera, on_delete=models.SET_NULL, null=True, blank=True, db_column='id_carrera', verbose_name="Carrera")
     
-    perfil = models.CharField(max_length=50, choices=[
-        ('Administrador', 'Administrador'),
-        ('Docente', 'Docente'),
-        ('Alumno', 'Alumno')
-    ])
+    # Perfil principal conservado para compatibilidad con los módulos existentes.
+    perfil = models.CharField(max_length=50, choices=PERFILES_PERSONA)
     matricula = models.CharField(max_length=20, unique=True, null=True, blank=True)
     nombre = models.CharField(max_length=100)
     apellidos = models.CharField(max_length=100)
 
+    def clean(self):
+        super().clean()
+        if self.grupo_id and self.carrera_id != self.grupo.carrera_id:
+            raise ValidationError({'grupo': 'El grupo debe pertenecer a la carrera de la persona.'})
+
+    @property
+    def perfiles_actuales(self):
+        perfiles = {item.perfil for item in self.perfiles.all()} if self.pk else set()
+        if self.perfil:
+            perfiles.add(self.perfil)
+        return perfiles
+
+    def tiene_perfil(self, *perfiles):
+        return bool(self.perfiles_actuales.intersection(perfiles))
+
+    def save(self, *args, **kwargs):
+        using = kwargs.get('using') or router.db_for_write(type(self), instance=self)
+        with transaction.atomic(using=using):
+            super().save(*args, **kwargs)
+            if self.perfil in dict(PERFILES_PERSONA):
+                # Serializa la sincronización del perfil principal al editar una
+                # persona existente. Los perfiles adicionales nunca se eliminan.
+                type(self).objects.using(using).select_for_update().get(pk=self.pk)
+                if not PersonaPerfil.objects.using(using).filter(persona_id=self.pk, perfil=self.perfil).exists():
+                    membership = PersonaPerfil(persona_id=self.pk, perfil=self.perfil)
+                    membership._history_user = getattr(self, '_history_user', None)
+                    membership._change_reason = getattr(self, '_change_reason', None)
+                    membership.save(using=using)
+
     def __str__(self):
         return f"{self.matricula or 'S/N'} {self.nombre} {self.apellidos}"
+
+
+class PersonaPerfil(models.Model):
+    persona = models.ForeignKey(Persona, on_delete=models.CASCADE, related_name='perfiles')
+    perfil = models.CharField(max_length=50, choices=PERFILES_PERSONA)
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = 'perfil institucional'
+        verbose_name_plural = 'perfiles institucionales'
+        constraints = [
+            models.UniqueConstraint(fields=('persona', 'perfil'), name='inicio_persona_perfil_unico'),
+            models.CheckConstraint(condition=models.Q(perfil__in=[p for p, _ in PERFILES_PERSONA]), name='inicio_persona_perfil_valido'),
+        ]
+
+    def __str__(self):
+        return f'{self.persona} - {self.get_perfil_display()}'
 
 
 class Externo(models.Model):
@@ -65,6 +219,7 @@ class Externo(models.Model):
 class Materia(models.Model):
     id_materia = models.AutoField(primary_key=True)
     nombre_materia = models.CharField(max_length=100)
+    semestre = models.IntegerField(null=True, blank=True)
     carrera = models.ForeignKey(Carrera, on_delete=models.CASCADE, db_column='id_carrera', verbose_name="Carrera")
 
     def __str__(self):
@@ -74,25 +229,42 @@ class Materia(models.Model):
 class Grupo(models.Model):
     id_grupo = models.AutoField(primary_key=True)
     nombre_grupo = models.CharField(max_length=20)
-    semestre = models.IntegerField()
-    turno = models.CharField(max_length=20)
+    semestre = models.IntegerField(null=True, blank=True)
+    turno = models.CharField(max_length=20, blank=True)
     carrera = models.ForeignKey(Carrera, on_delete=models.CASCADE, db_column='id_carrera', verbose_name="Carrera")
 
     def __str__(self):
-        return f"{self.nombre_grupo} - Semestre {self.semestre} ({self.turno})"
+        if self.semestre is not None and self.turno:
+            return f"{self.nombre_grupo} - Semestre {self.semestre} ({self.turno})"
+        partes = [self.nombre_grupo]
+        if self.semestre is not None:
+            partes.append(f'Semestre {self.semestre}')
+        if self.turno:
+            partes.append(self.turno)
+        return ' - '.join(partes)
 
 
 class Clase(models.Model):
+    objects = HorarioQuerySet.as_manager()
+
     id_clase = models.AutoField(primary_key=True)
     materia = models.ForeignKey(Materia, on_delete=models.CASCADE, db_column='id_materia', verbose_name="Materia")
     grupo = models.ForeignKey(Grupo, on_delete=models.CASCADE, db_column='id_grupo', verbose_name="Grupo")
-    docente = models.ForeignKey(Persona, on_delete=models.CASCADE, db_column='id_persona', verbose_name="Responsable a cargo")
+    docente = models.ForeignKey(
+        Persona,
+        on_delete=models.CASCADE,
+        db_column='id_persona',
+        limit_choices_to=models.Q(perfil='Docente') | models.Q(perfiles__perfil='Docente'),
+        verbose_name="Responsable a cargo",
+    )
     
     fecha = models.DateField()
     hora_inicio = models.TimeField()
     hora_fin = models.TimeField()
 
     def clean(self):
+        self.hora_inicio = normalizar_hora(self.hora_inicio)
+        self.hora_fin = normalizar_hora(self.hora_fin)
         if not self.fecha or not self.hora_inicio or not self.hora_fin:
             return
 
@@ -118,6 +290,8 @@ class Clase(models.Model):
 
 
 class EventoTallerConferencia(models.Model):
+    objects = HorarioQuerySet.as_manager()
+
     TIPO_EVENTO_CHOICES = [
         ('Taller', 'Taller'),
         ('Conferencia', 'Conferencia'),
@@ -144,6 +318,8 @@ class EventoTallerConferencia(models.Model):
     history = HistoricalRecords()  # Para el historial de cambios
     
     def clean(self):
+        self.hora_inicio = normalizar_hora(self.hora_inicio)
+        self.hora_fin = normalizar_hora(self.hora_fin)
         if not self.fecha or not self.hora_inicio or not self.hora_fin:
             return
 
@@ -238,7 +414,12 @@ class Registro(models.Model):
     hora_entrada = models.TimeField(default=timezone.now)
     hora_salida = models.TimeField(null=True, blank=True)
     
-    persona = models.ForeignKey(Persona, on_delete=models.CASCADE, verbose_name="Usuario / Persona")
+    persona = models.ForeignKey(
+        Persona, on_delete=models.CASCADE, null=True, blank=True, verbose_name="Usuario / Persona",
+    )
+    externo = models.ForeignKey(
+        Externo, on_delete=models.PROTECT, null=True, blank=True, verbose_name="Asistente externo",
+    )
     equipo = models.ForeignKey(Equipo, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Equipo de Cómputo")
     clase = models.ForeignKey(Clase, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Clase asignada")
     evento = models.ForeignKey(EventoTallerConferencia, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Evento asignado")
@@ -246,8 +427,22 @@ class Registro(models.Model):
     observaciones = models.TextField(null=True, blank=True)
     history = HistoricalRecords()  # Para el historial de cambios
 
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(persona__isnull=False, externo__isnull=True)
+                    | models.Q(persona__isnull=True, externo__isnull=False)
+                ),
+                name='inicio_registro_un_solo_asistente',
+            ),
+        ]
+
     # SISTEMA ANTI-CHOQUES RESTAURADO
     def clean(self):
+        if bool(self.persona_id) == bool(self.externo_id):
+            raise ValidationError('El registro debe estar asociado a una persona o a un asistente externo.')
+
         if self.hora_entrada and self.hora_salida:
             if self.hora_salida <= self.hora_entrada:
                 raise ValidationError({'hora_salida': 'Error lógico: La hora de salida no puede ser antes o igual a la hora de entrada.'})
@@ -295,3 +490,87 @@ class Registro(models.Model):
 #CHIDO PERRON
     def __str__(self):
         return f"Registro {self.id_registro} - {self.modulo} ({self.fecha})"
+
+
+class Asistencia(models.Model):
+    ESTADOS = (
+        ('Asistió', 'Asistió'),
+        ('Falta', 'Falta'),
+    )
+
+    clase = models.ForeignKey(Clase, on_delete=models.CASCADE, related_name='asistencias')
+    alumno = models.ForeignKey(Persona, on_delete=models.CASCADE, related_name='asistencias')
+    estado = models.CharField(max_length=10, choices=ESTADOS)
+    equipo = models.ForeignKey(Equipo, on_delete=models.SET_NULL, null=True, blank=True)
+    registro = models.OneToOneField(
+        Registro, on_delete=models.PROTECT, null=True, blank=True, related_name='asistencia',
+    )
+    history = HistoricalRecords()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=('clase', 'alumno'), name='inicio_asistencia_clase_alumno_unica'),
+        ]
+        ordering = ('alumno__apellidos', 'alumno__nombre')
+
+    def clean(self):
+        super().clean()
+        if self.clase_id and self.alumno_id:
+            if not self.alumno.tiene_perfil('Alumno'):
+                raise ValidationError({'alumno': 'La asistencia solo puede registrarse para alumnos.'})
+            if self.alumno.grupo_id != self.clase.grupo_id:
+                raise ValidationError({'alumno': 'El alumno no pertenece al grupo de esta clase.'})
+
+        if self.estado == 'Asistió':
+            if not self.registro_id:
+                raise ValidationError({'registro': 'La asistencia requiere el registro de entrada correspondiente.'})
+            if self.registro.persona_id != self.alumno_id or self.registro.clase_id != self.clase_id:
+                raise ValidationError({'registro': 'El registro de entrada no corresponde a este alumno y clase.'})
+            if self.registro.equipo_id != self.equipo_id:
+                raise ValidationError({'equipo': 'El equipo debe coincidir con el registro de entrada.'})
+        elif self.estado == 'Falta' and (self.registro_id or self.equipo_id):
+            raise ValidationError('Una falta no puede tener registro de entrada ni equipo asignado.')
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f'{self.alumno} - {self.clase} - {self.get_estado_display()}'
+
+
+class Incidencia(models.Model):
+    MOMENTOS_DETECCION = (
+        ('durante_uso', 'Durante el uso'),
+        ('al_finalizar', 'Al finalizar el uso'),
+        ('despues_actividad', 'Después del evento o visita'),
+    )
+    ESTADOS = (
+        ('Pendiente', 'Pendiente'),
+        ('Resuelta', 'Resuelta'),
+    )
+
+    equipo = models.ForeignKey(Equipo, on_delete=models.PROTECT, related_name='incidencias')
+    registro = models.ForeignKey(
+        Registro, on_delete=models.SET_NULL, null=True, blank=True, related_name='incidencias',
+    )
+    reportada_por = models.ForeignKey(
+        UsuarioSistema, on_delete=models.SET_NULL, null=True, blank=True, related_name='incidencias',
+    )
+    momento_deteccion = models.CharField(max_length=24, choices=MOMENTOS_DETECCION)
+    descripcion = models.TextField()
+    estado = models.CharField(max_length=10, choices=ESTADOS, default='Pendiente')
+    creada_en = models.DateTimeField(auto_now_add=True)
+    history = HistoricalRecords()
+
+    def clean(self):
+        super().clean()
+        if self.registro_id and self.registro.equipo_id != self.equipo_id:
+            raise ValidationError({'registro': 'El registro seleccionado no corresponde al equipo afectado.'})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f'Incidencia {self.pk or "nueva"} - {self.equipo}'

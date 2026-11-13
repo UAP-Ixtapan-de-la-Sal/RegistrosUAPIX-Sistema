@@ -430,6 +430,10 @@ body.sala-subview-active .sala-form-panel--class .sala-form-heading {
     gap: 7px;
 }
 
+.sala-form-field[hidden] {
+    display: none;
+}
+
 .sala-docente-name-field {
     margin-top: 8px;
     display: flex;
@@ -463,6 +467,44 @@ body.sala-subview-active .sala-form-panel--class .sala-form-heading {
     color-scheme: light;
     font: inherit;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sala-search-teacher-btn {
+    width: 46px;
+    min-width: 46px;
+    min-height: 46px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: 1px solid var(--color-green);
+    border-radius: 9px;
+    background: var(--color-green);
+    color: #fff;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.sala-account-search-row {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.sala-account-search-row > .sala-form-control {
+    flex: 1;
+    min-width: 0;
+}
+
+.sala-search-teacher-btn:hover {
+    background: var(--color-green-hover);
+}
+
+.sala-search-teacher-btn:focus-visible {
+    outline: 3px solid var(--color-gold);
+    outline-offset: 2px;
 }
 
 .sala-time-trigger {
@@ -3380,4 +3422,533 @@ body.sala-class-form-active .sala-form-panel--class .sala-form-submit:hover {
     body.sala-class-form-active .sala-teacher-lookup-field {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+}
+.sala-search-select {
+    position: relative;
+}
+
+.sala-search-select-options {
+    position: absolute;
+    z-index: 30;
+    top: calc(100% + 5px);
+    left: 0;
+    right: 0;
+    max-height: 240px;
+    overflow-y: auto;
+    padding: 5px;
+    border: 1px solid rgba(82, 104, 85, 0.24);
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 10px 24px rgba(24, 39, 27, 0.16);
+}
+
+.sala-search-select-options[hidden],
+.sala-search-select-option[hidden],
+.sala-search-select-empty[hidden] {
+    display: none;
+}
+
+.sala-search-select-option {
+    display: block;
+    width: 100%;
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #263629;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.sala-search-select-option:hover,
+.sala-search-select-option:focus-visible {
+    background: #edf4ed;
+    outline: none;
+}
+
+.sala-search-select-empty {
+    padding: 10px 12px;
+    color: #667568;
+    font-size: 0.9rem;
+}
+
+/* Reloj compacto inspirado en el selector de autoacceso. */
+.sala-form-panel--class .sala-time-trigger,
+.sala-form-panel--schedule .sala-time-trigger {
+    height: 47px;
+    min-height: 47px;
+    padding: 8px 10px 8px 15px;
+    border-color: #bdcbbf;
+    border-radius: 9px;
+    background: #f7f9f7;
+    color: #384033;
+    font-size: 14px;
+    box-shadow: none;
+}
+
+.sala-form-panel--class .sala-time-trigger > span,
+.sala-form-panel--schedule .sala-time-trigger > span {
+    color: #384033;
+    font-size: 14px;
+}
+
+.sala-form-panel--class .sala-time-trigger i,
+.sala-form-panel--schedule .sala-time-trigger i {
+    width: 30px;
+    height: 30px;
+    flex-basis: 30px;
+    border-radius: 9px;
+    background: #526855;
+    color: #fff;
+    font-size: 14px;
+}
+
+.sala-form-panel--class .sala-time-trigger:hover,
+.sala-form-panel--class .sala-time-trigger[aria-expanded="true"],
+.sala-form-panel--schedule .sala-time-trigger:hover,
+.sala-form-panel--schedule .sala-time-trigger[aria-expanded="true"] {
+    border-color: #526855;
+    background: #f7f9f7;
+    box-shadow: 0 0 0 3px rgba(82, 104, 85, 0.12);
+}
+
+.sala-form-panel--class .sala-time-trigger:hover i,
+.sala-form-panel--class .sala-time-trigger[aria-expanded="true"] i,
+.sala-form-panel--schedule .sala-time-trigger:hover i,
+.sala-form-panel--schedule .sala-time-trigger[aria-expanded="true"] i {
+    background: #384033;
+    color: #fff;
+}
+
+.sala-form-panel--class .sala-time-popover,
+.sala-form-panel--schedule .sala-time-popover {
+    width: 350px;
+    max-width: min(350px, 90vw);
+    padding: 16px;
+    border-color: #dce4dc;
+    border-radius: 17px;
+    background: #fff;
+    box-shadow: 0 15px 40px rgba(35, 55, 40, 0.18);
+}
+
+.sala-form-panel--class .sala-time-picker-heading,
+.sala-form-panel--schedule .sala-time-picker-heading {
+    gap: 5px;
+    margin-bottom: 14px;
+}
+
+.sala-form-panel--class .sala-time-picker-heading strong,
+.sala-form-panel--schedule .sala-time-picker-heading strong {
+    color: #384033;
+    font-size: 14px;
+}
+
+.sala-form-panel--class .sala-time-picker-heading span,
+.sala-form-panel--schedule .sala-time-picker-heading span {
+    color: #647166;
+    font-size: 12px;
+}
+
+.sala-form-panel--class .sala-time-columns,
+.sala-form-panel--schedule .sala-time-columns {
+    height: 215px;
+    grid-template-columns: 1fr 1fr 0.75fr;
+    gap: 8px;
+    padding: 8px;
+    border-color: #dce4dc;
+    border-radius: 13px;
+    background: #f0f4f0;
+}
+
+.sala-form-panel--class .sala-time-column,
+.sala-form-panel--schedule .sala-time-column {
+    max-height: none;
+    gap: 4px;
+    padding: 0;
+    scrollbar-color: #b7c7b9 transparent;
+}
+
+.sala-form-panel--class .sala-time-option,
+.sala-form-panel--schedule .sala-time-option {
+    min-height: 37px;
+    padding: 8px 4px;
+    border: 0;
+    border-radius: 9px;
+    color: #526855;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+}
+
+.sala-form-panel--class .sala-time-option:hover,
+.sala-form-panel--schedule .sala-time-option:hover {
+    border: 0;
+    background: #e0e8e0;
+}
+
+.sala-form-panel--class .sala-time-option[aria-pressed="true"],
+.sala-form-panel--schedule .sala-time-option[aria-pressed="true"] {
+    background: #526855;
+    color: #fff;
+    box-shadow: 0 3px 8px rgba(56, 64, 51, 0.16);
+}
+
+.sala-form-panel--class .sala-time-period,
+.sala-form-panel--schedule .sala-time-period {
+    justify-content: center;
+    overflow: visible;
+}
+
+.sala-form-panel--class .sala-time-actions,
+.sala-form-panel--schedule .sala-time-actions {
+    margin-top: 14px;
+}
+
+.sala-form-panel--class .sala-time-cancel,
+.sala-form-panel--class .sala-time-apply,
+.sala-form-panel--schedule .sala-time-cancel,
+.sala-form-panel--schedule .sala-time-apply {
+    min-height: 36px;
+    padding: 9px 13px;
+    border-radius: 9px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+}
+
+.sala-form-panel--class .sala-time-cancel,
+.sala-form-panel--schedule .sala-time-cancel {
+    border-color: #dce4dc;
+    background: #fff;
+    color: #526855;
+}
+
+.sala-form-panel--class .sala-time-cancel:hover,
+.sala-form-panel--schedule .sala-time-cancel:hover {
+    background: #f0f4f0;
+}
+
+.sala-form-panel--class .sala-time-apply,
+.sala-form-panel--schedule .sala-time-apply {
+    border-color: #526855;
+    background: #526855;
+}
+
+.sala-form-panel--class .sala-time-apply:hover,
+.sala-form-panel--schedule .sala-time-apply:hover {
+    background: #384033;
+}
+
+@media (max-width: 480px) {
+    .sala-form-panel--class .sala-time-popover,
+    .sala-form-panel--schedule .sala-time-popover {
+        width: 320px;
+        max-width: 88vw;
+        padding: 12px;
+    }
+
+    .sala-form-panel--class .sala-time-columns,
+    .sala-form-panel--schedule .sala-time-columns {
+        gap: 5px;
+        padding: 6px;
+    }
+}
+
+body.sala-subview-active .sala-time-popover {
+    width: 245px;
+    max-width: calc(100vw - 24px);
+    padding: 8px;
+    border-color: #d5e2d5;
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(43, 66, 46, 0.14);
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-picker-heading,
+body.sala-subview-active .sala-time-popover .sala-time-actions {
+    display: none;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-columns {
+    height: 190px;
+    grid-template-columns: 1fr 1fr 0.9fr;
+    gap: 4px;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-option {
+    min-height: 30px;
+    padding: 5px 2px;
+    font-size: 12px;
+}
+
+/* El script mueve el popup al body para evitar recortes del formulario. */
+body.sala-subview-active .sala-time-popover {
+    width: 350px;
+    max-width: min(350px, 90vw);
+    padding: 16px;
+    border-color: #dce4dc;
+    border-radius: 17px;
+    background: #fff;
+    box-shadow: 0 15px 40px rgba(35, 55, 40, 0.18);
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-picker-heading {
+    gap: 5px;
+    margin-bottom: 14px;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-picker-heading strong {
+    color: #384033;
+    font-size: 14px;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-picker-heading span {
+    color: #647166;
+    font-size: 12px;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-columns {
+    height: 215px;
+    grid-template-columns: 1fr 1fr 0.75fr;
+    gap: 8px;
+    padding: 8px;
+    border-color: #dce4dc;
+    border-radius: 13px;
+    background: #f0f4f0;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-column {
+    max-height: none;
+    gap: 4px;
+    padding: 0;
+    scrollbar-color: #b7c7b9 transparent;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-option {
+    min-height: 37px;
+    padding: 8px 4px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: #526855;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-option:hover {
+    background: #e0e8e0;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-option[aria-pressed="true"] {
+    background: #526855;
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 3px 8px rgba(56, 64, 51, 0.16);
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-period {
+    justify-content: center;
+    overflow: visible;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-actions {
+    margin-top: 14px;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-cancel,
+body.sala-subview-active .sala-time-popover .sala-time-apply {
+    min-height: 36px;
+    padding: 9px 13px;
+    border-radius: 9px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-cancel {
+    border-color: #dce4dc;
+    background: #fff;
+    color: #526855;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-cancel:hover {
+    background: #f0f4f0;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-apply {
+    border-color: #526855;
+    background: #526855;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-apply:hover {
+    background: #384033;
+}
+
+@media (max-width: 480px) {
+    body.sala-subview-active .sala-time-popover {
+        width: 320px;
+        max-width: 88vw;
+        padding: 12px;
+    }
+
+    body.sala-subview-active .sala-time-popover .sala-time-columns {
+        gap: 5px;
+        padding: 6px;
+    }
+}
+
+/* Selector de hora sencillo con acentos verdes. */
+.sala-form-panel--class .sala-time-trigger,
+.sala-form-panel--schedule .sala-time-trigger {
+    border-color: #c8d7c9;
+    background: #fff;
+}
+
+.sala-form-panel--class .sala-time-trigger i,
+.sala-form-panel--schedule .sala-time-trigger i {
+    border-radius: 50%;
+    background: #e8f0e8;
+    color: #426347;
+}
+
+.sala-form-panel--class .sala-time-trigger:hover,
+.sala-form-panel--class .sala-time-trigger[aria-expanded="true"],
+.sala-form-panel--schedule .sala-time-trigger:hover,
+.sala-form-panel--schedule .sala-time-trigger[aria-expanded="true"] {
+    border-color: #527b57;
+    background: #fff;
+    box-shadow: 0 0 0 2px rgba(82, 123, 87, 0.12);
+}
+
+body.sala-subview-active .sala-time-popover {
+    width: 310px;
+    max-width: min(310px, calc(100vw - 24px));
+    padding: 13px;
+    border: 1px solid #d5e2d5;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 10px 26px rgba(43, 66, 46, 0.16);
+    animation: none;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-picker-heading {
+    gap: 3px;
+    margin-bottom: 10px;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-picker-heading strong {
+    color: #344b37;
+    font-size: 14px;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-picker-heading span {
+    color: #718074;
+    font-size: 12px;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-columns {
+    height: 160px;
+    grid-template-columns: 1fr 1fr 0.8fr;
+    gap: 6px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-column {
+    max-height: none;
+    gap: 2px;
+    padding: 2px;
+    border-right: 1px solid #edf2ed;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-column:last-child {
+    border-right: 0;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-option {
+    min-height: 29px;
+    padding: 5px 4px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #435747;
+    font-size: 13px;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-option:hover {
+    background: #f0f5f0;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-option[aria-pressed="true"] {
+    background: #527b57;
+    color: #fff;
+    box-shadow: none;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-period {
+    justify-content: center;
+    overflow: visible;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-actions {
+    gap: 7px;
+    margin-top: 10px;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-cancel,
+body.sala-subview-active .sala-time-popover .sala-time-apply {
+    min-height: 33px;
+    padding: 6px 11px;
+    border-radius: 7px;
+    font-size: 12px;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-cancel {
+    border: 1px solid #dce7dc;
+    background: #fff;
+    color: #49634d;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-apply {
+    border: 1px solid #527b57;
+    background: #527b57;
+    color: #fff;
+}
+
+@media (max-width: 480px) {
+    body.sala-subview-active .sala-time-popover {
+        width: 290px;
+        max-width: calc(100vw - 24px);
+        padding: 11px;
+    }
+
+    body.sala-subview-active .sala-time-popover .sala-time-columns {
+        gap: 4px;
+    }
+}
+
+/* Vista final: solo hora, minutos y periodo. */
+body.sala-subview-active .sala-time-popover {
+    width: 245px;
+    max-width: calc(100vw - 24px);
+    padding: 8px;
+    border-color: #d5e2d5;
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(43, 66, 46, 0.14);
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-picker-heading,
+body.sala-subview-active .sala-time-popover .sala-time-actions {
+    display: none;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-columns {
+    height: 190px;
+    grid-template-columns: 1fr 1fr 0.9fr;
+    gap: 4px;
+}
+
+body.sala-subview-active .sala-time-popover .sala-time-option {
+    min-height: 30px;
+    padding: 5px 2px;
+    font-size: 12px;
 }

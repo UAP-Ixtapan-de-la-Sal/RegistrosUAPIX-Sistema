@@ -16,8 +16,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include 
+from inicio.views_importacion import descargar_plantilla_excel, importar_excel
 
 urlpatterns = [
+    path('admin/importar-excel/plantilla/', admin.site.admin_view(descargar_plantilla_excel), name='descargar_plantilla_excel'),
+    path('admin/importar-excel/', admin.site.admin_view(importar_excel), name='importar_excel'),
     path('admin/', admin.site.urls),
     path('', include('inicio.urls')),
 ]

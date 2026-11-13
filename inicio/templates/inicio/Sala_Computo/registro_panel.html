@@ -9,6 +9,7 @@
         </header>
 
         <main class="registros-kiosk-content">
+            <form hidden aria-hidden="true">{% csrf_token %}</form>
             <section class="registros-operation-menu" data-operation-menu aria-label="Selecciona el tipo de registro" tabindex="-1">
                 <p>Selecciona la operación que deseas realizar</p>
                 <div class="registros-operation-grid">
@@ -66,54 +67,44 @@
             </div>
             <fieldset class="registros-mode-field">
                 <legend>¿La clase está agendada?</legend>
-                <label><input type="radio" name="clase_agendada_demo" value="si" checked> Sí, seleccionar clase</label>
-                <label><input type="radio" name="clase_agendada_demo" value="no"> No, buscar clase</label>
+                <label><input type="radio" name="clase_agendada" value="si" checked> Sí, seleccionar clase</label>
+                <label><input type="radio" name="clase_agendada" value="no"> No, buscar clase</label>
             </fieldset>
 
-            <div class="registros-form-grid" data-agenda-demo>
+            <div class="registros-form-grid" data-agenda>
                 <label class="sala-form-field">
                     <span>Clase agendada para este horario</span>
-                    <select class="sala-form-control">
-                        <option>Selecciona una clase</option>
-                        <option selected>Cálculo · Grupo 301 · 10:00–11:00</option>
-                        <option>Programación · Grupo 302 · 10:00–11:00</option>
+                    <select class="sala-form-control" data-agenda-class>
+                        <option value="">Cargando clases de hoy...</option>
                     </select>
                 </label>
             </div>
 
-            <div class="registros-class-search" data-busqueda-demo hidden>
+            <div class="registros-class-search" data-class-search hidden>
                 <div class="registros-search-form">
                     <label class="sala-form-field">
                         <span>Número de cuenta del docente</span>
-                        <input class="sala-form-control" type="search" placeholder="Ej. 1234567">
+                        <input class="sala-form-control" type="search" data-search-teacher placeholder="Ej. 1234567">
                     </label>
                     <label class="sala-form-field">
                         <span>No. de grupo</span>
-                        <input class="sala-form-control" type="text" placeholder="Ej. 301">
+                        <input class="sala-form-control" type="text" data-search-group placeholder="Ej. 301">
                     </label>
                     <label class="sala-form-field">
                         <span>Materia</span>
-                        <input class="sala-form-control" type="search" placeholder="Nombre de la materia">
+                        <input class="sala-form-control" type="search" data-search-subject placeholder="Nombre de la materia">
                     </label>
-                    <button class="sala-form-submit registros-search-submit" type="button" data-demo-search>
+                    <button class="sala-form-submit registros-search-submit" type="button" data-search-classes>
                         <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Buscar clase
                     </button>
                 </div>
-                <p class="registros-demo-feedback" data-demo-feedback role="status" hidden></p>
-                <div class="registros-form-grid registros-manual-class">
-                    <label class="sala-form-field">
-                        <span>Docente</span>
-                        <input class="sala-form-control" type="text" placeholder="Nombre del docente">
-                    </label>
-                    <label class="sala-form-field">
-                        <span>Grupo</span>
-                        <input class="sala-form-control" type="text" placeholder="Número de grupo">
-                    </label>
-                    <label class="sala-form-field">
-                        <span>Materia</span>
-                        <input class="sala-form-control" type="text" placeholder="Nombre de la materia">
-                    </label>
-                </div>
+                <p class="registros-demo-feedback" data-search-feedback role="status" hidden></p>
+                <label class="sala-form-field">
+                    <span>Resultado de búsqueda</span>
+                    <select class="sala-form-control" data-search-results>
+                        <option value="">Busca y selecciona una clase</option>
+                    </select>
+                </label>
             </div>
 
             <div class="registros-section-title registros-roster-heading">
@@ -125,27 +116,12 @@
                     <thead>
                         <tr><th>No. cuenta</th><th>Nombre</th><th>Asistencia</th><th>No. equipo</th></tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td>221001</td><td>Andrea Hernández</td>
-                            <td><label class="registros-attendance"><input type="radio" name="asistencia_demo_1" checked> Asistió</label><label class="registros-attendance"><input type="radio" name="asistencia_demo_1"> Falta</label></td>
-                            <td><select class="sala-form-control"><option>Sin equipo</option><option>Computadora 1</option><option>Computadora 2</option></select></td>
-                        </tr>
-                        <tr>
-                            <td>221002</td><td>Bruno García</td>
-                            <td><label class="registros-attendance"><input type="radio" name="asistencia_demo_2" checked> Asistió</label><label class="registros-attendance"><input type="radio" name="asistencia_demo_2"> Falta</label></td>
-                            <td><select class="sala-form-control"><option>Sin equipo</option><option>Computadora 1</option><option>Computadora 2</option></select></td>
-                        </tr>
-                        <tr>
-                            <td>221003</td><td>Camila Reyes</td>
-                            <td><label class="registros-attendance"><input type="radio" name="asistencia_demo_3"> Asistió</label><label class="registros-attendance"><input type="radio" name="asistencia_demo_3" checked> Falta</label></td>
-                            <td><select class="sala-form-control"><option selected>Sin equipo</option><option>Computadora 1</option><option>Computadora 2</option></select></td>
-                        </tr>
-                    </tbody>
+                    <tbody data-class-roster></tbody>
                 </table>
             </div>
+            <p class="registros-demo-feedback" data-class-feedback role="status" aria-live="polite"></p>
             <div class="registros-form-actions">
-                <button class="sala-form-submit" type="button" data-demo-save>
+                <button class="sala-form-submit" type="button" data-register-attendance disabled>
                     <i class="fa-solid fa-check" aria-hidden="true"></i> Registrar entrada de clase
                 </button>
             </div>
@@ -157,22 +133,21 @@
                 <p>Captura los datos de la persona externa y selecciona el evento al que asiste.</p>
             </div>
             <div class="registros-form-grid">
-                <label class="sala-form-field"><span>Nombre</span><input class="sala-form-control" type="text" placeholder="Nombre(s)"></label>
-                <label class="sala-form-field"><span>Apellidos</span><input class="sala-form-control" type="text" placeholder="Apellidos"></label>
+                <label class="sala-form-field"><span>Nombre</span><input class="sala-form-control" type="text" data-event-first-name required placeholder="Nombre(s)"></label>
+                <label class="sala-form-field"><span>Apellidos</span><input class="sala-form-control" type="text" data-event-last-name required placeholder="Apellidos"></label>
                 <label class="sala-form-field">
                     <span>Evento al que asiste</span>
-                    <select class="sala-form-control"><option>Selecciona el evento</option><option>Conferencia de tecnología</option><option>Taller de marketing</option></select>
+                    <select class="sala-form-control" data-event-select required><option value="">Cargando eventos de hoy...</option></select>
                 </label>
-                <label class="sala-form-field"><span>Institución de procedencia</span><input class="sala-form-control" type="text" placeholder="Institución (opcional)"></label>
-                <label class="sala-form-field"><span>Hora de entrada</span><input class="sala-form-control" type="time" value="10:00"></label>
-                <label class="sala-form-field"><span>Fecha</span><input class="sala-form-control" type="date"></label>
+                <label class="sala-form-field"><span>Institución de procedencia</span><input class="sala-form-control" type="text" data-event-institution placeholder="Institución (opcional)"></label>
                 <label class="sala-form-field">
                     <span>No. de equipo</span>
-                    <select class="sala-form-control"><option>Sin equipo</option><option>Computadora 1</option><option>Computadora 2</option><option>Computadora 3</option></select>
+                    <select class="sala-form-control" data-event-equipment></select>
                 </label>
             </div>
+            <p class="registros-demo-feedback" data-event-feedback role="status" aria-live="polite"></p>
             <div class="registros-form-actions">
-                <button class="sala-form-submit" type="button" data-demo-save>
+                <button class="sala-form-submit" type="button" data-register-event>
                     <i class="fa-solid fa-check" aria-hidden="true"></i> Registrar asistente
                 </button>
             </div>
@@ -184,23 +159,21 @@
                 <p>Busca al alumno del plantel por su número de cuenta.</p>
             </div>
             <div class="registros-form-grid">
-                <label class="sala-form-field"><span>No. de cuenta</span><input class="sala-form-control" type="search" placeholder="Número de cuenta"></label>
-                <button class="sala-form-submit registros-lookup-button" type="button" data-demo-lookup><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Buscar alumno</button>
-                <label class="sala-form-field"><span>Nombre</span><input class="sala-form-control" type="text" placeholder="Nombre del alumno" readonly></label>
-                <label class="sala-form-field"><span>Hora de entrada</span><input class="sala-form-control" type="time" value="10:00"></label>
-                <label class="sala-form-field"><span>Fecha</span><input class="sala-form-control" type="date"></label>
+                <label class="sala-form-field"><span>No. de cuenta</span><input class="sala-form-control" type="search" data-visit-account placeholder="Número de cuenta"></label>
+                <button class="sala-form-submit registros-lookup-button" type="button" data-search-student><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Buscar alumno</button>
+                <label class="sala-form-field"><span>Nombre</span><input class="sala-form-control" type="text" data-visit-name placeholder="Nombre del alumno" readonly></label>
                 <label class="sala-form-field">
                     <span>No. de equipo</span>
-                    <select class="sala-form-control"><option>Sin equipo</option><option>Computadora 1</option><option>Computadora 2</option><option>Computadora 3</option></select>
+                    <select class="sala-form-control" data-visit-equipment></select>
                 </label>
             </div>
+            <p class="registros-demo-feedback" data-visit-feedback role="status" aria-live="polite"></p>
             <div class="registros-form-actions">
-                <button class="sala-form-submit" type="button" data-demo-save>
+                <button class="sala-form-submit" type="button" data-register-visit disabled>
                     <i class="fa-solid fa-check" aria-hidden="true"></i> Registrar visita
                 </button>
             </div>
         </div>
-        <p class="registros-demo-notice" role="status"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> Vista de diseño: los datos todavía no se guardan.</p>
     </section>
 
             <section class="registros-operation-view" data-operation-view="salida" hidden aria-labelledby="salida-title">
@@ -218,9 +191,9 @@
         <form class="registros-exit-lookup" data-exit-search-form novalidate>
             <label class="sala-form-field">
                 <span>Número de cuenta</span>
-                <input class="sala-form-control" type="search" placeholder="Ingresa tu número de cuenta" autocomplete="off">
+                <input class="sala-form-control" type="search" data-exit-identifier placeholder="Cuenta o folio de entrada (R-123)" autocomplete="off">
             </label>
-            <button type="submit" class="sala-form-submit">
+            <button type="button" class="sala-form-submit" data-search-exit>
                 <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Buscar registro
             </button>
         </form>
@@ -228,17 +201,16 @@
         <div class="registros-exit-result" data-exit-result hidden aria-live="polite">
             <div class="registros-exit-person">
                 <span class="registros-exit-avatar"><i class="fa-solid fa-user" aria-hidden="true"></i></span>
-                <div><strong>Andrea Hernández</strong><small>Cuenta: 221001 · Entrada: 10:02</small></div>
+                <div><strong data-exit-person></strong><small data-exit-details></small></div>
             </div>
             <div class="registros-exit-equipment">
-                <span>Equipo asignado</span><strong>Computadora 1</strong>
+                <span>Equipo asignado</span><strong data-exit-equipment></strong>
             </div>
-            <button class="registros-exit-button" type="button" data-confirm-exit>
+            <button class="registros-exit-button" type="button" data-register-exit>
                 <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> Registrar salida
             </button>
         </div>
         <p class="registros-demo-feedback" data-exit-feedback role="status" hidden></p>
-        <p class="registros-demo-notice" role="status"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> Vista de diseño: la búsqueda y el registro todavía no están conectados.</p>
     </section>
             </section>
         </main>
@@ -249,22 +221,83 @@
 
 <script>
     (function () {
-        const typeButtons = document.querySelectorAll('[data-registro-type]');
-        const typeSections = document.querySelectorAll('[data-registro-fields]');
+        const typeButtons = Array.from(document.querySelectorAll('[data-registro-type]'));
+        const typeSections = Array.from(document.querySelectorAll('[data-registro-fields]'));
         const typeSelectionStatus = document.querySelector('[data-type-selection-status]');
-        const agendaModes = document.querySelectorAll('input[name="clase_agendada_demo"]');
-        const agendaSection = document.querySelector('[data-agenda-demo]');
-        const searchSection = document.querySelector('[data-busqueda-demo]');
-        const globalFeedback = document.querySelector('[data-global-feedback]');
+        const agendaModes = document.querySelectorAll('input[name="clase_agendada"]');
+        const agendaSection = document.querySelector('[data-agenda]');
+        const searchSection = document.querySelector('[data-class-search]');
         const operationMenu = document.querySelector('[data-operation-menu]');
         const operationViews = document.querySelectorAll('[data-operation-view]');
+        const csrfToken = document.querySelector('[name="csrfmiddlewaretoken"]').value;
+        const classSelects = [
+            document.querySelector('[data-agenda-class]'),
+            document.querySelector('[data-search-results]'),
+        ];
+        const rosterBody = document.querySelector('[data-class-roster]');
+        const classFeedback = document.querySelector('[data-class-feedback]');
+        const classSubmit = document.querySelector('[data-register-attendance]');
+        const searchFeedback = document.querySelector('[data-search-feedback]');
+        const eventFeedback = document.querySelector('[data-event-feedback]');
+        const visitFeedback = document.querySelector('[data-visit-feedback]');
         let selectedType = null;
+        let selectedClassId = '';
+        let selectedStudentId = '';
+        let selectedExitRecordId = '';
+
+        async function requestJson(url, options) {
+            const response = await fetch(url, options || {});
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'No fue posible completar la solicitud.');
+            }
+            return data;
+        }
+
+        function apiUrl(templateUrl, params) {
+            const url = new URL(templateUrl, window.location.origin);
+            Object.keys(params || {}).forEach(function (key) {
+                url.searchParams.set(key, params[key]);
+            });
+            return url;
+        }
+
+        function postData(values) {
+            const data = new URLSearchParams(values);
+            data.set('csrfmiddlewaretoken', csrfToken);
+            return {
+                method: 'POST',
+                body: data,
+                headers: { 'X-CSRFToken': csrfToken },
+            };
+        }
+
+        function setMessage(element, message, isError) {
+            element.textContent = message;
+            element.classList.toggle('is-error', Boolean(isError));
+            if (element.hasAttribute('hidden')) element.hidden = false;
+        }
+
+        function fillSelect(select, items, placeholder, valueKey, labelKey) {
+            select.replaceChildren(new Option(placeholder, ''));
+            items.forEach(function (item) {
+                select.add(new Option(item[labelKey], item[valueKey]));
+            });
+        }
 
         function showOperation(operation) {
             operationMenu.hidden = true;
             operationViews.forEach(function (view) {
                 view.hidden = view.dataset.operationView !== operation;
             });
+        }
+
+        function clearRoster() {
+            selectedClassId = '';
+            rosterBody.replaceChildren();
+            classSubmit.disabled = true;
+            classFeedback.textContent = '';
+            classFeedback.classList.remove('is-error');
         }
 
         function resetTypeSelection() {
@@ -278,10 +311,30 @@
                 section.hidden = true;
             });
             typeSelectionStatus.textContent = 'Selecciona un tipo de entrada. Una vez seleccionado, no podrás cambiarlo durante esta sesión.';
+            clearRoster();
         }
 
         function showOperationMenu() {
             resetTypeSelection();
+            classSelects.forEach(function (select) { select.value = ''; });
+            document.querySelectorAll('input[name="clase_agendada"]').forEach(function (radio) {
+                radio.checked = radio.value === 'si';
+            });
+            updateAgendaMode();
+            document.querySelector('[data-search-teacher]').value = '';
+            document.querySelector('[data-search-group]').value = '';
+            document.querySelector('[data-search-subject]').value = '';
+            fillSelect(classSelects[1], [], 'Busca y selecciona una clase', 'id', 'nombre');
+            selectedStudentId = '';
+            selectedExitRecordId = '';
+            document.querySelector('[data-visit-account]').value = '';
+            document.querySelector('[data-visit-name]').value = '';
+            document.querySelector('[data-register-visit]').disabled = true;
+            document.querySelector('[data-event-first-name]').value = '';
+            document.querySelector('[data-event-last-name]').value = '';
+            document.querySelector('[data-event-institution]').value = '';
+            document.querySelector('[data-exit-identifier]').value = '';
+            document.querySelector('[data-exit-result]').hidden = true;
             operationMenu.hidden = false;
             operationViews.forEach(function (view) {
                 view.hidden = true;
@@ -299,9 +352,7 @@
         });
 
         function setType(type) {
-            if (selectedType !== null) {
-                return;
-            }
+            if (selectedType !== null) return;
 
             selectedType = type;
             typeButtons.forEach(function (button) {
@@ -323,91 +374,280 @@
         });
 
         function updateAgendaMode() {
-            const isScheduled = document.querySelector('input[name="clase_agendada_demo"]:checked').value === 'si';
+            const isScheduled = document.querySelector('input[name="clase_agendada"]:checked').value === 'si';
             agendaSection.hidden = !isScheduled;
             searchSection.hidden = isScheduled;
+            clearRoster();
         }
         agendaModes.forEach(function (radio) {
             radio.addEventListener('change', updateAgendaMode);
         });
         updateAgendaMode();
 
-        const exitSearchForm = document.querySelector('[data-exit-search-form]');
-        const exitAccountInput = exitSearchForm.querySelector('input');
-        const exitResult = document.querySelector('[data-exit-result]');
-        const exitFeedback = document.querySelector('[data-exit-feedback]');
-        const exitConfirmButton = document.querySelector('[data-confirm-exit]');
+        async function loadRoster(classId) {
+            clearRoster();
+            if (!classId) return;
+            selectedClassId = classId;
+            classFeedback.textContent = 'Cargando alumnos y equipos...';
+            try {
+                const result = await requestJson(apiUrl('{% url "alumnos_clase_registro" %}', { clase: classId }));
+                result.alumnos.forEach(function (alumno) {
+                    const row = document.createElement('tr');
+                    const accountCell = document.createElement('td');
+                    const nameCell = document.createElement('td');
+                    const attendanceCell = document.createElement('td');
+                    const equipmentCell = document.createElement('td');
+                    const attendance = document.createElement('select');
+                    const equipment = document.createElement('select');
 
-        exitSearchForm.addEventListener('submit', function (event) {
-            event.preventDefault();
-            const account = exitAccountInput.value.trim();
-            exitResult.hidden = true;
-            exitFeedback.hidden = false;
-
-            if (!account) {
-                exitFeedback.textContent = 'Ingresa tu número de cuenta para buscar una sesión activa.';
-                exitAccountInput.focus();
-                return;
+                    accountCell.textContent = alumno.matricula || '—';
+                    nameCell.textContent = alumno.nombre;
+                    attendance.className = 'sala-form-control';
+                    attendance.dataset.attendanceState = '';
+                    attendance.dataset.alumnoId = alumno.id;
+                    attendance.add(new Option('Selecciona', ''));
+                    attendance.add(new Option('Asistió', 'Asistió'));
+                    attendance.add(new Option('Falta', 'Falta'));
+                    equipment.className = 'sala-form-control';
+                    equipment.dataset.attendanceEquipment = '';
+                    equipment.add(new Option('Sin equipo', ''));
+                    result.equipos.forEach(function (item) {
+                        equipment.add(new Option(item.nombre, item.id));
+                    });
+                    equipment.disabled = true;
+                    attendance.addEventListener('change', function () {
+                        equipment.disabled = attendance.value !== 'Asistió';
+                        if (equipment.disabled) equipment.value = '';
+                        updateEquipmentAvailability();
+                    });
+                    equipment.addEventListener('change', updateEquipmentAvailability);
+                    attendanceCell.appendChild(attendance);
+                    equipmentCell.appendChild(equipment);
+                    row.append(accountCell, nameCell, attendanceCell, equipmentCell);
+                    rosterBody.appendChild(row);
+                });
+                classFeedback.textContent = result.alumnos.length
+                    ? 'Selecciona asistencia para cada alumno. El equipo es opcional.'
+                    : 'La clase no tiene alumnos registrados en su grupo.';
+                classSubmit.disabled = result.alumnos.length === 0;
+                updateEquipmentAvailability();
+            } catch (error) {
+                selectedClassId = '';
+                setMessage(classFeedback, error.message, true);
             }
+        }
 
-            if (account === '221001') {
-                exitResult.hidden = false;
-                exitFeedback.hidden = true;
-                return;
-            }
-
-            exitFeedback.textContent = 'No encontramos una sesión activa para esa cuenta. Verifica el número e inténtalo de nuevo.';
-        });
-
-        exitConfirmButton.addEventListener('click', function () {
-            window.confirmarAccion('Esta demostración no guardará cambios. ¿Deseas continuar con el registro de salida?', {
-                title: 'Confirmar salida',
-                acceptText: 'Registrar salida',
-            }).then(function (accepted) {
-                if (!accepted) return;
-                exitResult.hidden = true;
-                exitFeedback.textContent = 'Salida registrada en la demostración. El equipo quedó disponible.';
-                exitFeedback.hidden = false;
-            }).catch(function (error) {
-                console.error('No se pudo mostrar la confirmación de salida.', error);
-            });
-        });
-
-        document.querySelectorAll('[data-demo-save]').forEach(function (button) {
-            button.addEventListener('click', function () {
-                const action = button.textContent.trim().replace(/\s+/g, ' ').toLocaleLowerCase('es');
-                window.confirmarAccion('Esta acción es una demostración y no guardará información. ¿Deseas continuar con "' + action + '"?', {
-                    title: 'Confirmar demostración',
-                    acceptText: 'Continuar',
-                }).then(function(accepted) {
-                    if (!accepted) return;
-                    globalFeedback.textContent = 'Vista de diseño: el registro todavía no se guarda.';
-                    globalFeedback.hidden = false;
-                }).catch(function(error) {
-                    console.error('No se pudo mostrar la confirmación de demostración.', error);
+        function updateEquipmentAvailability() {
+            const selectors = Array.from(rosterBody.querySelectorAll('[data-attendance-equipment]'));
+            const assigned = new Set(selectors.map(function (select) { return select.value; }).filter(Boolean));
+            selectors.forEach(function (select) {
+                Array.from(select.options).forEach(function (option) {
+                    option.disabled = Boolean(option.value && assigned.has(option.value) && option.value !== select.value);
                 });
             });
-        });
-        document.querySelectorAll('[data-demo-search], [data-demo-lookup]').forEach(function (button) {
-            button.addEventListener('click', function () {
-                const feedback = button.closest('[data-busqueda-demo]')?.querySelector('[data-demo-feedback]');
-                if (feedback) {
-                    feedback.textContent = 'La búsqueda se conectará cuando se implemente la lógica.';
-                    feedback.hidden = false;
-                } else {
-                    globalFeedback.textContent = 'La búsqueda se conectará cuando se implemente la lógica.';
-                    globalFeedback.hidden = false;
-                }
-            });
-        });
-        const exitSearch = document.querySelector('[data-demo-exit-search]');
-        if (exitSearch) {
-            exitSearch.addEventListener('click', function () {
-                const feedback = document.querySelector('[data-exit-feedback]');
-                feedback.textContent = 'Búsqueda de ejemplo: se conectará cuando se implemente la lógica.';
-                feedback.hidden = false;
-                document.querySelector('[data-exit-result]').hidden = false;
-            });
         }
+
+        classSelects.forEach(function (select) {
+            select.addEventListener('change', function () {
+                classSelects.forEach(function (other) {
+                    if (other !== select) other.value = '';
+                });
+                loadRoster(select.value);
+            });
+        });
+
+        document.querySelector('[data-search-classes]').addEventListener('click', async function () {
+            searchFeedback.textContent = '';
+            const params = {
+                docente: document.querySelector('[data-search-teacher]').value.trim(),
+                grupo: document.querySelector('[data-search-group]').value.trim(),
+                materia: document.querySelector('[data-search-subject]').value.trim(),
+            };
+            try {
+                const result = await requestJson(apiUrl('{% url "buscar_clases_registro" %}', params));
+                fillSelect(classSelects[1], result.clases, 'Selecciona una clase', 'id', 'nombre');
+                setMessage(searchFeedback, result.clases.length
+                    ? 'Selecciona una clase para cargar su lista.'
+                    : 'No se encontraron clases para hoy con esos datos.', false);
+            } catch (error) {
+                fillSelect(classSelects[1], [], 'Busca y selecciona una clase', 'id', 'nombre');
+                setMessage(searchFeedback, error.message, true);
+            }
+        });
+
+        async function loadInitialOptions() {
+            try {
+                const result = await requestJson('{% url "clases_registro" %}');
+                fillSelect(classSelects[0], result.clases, 'Selecciona una clase de hoy', 'id', 'nombre');
+            } catch (error) {
+                fillSelect(classSelects[0], [], 'No fue posible cargar las clases', 'id', 'nombre');
+                setMessage(classFeedback, error.message, true);
+            }
+            try {
+                const result = await requestJson('{% url "eventos_registro" %}');
+                fillSelect(document.querySelector('[data-event-select]'), result.eventos, 'Selecciona el evento de hoy', 'id', 'nombre');
+            } catch (error) {
+                fillSelect(document.querySelector('[data-event-select]'), [], 'No fue posible cargar eventos', 'id', 'nombre');
+                setMessage(eventFeedback, error.message, true);
+            }
+            try {
+                const result = await requestJson('{% url "equipos_sala" %}');
+                [
+                    document.querySelector('[data-event-equipment]'),
+                    document.querySelector('[data-visit-equipment]'),
+                ].forEach(function (select) {
+                    fillSelect(select, result.equipos, 'Sin equipo', 'id', 'nombre');
+                });
+            } catch (error) {
+                setMessage(eventFeedback, error.message, true);
+                setMessage(visitFeedback, error.message, true);
+            }
+        }
+
+        function equipmentValue(selector) {
+            return document.querySelector(selector).value;
+        }
+
+        document.querySelector('[data-register-attendance]').addEventListener('click', async function () {
+            const rows = Array.from(rosterBody.querySelectorAll('tr'));
+            const attendance = rows.map(function (row) {
+                return {
+                    alumno_id: row.querySelector('[data-attendance-state]').dataset.alumnoId,
+                    estado: row.querySelector('[data-attendance-state]').value,
+                    equipo_id: row.querySelector('[data-attendance-equipment]').value,
+                };
+            });
+            if (!selectedClassId || !rows.length || attendance.some(function (item) { return !item.estado; })) {
+                setMessage(classFeedback, 'Selecciona asistencia o falta para cada alumno antes de registrar.', true);
+                return;
+            }
+            this.disabled = true;
+            try {
+                const result = await requestJson('{% url "registrar_asistencia_sala" %}', postData({
+                    clase_id: selectedClassId,
+                    asistencias: JSON.stringify(attendance),
+                }));
+                setMessage(classFeedback, 'Se guardó la asistencia de ' + result.total + ' alumnos.', false);
+                rosterBody.replaceChildren();
+                selectedClassId = '';
+            } catch (error) {
+                setMessage(classFeedback, error.message, true);
+            } finally {
+                this.disabled = !selectedClassId || !rosterBody.querySelector('tr');
+            }
+        });
+
+        document.querySelector('[data-search-student]').addEventListener('click', async function () {
+            const account = document.querySelector('[data-visit-account]').value.trim();
+            selectedStudentId = '';
+            document.querySelector('[data-visit-name]').value = '';
+            document.querySelector('[data-register-visit]').disabled = true;
+            visitFeedback.textContent = '';
+            try {
+                const result = await requestJson(apiUrl('{% url "buscar_alumno_sala" %}', { cuenta: account }));
+                selectedStudentId = result.persona_id;
+                document.querySelector('[data-visit-name]').value = result.nombre;
+                document.querySelector('[data-register-visit]').disabled = false;
+                setMessage(visitFeedback, 'Alumno encontrado.', false);
+            } catch (error) {
+                setMessage(visitFeedback, error.message, true);
+            }
+        });
+
+        document.querySelector('[data-register-visit]').addEventListener('click', async function () {
+            if (!selectedStudentId) {
+                setMessage(visitFeedback, 'Busca primero al alumno por su número de cuenta.', true);
+                return;
+            }
+            this.disabled = true;
+            try {
+                const result = await requestJson('{% url "registrar_entrada_sala" %}', postData({
+                    tipo: 'visita',
+                    persona_id: selectedStudentId,
+                    equipo_id: equipmentValue('[data-visit-equipment]'),
+                }));
+                setMessage(visitFeedback, 'Entrada registrada. Folio: R-' + result.registro_id + '.', false);
+                selectedStudentId = '';
+                document.querySelector('[data-visit-account]').value = '';
+                document.querySelector('[data-visit-name]').value = '';
+            } catch (error) {
+                setMessage(visitFeedback, error.message, true);
+            } finally {
+                this.disabled = !selectedStudentId;
+            }
+        });
+
+        document.querySelector('[data-register-event]').addEventListener('click', async function () {
+            const nombre = document.querySelector('[data-event-first-name]').value.trim();
+            const apellidos = document.querySelector('[data-event-last-name]').value.trim();
+            const evento = document.querySelector('[data-event-select]').value;
+            if (!nombre || !apellidos || !evento) {
+                setMessage(eventFeedback, 'Completa nombre, apellidos y selecciona el evento.', true);
+                return;
+            }
+            this.disabled = true;
+            try {
+                const result = await requestJson('{% url "registrar_entrada_sala" %}', postData({
+                    tipo: 'evento',
+                    evento_id: evento,
+                    nombre: nombre,
+                    apellidos: apellidos,
+                    institucion: document.querySelector('[data-event-institution]').value.trim(),
+                    equipo_id: equipmentValue('[data-event-equipment]'),
+                }));
+                setMessage(eventFeedback, 'Entrada registrada. Entrega este folio para registrar la salida: R-' + result.registro_id + '.', false);
+                document.querySelector('[data-event-first-name]').value = '';
+                document.querySelector('[data-event-last-name]').value = '';
+                document.querySelector('[data-event-institution]').value = '';
+            } catch (error) {
+                setMessage(eventFeedback, error.message, true);
+            } finally {
+                this.disabled = false;
+            }
+        });
+
+        const exitResult = document.querySelector('[data-exit-result]');
+        const exitFeedback = document.querySelector('[data-exit-feedback]');
+        document.querySelector('[data-search-exit]').addEventListener('click', async function () {
+            const identifier = document.querySelector('[data-exit-identifier]').value.trim();
+            const params = identifier.match(/^R-(\d+)$/i)
+                ? { folio: identifier.match(/^R-(\d+)$/i)[1] }
+                : { cuenta: identifier };
+            selectedExitRecordId = '';
+            exitResult.hidden = true;
+            exitFeedback.textContent = '';
+            try {
+                const result = await requestJson(apiUrl('{% url "buscar_salida_sala" %}', params));
+                selectedExitRecordId = result.registro_id;
+                document.querySelector('[data-exit-person]').textContent = result.nombre;
+                document.querySelector('[data-exit-details]').textContent =
+                    'Cuenta: ' + (result.cuenta || 'No aplica') + ' · Entrada: ' + result.entrada;
+                document.querySelector('[data-exit-equipment]').textContent = result.equipo;
+                exitResult.hidden = false;
+            } catch (error) {
+                setMessage(exitFeedback, error.message, true);
+                exitResult.hidden = true;
+            }
+        });
+
+        document.querySelector('[data-register-exit]').addEventListener('click', async function () {
+            if (!selectedExitRecordId) return;
+            this.disabled = true;
+            try {
+                await requestJson('{% url "registrar_salida_sala" %}', postData({
+                    registro_id: selectedExitRecordId,
+                }));
+                setMessage(exitFeedback, 'Salida registrada. El equipo quedó disponible.', false);
+                exitResult.hidden = true;
+                selectedExitRecordId = '';
+                document.querySelector('[data-exit-identifier]').value = '';
+            } catch (error) {
+                setMessage(exitFeedback, error.message, true);
+            } finally {
+                this.disabled = false;
+            }
+        });
+
+        loadInitialOptions();
     })();
 </script>
