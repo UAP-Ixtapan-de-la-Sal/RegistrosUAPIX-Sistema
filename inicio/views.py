@@ -224,3 +224,24 @@ def buscar_ponente_sala_view(request):
 def auditoria_reportes_view(request):
     # Lógica para la vista de auditoría y reportes
     return render(request, 'inicio/auditoria_reportes.html')
+# ==================================================
+# MÓDULO AUTOACCESO
+# ==================================================
+
+@login_required
+def autoacceso_view(request):
+
+    if not (
+        request.user.is_superuser
+        or request.user.mod_auto_acceso
+    ):
+        messages.error(
+            request,
+            "No tienes permisos para acceder al módulo AutoAcceso."
+        )
+        return redirect('homePage')
+
+    return render(
+        request,
+        'inicio/AutoAcceso/autoacceso.html'
+    )

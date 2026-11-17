@@ -1,0 +1,275 @@
+
+<!-- ==========================================
+     REGISTRO DE ENTRADA | AUTOACCESO UAPIX
+     ========================================== -->
+
+<div class="aa-form-page">
+
+    <!-- ENCABEZADO -->
+    <div class="aa-form-header">
+
+        <button type="button"
+                class="aa-btn-regresar"
+                onclick="aaMostrar('registros')">
+            <i class="fa-solid fa-arrow-left"></i>
+            Regresar
+        </button>
+
+        <h1>Registro de Entrada</h1>
+
+        <button type="button"
+                class="aa-btn-cerrar"
+                onclick="aaMostrar('registros')"
+                aria-label="Cerrar formulario">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+    </div>
+
+    <!-- FORMULARIO -->
+    <form class="aa-form-card aa-form-demo"
+          id="aaFormularioEntrada">
+
+        <!-- FILA: MOTIVO, HORA Y FECHA -->
+        <div class="aa-grid-3">
+
+            <!-- MOTIVO DE USO -->
+            <div class="aa-campo">
+                <label for="aaMotivoUso">Motivo de uso:</label>
+
+                <select id="aaMotivoUso"
+                        name="motivo_uso"
+                        onchange="aaCambiarMotivo()"
+                        required>
+
+                    <option value="visita">
+                        Visita (uso de PC)
+                    </option>
+
+                    <option value="conversacion">
+                        Conversación
+                    </option>
+
+                    <option value="clase">
+                        Clase
+                    </option>
+
+                </select>
+            </div>
+
+            <!-- HORA DE ENTRADA: MISMO RELOJ QUE REGISTRO DE CLASE -->
+            <div class="aa-campo aa-hora-campo">
+                <label for="aaHoraEntrada">Hora Entrada:</label>
+                <div class="aa-entrada-hora-personalizada">
+                    <input type="text" id="aaHoraEntrada" name="hora_entrada"
+                           class="aa-entrada-hora-input" placeholder="Selecciona una hora"
+                           autocomplete="off" readonly required>
+                    <button type="button" class="aa-entrada-hora-boton"
+                            aria-label="Seleccionar hora de entrada" aria-expanded="false">
+                        <i class="fa-regular fa-clock"></i>
+                    </button>
+                    <div class="aa-entrada-reloj-popup" hidden>
+                        <div class="aa-entrada-reloj-titulo">Hora de entrada</div>
+                        <div class="aa-entrada-reloj-controles">
+                            <select class="aa-entrada-reloj-horas" aria-label="Horas"></select>
+                            <span>:</span>
+                            <select class="aa-entrada-reloj-minutos" aria-label="Minutos"></select>
+                            <select class="aa-entrada-reloj-periodo" aria-label="Periodo">
+                                <option value="AM">a. m.</option>
+                                <option value="PM">p. m.</option>
+                            </select>
+                        </div>
+                        <button type="button" class="aa-entrada-reloj-aceptar">Aceptar</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FECHA -->
+            <div class="aa-campo">
+
+                <label for="aaFechaEntrada">
+                    FECHA:
+                </label>
+
+                <input
+                    type="date"
+                    id="aaFechaEntrada"
+                    name="fecha_entrada"
+                    required
+                >
+
+            </div>
+
+        </div>
+
+        <!-- NÚMERO DE CUENTA -->
+        <div class="aa-cuenta-fila">
+
+            <div class="aa-campo">
+
+                <label for="aaNumeroCuenta">
+                    No. Cuenta:
+                </label>
+
+                <div class="aa-buscador">
+
+                    <input
+                        type="text"
+                        id="aaNumeroCuenta"
+                        name="numero_cuenta"
+                        placeholder="Ingresa tu número de cuenta"
+                        autocomplete="off"
+                        required
+                    >
+
+                    <button
+                        type="button"
+                        aria-label="Buscar número de cuenta"
+                        onclick="aaAviso('Búsqueda de usuario')">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+
+                </div>
+
+            </div>
+
+            <span class="aa-lectura-indicador">
+                Datos de solo lectura
+            </span>
+
+        </div>
+
+        <!-- INFORMACIÓN DEL USUARIO -->
+        <div class="aa-datos-lectura">
+
+            <div>
+                <span>Nombre:</span>
+                <strong id="aaNombreUsuario">—</strong>
+            </div>
+
+            <div>
+                <span>Usuario:</span>
+                <strong id="aaTipoUsuario">—</strong>
+            </div>
+
+        </div>
+
+        <!-- EQUIPO DE CÓMPUTO -->
+        <div class="aa-equipo-fila">
+
+            <div class="aa-equipo-pregunta">
+
+                <span>
+                    ¿Necesitas equipo de cómputo?
+                </span>
+
+                <label>
+                    <input
+                        type="radio"
+                        name="aaNecesitaEquipo"
+                        value="si"
+                        checked
+                        onchange="aaCambiarEquipo()"
+                    >
+                    Sí
+                </label>
+
+                <label>
+                    <input
+                        type="radio"
+                        name="aaNecesitaEquipo"
+                        value="no"
+                        onchange="aaCambiarEquipo()"
+                    >
+                    No
+                </label>
+
+            </div>
+
+            <!-- SE OCULTA CUANDO SELECCIONA NO -->
+            <div class="aa-equipo-selector"
+                 id="aaSelectorEquipo">
+
+                <label for="aaNumeroEquipo">
+                    No. de Equipo:
+                </label>
+
+                <select
+                    id="aaNumeroEquipo"
+                    name="numero_equipo"
+                    required>
+
+                    <option value="">
+                        Selecciona un equipo
+                    </option>
+
+                    <option value="PC-01">PC-01</option>
+                    <option value="PC-02">PC-02</option>
+                    <option value="PC-03">PC-03</option>
+                    <option value="PC-04">PC-04</option>
+                    <option value="PC-05">PC-05</option>
+                    <option value="PC-06">PC-06</option>
+                    <option value="PC-07">PC-07</option>
+                    <option value="PC-08">PC-08</option>
+                    <option value="PC-09">PC-09</option>
+                    <option value="PC-10">PC-10</option>
+                    <option value="PC-11">PC-11</option>
+                    <option value="PC-12">PC-12</option>
+                    <option value="PC-13">PC-13</option>
+                    <option value="PC-14">PC-14</option>
+                    <option value="PC-15">PC-15</option>
+                    <option value="PC-16">PC-16</option>
+                    <option value="PC-17">PC-17</option>
+                    <option value="PC-18">PC-18</option>
+                    <option value="PC-19">PC-19</option>
+                    <option value="PC-20">PC-20</option>
+                    <option value="PC-21">PC-21</option>
+                    <option value="PC-22">PC-22</option>
+                    <option value="PC-23">PC-23</option>
+                    <option value="PC-24">PC-24</option>
+                    <option value="PC-25">PC-25</option>
+                    <option value="PC-26">PC-26</option>
+                    <option value="PC-27">PC-27</option>
+                    <option value="PC-28">PC-28</option>
+                    <option value="PC-29">PC-29</option>
+                    <option value="PC-30">PC-30</option>
+
+                </select>
+
+            </div>
+
+        </div>
+
+        <!-- DESCRIPCIÓN -->
+        <div class="aa-campo aa-descripcion">
+
+            <label for="aaDescripcionActividad">
+                Descripción de la actividad:
+            </label>
+
+            <textarea
+                id="aaDescripcionActividad"
+                name="descripcion_actividad"
+                rows="4"
+                placeholder="Describe brevemente la actividad que realizarás"
+            ></textarea>
+
+        </div>
+
+        <!-- GUARDAR -->
+        <div class="aa-form-acciones">
+
+            <button
+                type="submit"
+                class="aa-btn-guardar">
+
+                <i class="fa-solid fa-floppy-disk"></i>
+                Guardar
+
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
