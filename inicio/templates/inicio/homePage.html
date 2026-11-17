@@ -50,12 +50,14 @@
                 </a>
             {% endif %}
 
-            <a class="bento-card autoacceso-card" href="{% url 'autoacceso' %}">
-    <div class="card-icon-slot">
-        <i class="fa-solid fa-chalkboard-user"></i>
-    </div>
-    <div class="card-title">Auto Acceso</div>
-</a>
+            {% if request.user.mod_auto_acceso or request.user.is_superuser %}
+                <a class="bento-card" href="{% url 'auto_acceso' %}">
+                    <div class="card-icon-slot">
+                        <i class="fa-solid fa-chalkboard-user"></i>
+                    </div>
+                    <div class="card-title">Auto Acceso</div>
+                </a>
+            {% endif %}
 
             {% if request.user.mod_biblioteca or request.user.is_superuser %}
                 <a class="bento-card" href="#">

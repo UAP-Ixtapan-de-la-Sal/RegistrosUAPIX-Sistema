@@ -430,6 +430,10 @@ body.sala-subview-active .sala-form-panel--class .sala-form-heading {
     gap: 7px;
 }
 
+.sala-form-field[hidden] {
+    display: none;
+}
+
 .sala-docente-name-field {
     margin-top: 8px;
     display: flex;

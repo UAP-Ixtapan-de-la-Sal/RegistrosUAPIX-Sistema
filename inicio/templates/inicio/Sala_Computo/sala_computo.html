@@ -6,7 +6,7 @@
 {% block body_class %}sala-computo-body{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'inicio/css/salacomputo/salacomputo.css' %}?v=20261110-compact-schedule-footer">
+<link rel="stylesheet" href="{% static 'inicio/css/salacomputo/salacomputo.css' %}?v=20261112-event-speaker-toggle">
 <link rel="stylesheet" href="{% static 'inicio/css/salacomputo/registros.css' %}?v=20261109-event-heading">
 {% endblock %}
 
@@ -56,23 +56,25 @@
             <div class="sala-equipment-counts">
                 <div class="sala-equipment-count sala-equipment-occupied">
                     <span class="sala-count-dot" aria-hidden="true"></span>
-                    <strong>12</strong>
+                    <strong>{{ equipos_ocupados }}</strong>
                     <span>Ocupados</span>
                 </div>
                 <div class="sala-equipment-count sala-equipment-available">
                     <span class="sala-count-dot" aria-hidden="true"></span>
-                    <strong>18</strong>
+                    <strong>{{ equipos_disponibles }}</strong>
                     <span>Disponibles</span>
                 </div>
-                <div class="sala-equipment-progress" role="progressbar" aria-label="Equipos ocupados" aria-valuemin="0" aria-valuemax="30" aria-valuenow="12">
-                    <span></span>
+                <div class="sala-equipment-progress" role="progressbar" aria-label="Equipos ocupados" aria-valuemin="0" aria-valuemax="{{ equipos_total }}" aria-valuenow="{{ equipos_ocupados }}">
+                    <span style="width: {{ equipos_ocupados_porcentaje }}%"></span>
                 </div>
-                <span class="sala-equipment-total">30 equipos en total</span>
+                <span class="sala-equipment-total">{{ equipos_total }} equipos en total</span>
             </div>
+            {% if not equipos_total %}
             <p class="sala-demo-note">
                 <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
-                Datos de ejemplo; aún no están conectados al estado real de los equipos.
+                No hay equipos de Sala registrados en la base de datos.
             </p>
+            {% endif %}
         </section>
 
         <section class="sala-tools-panel" aria-labelledby="salaToolsTitle">
@@ -132,11 +134,6 @@
                     <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver al panel
                 </button>
             </div>
-
-            <p class="sala-demo-note sala-session-demo-note">
-                <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
-                Datos de ejemplo para la maqueta; los filtros y la exportación usan únicamente estos registros.
-            </p>
 
             <section class="sala-history-filter-panel" aria-label="Filtros del historial">
                 <div class="sala-history-filter-heading">
@@ -227,26 +224,16 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr data-module="VISITA" data-date="2026-10-02">
-                            <td>Viernes 2-10-2026</td><td>10 AM–12 PM</td><td>VISITA</td>
-                            <td>Alumna Ana 123456</td><td>Uso de computadora</td><td>Computadora 5</td>
+                        {% for registro in historial_registros %}
+                        <tr data-module="{% if registro.observaciones %}OBSERVACIONES{% else %}{{ registro.tipo_registro|upper }}{% endif %}" data-date="{{ registro.fecha|date:'Y-m-d' }}">
+                            <td>{{ registro.fecha|date:'l j-n-Y' }}</td>
+                            <td>{{ registro.hora_entrada|time:'H:i' }}–{% if registro.hora_salida %}{{ registro.hora_salida|time:'H:i' }}{% else %}Activa{% endif %}</td>
+                            <td>{% if registro.observaciones %}OBSERVACIONES{% else %}{{ registro.get_tipo_registro_display|default:'—' }}{% endif %}</td>
+                            <td>{% if registro.persona_id %}{{ registro.persona }}{% elif registro.externo_id %}{{ registro.externo }}{% else %}Sin identificar{% endif %}</td>
+                            <td>{% if registro.clase_id %}{{ registro.clase.materia }} · {{ registro.clase.grupo }}{% elif registro.evento_id %}{{ registro.evento.nombre_evento }}{% else %}{{ registro.observaciones|default:'Uso de equipo' }}{% endif %}</td>
+                            <td>{{ registro.equipo.no_equipo|default:'Sin equipo' }}</td>
                         </tr>
-                        <tr data-module="CLASE" data-date="2026-10-03">
-                            <td>Sábado 3-10-2026</td><td>7 AM–9 AM</td><td>CLASE</td>
-                            <td>Grupo 12</td><td>Materia: Cálculo</td><td>Computadora 12</td>
-                        </tr>
-                        <tr data-module="CLASE" data-date="2026-10-04">
-                            <td>Domingo 4-10-2026</td><td>11 AM–12 PM</td><td>CLASE</td>
-                            <td>Alumna Ana 123456</td><td>Docente: Dra. García · Asistencia: 25</td><td>Computadora 8</td>
-                        </tr>
-                        <tr data-module="EVENTO" data-date="2026-10-05">
-                            <td>Lunes 5-10-2026</td><td>7 PM–9 PM</td><td>EVENTO</td>
-                            <td>Taller de Marketing</td><td>Ponente: Lic. Martínez · Asistentes: 15</td><td>Proyector 1</td>
-                        </tr>
-                        <tr data-module="OBSERVACIONES" data-date="2026-10-06">
-                            <td>Martes 6-10-2026</td><td>10 AM</td><td>OBSERVACIONES</td>
-                            <td>Fernández 1234567</td><td>Teclado con teclas faltantes</td><td>Computadora 1</td>
-                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
                 <p id="historyEmptyState" class="sala-history-empty sala-view-hidden">No hay registros que coincidan con los filtros seleccionados.</p>
@@ -270,10 +257,12 @@
 
             <p class="sala-demo-note sala-session-demo-note">
                 <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
-                Interfaz de demostración: el registro no se guarda en el sistema.
+                Los reportes se guardan y quedan relacionados con el equipo y, si se identifica, con su registro de uso.
             </p>
 
-            <form id="incidentDemoForm" class="sala-incident-form" data-confirm-submit data-confirm-message="Esta es una maqueta y no guardará información. ¿Deseas continuar con la demostración del registro?">
+            <form id="incidentDemoForm" class="sala-incident-form">
+                {% csrf_token %}
+                <input id="incidentRelatedRecord" type="hidden" name="registro_id">
                 <section class="sala-incident-section is-active" data-incident-step="1">
                     <h3 class="sala-incident-section-title">
                         <button class="sala-incident-step-trigger" type="button" aria-expanded="true" aria-controls="incidentStepBody1">
@@ -286,11 +275,8 @@
                         <div class="sala-incident-search">
                             <label class="sala-history-field sala-incident-equipment-field" for="incidentEquipment">
                                 <span>Número de PC</span>
-                                <select id="incidentEquipment" class="sala-form-control" required>
+                                <select id="incidentEquipment" name="equipo_id" class="sala-form-control" required>
                                     <option value="">Selecciona el equipo afectado</option>
-                                    <option value="pc-01" data-asset="BP-001">PC-01</option>
-                                    <option value="pc-02" data-asset="BP-002">PC-02</option>
-                                    <option value="pc-03" data-asset="BP-003">PC-03</option>
                                 </select>
                             </label>
                         </div>
@@ -310,7 +296,7 @@
                         <div class="sala-incident-search sala-incident-history-search">
                             <label class="sala-history-field" for="incidentUsageDate">
                                 <span>Fecha del uso</span>
-                                <input id="incidentUsageDate" class="sala-form-control" type="date" value="2026-10-06">
+                                <input id="incidentUsageDate" class="sala-form-control" type="date" value="{{ fecha_hoy }}">
                             </label>
                             <label class="sala-history-field" for="incidentModule">
                                 <span>Tipo de registro</span>
@@ -333,18 +319,6 @@
                                         <tr><th>Hora</th><th>Tipo</th><th>Persona registrada</th><th>No. de cuenta</th><th scope="col" aria-label="Acción"></th></tr>
                                     </thead>
                                     <tbody id="incidentHistoryResults">
-                                        <tr data-date="2026-10-06" data-equipment="pc-01" data-type="CLASE" data-time="09:00–10:00" data-person="Andrea Hernández" data-account="221001">
-                                            <td>09:00–10:00</td><td>Clase</td><td>Andrea Hernández</td><td>221001</td>
-                                            <td><button type="button" class="sala-incident-select-record">Usó esta PC</button></td>
-                                        </tr>
-                                        <tr data-date="2026-10-06" data-equipment="pc-01" data-type="CLASE" data-time="10:00–11:00" data-person="Luis Méndez" data-account="221014">
-                                            <td>10:00–11:00</td><td>Clase</td><td>Luis Méndez</td><td>221014</td>
-                                            <td><button type="button" class="sala-incident-select-record">Usó esta PC</button></td>
-                                        </tr>
-                                        <tr data-date="2026-10-06" data-equipment="pc-02" data-type="EVENTO" data-time="11:00–12:00" data-person="Asistente externo" data-account="">
-                                            <td>11:00–12:00</td><td>Evento</td><td>Asistente externo</td><td>Sin cuenta</td>
-                                            <td><button type="button" class="sala-incident-select-record">Usó esta PC</button></td>
-                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -372,24 +346,24 @@
                             <div><span>PC afectada</span><strong id="incidentReadonlyEquipment">Selecciona una PC</strong></div>
                             <div><span>Bien patrimonial</span><strong id="incidentReadonlyAsset">—</strong></div>
                             <div><span>Persona usuaria</span><strong id="incidentReadonlyIdentity">No identificada</strong></div>
-                            <div><span>Responsable</span><strong>Encargado que registra</strong></div>
+                            <div><span>Responsable</span><strong>{% if request.user.is_authenticated %}{{ request.user.username }}{% else %}Encargado no identificado{% endif %}</strong></div>
                             <div><span>No. de cuenta</span><strong id="incidentReadonlyAccount">—</strong></div>
                             <div><span>Hora de uso</span><strong id="incidentReadonlyTime">—</strong></div>
                         </fieldset>
                         <div class="sala-incident-search">
                             <label class="sala-history-field" for="incidentDetectionMoment">
                                 <span>¿Cuándo se detectó?</span>
-                                <select id="incidentDetectionMoment" class="sala-form-control" required>
+                                <select id="incidentDetectionMoment" name="momento_deteccion" class="sala-form-control" required>
                                     <option value="">Selecciona</option>
-                                    <option>Durante el uso</option>
-                                    <option>Al finalizar el uso</option>
-                                    <option>Después del evento o visita</option>
+                                    <option value="durante_uso">Durante el uso</option>
+                                    <option value="al_finalizar">Al finalizar el uso</option>
+                                    <option value="despues_actividad">Después del evento o visita</option>
                                 </select>
                             </label>
                         </div>
                         <label class="sala-history-field" for="incidentDescription">
                             <span>Descripción</span>
-                            <textarea id="incidentDescription" class="sala-form-control" rows="3" placeholder="Describe qué falla observó el encargado." required></textarea>
+                            <textarea id="incidentDescription" name="descripcion" class="sala-form-control" rows="3" placeholder="Describe qué falla observó el encargado." required></textarea>
                         </label>
                         <div class="sala-incident-submit">
                             <button class="sala-form-submit" type="submit">
@@ -489,7 +463,7 @@
         document.getElementById('registrosView').classList.remove('sala-view-hidden');
         document.getElementById('salaKioskButton').setAttribute('aria-expanded', 'true');
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        document.getElementById('registrosTitle').focus();
+        document.querySelector('[data-operation-menu]').focus();
     }
 
     function regresarDeRegistros() {
@@ -709,19 +683,14 @@
         const downloadLink = document.createElement('a');
 
         downloadLink.href = downloadUrl;
-        downloadLink.download = 'historial-sala-computo-demo.csv';
+        downloadLink.download = 'historial-sala-computo.csv';
         document.body.appendChild(downloadLink);
         downloadLink.click();
         downloadLink.remove();
         window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
     });
 
-    document.getElementById('incidentDemoForm').addEventListener('submit', (event) => {
-        event.preventDefault();
-        document.getElementById('incidentDemoMessage').textContent =
-            'Esta maqueta no guarda datos. El registro estará disponible cuando se conecte al sistema.';
-    });
-
+    const incidentForm = document.getElementById('incidentDemoForm');
     const incidentModule = document.getElementById('incidentModule');
     const incidentReadonlyIdentity = document.getElementById('incidentReadonlyIdentity');
     const incidentReadonlyAccount = document.getElementById('incidentReadonlyAccount');
@@ -735,8 +704,10 @@
     const incidentHistoryPanel = document.getElementById('incidentHistoryPanel');
     const incidentHistoryStatus = document.getElementById('incidentHistoryStatus');
     const incidentNoHistory = document.getElementById('incidentNoHistory');
-    const incidentHistoryRows = Array.from(document.querySelectorAll('#incidentHistoryResults tr'));
+    const incidentHistoryResults = document.getElementById('incidentHistoryResults');
     const incidentContinueUnknown = document.getElementById('incidentContinueUnknown');
+    const incidentRelatedRecord = document.getElementById('incidentRelatedRecord');
+    const incidentMessage = document.getElementById('incidentDemoMessage');
     const incidentSteps = Array.from(document.querySelectorAll('[data-incident-step]'));
     const incidentStepSummaries = incidentSteps.map((step) => step.querySelector('[data-incident-step-summary]'));
     const incidentStepUnlocked = [true, false, false];
@@ -772,14 +743,16 @@
     incidentEquipment.addEventListener('change', () => {
         const selectedOption = incidentEquipment.selectedOptions[0];
         incidentReadonlyEquipment.textContent = selectedOption.value ? selectedOption.textContent : 'Selecciona una PC arriba';
-        incidentReadonlyAsset.textContent = selectedOption.dataset.asset || 'Se muestra al seleccionar la PC';
+        incidentReadonlyAsset.textContent = selectedOption.dataset.asset || '—';
         clearIncidentUser();
         incidentModule.value = '';
-        incidentHistoryRows.forEach((row) => { row.hidden = true; });
+        incidentHistoryResults.replaceChildren();
         incidentHistoryPanel.hidden = true;
         incidentContinueUnknown.hidden = true;
+        incidentRelatedRecord.value = '';
         incidentDetectionMoment.value = '';
         incidentDescription.value = '';
+        incidentMessage.textContent = '';
         incidentSteps[1].classList.remove('is-complete');
         incidentSteps[2].classList.remove('is-complete');
         incidentStepUnlocked[1] = Boolean(incidentEquipment.value);
@@ -803,10 +776,11 @@
         incidentReadonlyIdentity.textContent = 'No identificada';
         incidentReadonlyAccount.textContent = '—';
         incidentReadonlyTime.textContent = '—';
-        incidentHistoryRows.forEach((row) => row.classList.remove('is-selected'));
+        incidentRelatedRecord.value = '';
+        incidentHistoryResults.querySelectorAll('tr').forEach((row) => row.classList.remove('is-selected'));
     }
 
-    document.getElementById('incidentLookupButton').addEventListener('click', () => {
+    document.getElementById('incidentLookupButton').addEventListener('click', async () => {
         const selectedEquipment = incidentEquipment.value;
         const selectedDate = incidentUsageDate.value;
         const selectedType = incidentModule.value;
@@ -822,38 +796,71 @@
             incidentHistoryStatus.textContent = 'Selecciona primero la PC y la fecha para consultar el historial.';
             incidentNoHistory.hidden = true;
             incidentContinueUnknown.hidden = true;
-            incidentHistoryRows.forEach((row) => { row.hidden = true; });
+            incidentHistoryResults.replaceChildren();
             return;
         }
 
-        let matches = 0;
-        incidentHistoryRows.forEach((row) => {
-            const matchesEquipment = row.dataset.equipment === selectedEquipment;
-            const matchesDate = row.dataset.date === selectedDate;
-            const matchesType = !selectedType || row.dataset.type === selectedType;
-            const isVisible = matchesEquipment && matchesDate && matchesType;
-
-            row.hidden = !isVisible;
-            if (isVisible) matches += 1;
-        });
-
-        incidentHistoryStatus.textContent = `${matches} ${matches === 1 ? 'registro encontrado' : 'registros encontrados'} · resultados de ejemplo`;
-        incidentNoHistory.hidden = matches > 0;
-        incidentContinueUnknown.hidden = false;
-    });
-
-    incidentHistoryRows.forEach((row) => {
-        row.querySelector('.sala-incident-select-record').addEventListener('click', () => {
-            incidentReadonlyIdentity.textContent = row.dataset.person || 'No identificada';
-            incidentReadonlyAccount.textContent = row.dataset.account || 'Sin cuenta';
-            incidentReadonlyTime.textContent = row.dataset.time || '—';
-            incidentHistoryRows.forEach((otherRow) => otherRow.classList.toggle('is-selected', otherRow === row));
-            incidentStepSummaries[1].textContent = `${row.dataset.time} · ${row.dataset.person}`;
-            incidentSteps[1].classList.add('is-complete');
-            incidentStepUnlocked[2] = true;
-            activateIncidentStep(3);
-            incidentSteps[2].querySelector('.sala-incident-step-trigger').focus();
-        });
+        const url = new URL('{% url "historial_equipo_sala" %}', window.location.origin);
+        url.searchParams.set('equipo_id', selectedEquipment);
+        url.searchParams.set('fecha', selectedDate);
+        if (selectedType) url.searchParams.set('tipo', selectedType);
+        incidentHistoryStatus.textContent = 'Consultando el historial...';
+        incidentNoHistory.hidden = true;
+        incidentContinueUnknown.hidden = true;
+        incidentHistoryResults.replaceChildren();
+        try {
+            const response = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            const resultado = await response.json();
+            if (!response.ok) {
+                incidentHistoryStatus.textContent = resultado.error || 'No fue posible consultar el historial.';
+                return;
+            }
+            resultado.registros.forEach((registro) => {
+                const row = document.createElement('tr');
+                row.dataset.recordId = registro.id;
+                row.dataset.person = registro.persona;
+                row.dataset.account = registro.cuenta;
+                row.dataset.time = registro.hora;
+                [
+                    registro.hora,
+                    registro.tipo,
+                    registro.persona,
+                    registro.cuenta || 'Sin cuenta',
+                ].forEach((value) => {
+                    const cell = document.createElement('td');
+                    cell.textContent = value;
+                    row.appendChild(cell);
+                });
+                const actionCell = document.createElement('td');
+                const selectButton = document.createElement('button');
+                selectButton.type = 'button';
+                selectButton.className = 'sala-incident-select-record';
+                selectButton.textContent = 'Usó esta PC';
+                actionCell.appendChild(selectButton);
+                row.appendChild(actionCell);
+                selectButton.addEventListener('click', () => {
+                    incidentReadonlyIdentity.textContent = registro.persona || 'No identificada';
+                    incidentReadonlyAccount.textContent = registro.cuenta || 'Sin cuenta';
+                    incidentReadonlyTime.textContent = registro.hora;
+                    incidentRelatedRecord.value = registro.id;
+                    incidentHistoryResults.querySelectorAll('tr').forEach((otherRow) => {
+                        otherRow.classList.toggle('is-selected', otherRow === row);
+                    });
+                    incidentStepSummaries[1].textContent = `${registro.hora} · ${registro.persona}`;
+                    incidentSteps[1].classList.add('is-complete');
+                    incidentStepUnlocked[2] = true;
+                    activateIncidentStep(3);
+                    incidentSteps[2].querySelector('.sala-incident-step-trigger').focus();
+                });
+                incidentHistoryResults.appendChild(row);
+            });
+            const total = resultado.registros.length;
+            incidentHistoryStatus.textContent = `${total} ${total === 1 ? 'registro encontrado' : 'registros encontrados'}`;
+            incidentNoHistory.hidden = total > 0;
+            incidentContinueUnknown.hidden = false;
+        } catch (error) {
+            incidentHistoryStatus.textContent = 'No fue posible consultar el historial. Intenta nuevamente.';
+        }
     });
 
     incidentContinueUnknown.addEventListener('click', () => {
@@ -882,6 +889,66 @@
         field.addEventListener('input', updateIncidentReportStep);
         field.addEventListener('change', updateIncidentReportStep);
     });
+
+    incidentForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        incidentMessage.textContent = '';
+        if (!incidentForm.reportValidity()) return;
+
+        try {
+            const response = await fetch('{% url "registrar_incidencia_sala" %}', {
+                method: 'POST',
+                body: new FormData(incidentForm),
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            });
+            const resultado = await response.json();
+            if (!response.ok) {
+                incidentMessage.textContent = resultado.error || 'No fue posible guardar la incidencia.';
+                return;
+            }
+            incidentMessage.textContent = 'La incidencia se guardó correctamente.';
+            incidentForm.reset();
+            incidentHistoryResults.replaceChildren();
+            incidentHistoryPanel.hidden = true;
+            incidentReadonlyEquipment.textContent = 'Selecciona una PC arriba';
+            incidentReadonlyAsset.textContent = '—';
+            incidentReadonlyIdentity.textContent = 'No identificada';
+            incidentReadonlyAccount.textContent = '—';
+            incidentReadonlyTime.textContent = '—';
+            incidentRelatedRecord.value = '';
+            incidentStepUnlocked[1] = false;
+            incidentStepUnlocked[2] = false;
+            incidentSteps.forEach((step) => step.classList.remove('is-complete'));
+            incidentStepSummaries[0].textContent = 'Selecciona una PC';
+            incidentStepSummaries[1].textContent = 'Se habilita al elegir PC';
+            incidentStepSummaries[2].textContent = 'Completa el reporte';
+            activateIncidentStep(1);
+        } catch (error) {
+            incidentMessage.textContent = 'No fue posible guardar la incidencia. Intenta nuevamente.';
+        }
+    });
+
+    (async function cargarEquiposIncidencia() {
+        try {
+            const url = new URL('{% url "equipos_sala" %}', window.location.origin);
+            url.searchParams.set('todos', '1');
+            const response = await fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            });
+            const resultado = await response.json();
+            if (!response.ok) {
+                incidentHistoryStatus.textContent = resultado.error || 'No fue posible cargar los equipos.';
+                return;
+            }
+            resultado.equipos.forEach((equipo) => {
+                const option = new Option(equipo.nombre, equipo.id);
+                option.dataset.asset = equipo.bien_patrimonial;
+                incidentEquipment.add(option);
+            });
+        } catch (error) {
+            incidentHistoryStatus.textContent = 'No fue posible cargar los equipos.';
+        }
+    })();
 
     function seleccionarTipoAgendamiento(tipo) {
         document.body.classList.toggle('sala-class-form-active', tipo === 'clase');

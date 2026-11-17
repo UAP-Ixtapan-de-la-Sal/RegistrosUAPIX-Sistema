@@ -250,7 +250,13 @@ class Clase(models.Model):
     id_clase = models.AutoField(primary_key=True)
     materia = models.ForeignKey(Materia, on_delete=models.CASCADE, db_column='id_materia', verbose_name="Materia")
     grupo = models.ForeignKey(Grupo, on_delete=models.CASCADE, db_column='id_grupo', verbose_name="Grupo")
-    docente = models.ForeignKey(Persona, on_delete=models.CASCADE, db_column='id_persona', verbose_name="Responsable a cargo")
+    docente = models.ForeignKey(
+        Persona,
+        on_delete=models.CASCADE,
+        db_column='id_persona',
+        limit_choices_to=models.Q(perfil='Docente') | models.Q(perfiles__perfil='Docente'),
+        verbose_name="Responsable a cargo",
+    )
     
     fecha = models.DateField()
     hora_inicio = models.TimeField()
@@ -408,7 +414,12 @@ class Registro(models.Model):
     hora_entrada = models.TimeField(default=timezone.now)
     hora_salida = models.TimeField(null=True, blank=True)
     
-    persona = models.ForeignKey(Persona, on_delete=models.CASCADE, verbose_name="Usuario / Persona")
+    persona = models.ForeignKey(
+        Persona, on_delete=models.CASCADE, null=True, blank=True, verbose_name="Usuario / Persona",
+    )
+    externo = models.ForeignKey(
+        Externo, on_delete=models.PROTECT, null=True, blank=True, verbose_name="Asistente externo",
+    )
     equipo = models.ForeignKey(Equipo, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Equipo de Cómputo")
     clase = models.ForeignKey(Clase, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Clase asignada")
     evento = models.ForeignKey(EventoTallerConferencia, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Evento asignado")
@@ -416,8 +427,22 @@ class Registro(models.Model):
     observaciones = models.TextField(null=True, blank=True)
     history = HistoricalRecords()  # Para el historial de cambios
 
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(persona__isnull=False, externo__isnull=True)
+                    | models.Q(persona__isnull=True, externo__isnull=False)
+                ),
+                name='inicio_registro_un_solo_asistente',
+            ),
+        ]
+
     # SISTEMA ANTI-CHOQUES RESTAURADO
     def clean(self):
+        if bool(self.persona_id) == bool(self.externo_id):
+            raise ValidationError('El registro debe estar asociado a una persona o a un asistente externo.')
+
         if self.hora_entrada and self.hora_salida:
             if self.hora_salida <= self.hora_entrada:
                 raise ValidationError({'hora_salida': 'Error lógico: La hora de salida no puede ser antes o igual a la hora de entrada.'})
@@ -465,3 +490,87 @@ class Registro(models.Model):
 #CHIDO PERRON
     def __str__(self):
         return f"Registro {self.id_registro} - {self.modulo} ({self.fecha})"
+
+
+class Asistencia(models.Model):
+    ESTADOS = (
+        ('Asistió', 'Asistió'),
+        ('Falta', 'Falta'),
+    )
+
+    clase = models.ForeignKey(Clase, on_delete=models.CASCADE, related_name='asistencias')
+    alumno = models.ForeignKey(Persona, on_delete=models.CASCADE, related_name='asistencias')
+    estado = models.CharField(max_length=10, choices=ESTADOS)
+    equipo = models.ForeignKey(Equipo, on_delete=models.SET_NULL, null=True, blank=True)
+    registro = models.OneToOneField(
+        Registro, on_delete=models.PROTECT, null=True, blank=True, related_name='asistencia',
+    )
+    history = HistoricalRecords()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=('clase', 'alumno'), name='inicio_asistencia_clase_alumno_unica'),
+        ]
+        ordering = ('alumno__apellidos', 'alumno__nombre')
+
+    def clean(self):
+        super().clean()
+        if self.clase_id and self.alumno_id:
+            if not self.alumno.tiene_perfil('Alumno'):
+                raise ValidationError({'alumno': 'La asistencia solo puede registrarse para alumnos.'})
+            if self.alumno.grupo_id != self.clase.grupo_id:
+                raise ValidationError({'alumno': 'El alumno no pertenece al grupo de esta clase.'})
+
+        if self.estado == 'Asistió':
+            if not self.registro_id:
+                raise ValidationError({'registro': 'La asistencia requiere el registro de entrada correspondiente.'})
+            if self.registro.persona_id != self.alumno_id or self.registro.clase_id != self.clase_id:
+                raise ValidationError({'registro': 'El registro de entrada no corresponde a este alumno y clase.'})
+            if self.registro.equipo_id != self.equipo_id:
+                raise ValidationError({'equipo': 'El equipo debe coincidir con el registro de entrada.'})
+        elif self.estado == 'Falta' and (self.registro_id or self.equipo_id):
+            raise ValidationError('Una falta no puede tener registro de entrada ni equipo asignado.')
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f'{self.alumno} - {self.clase} - {self.get_estado_display()}'
+
+
+class Incidencia(models.Model):
+    MOMENTOS_DETECCION = (
+        ('durante_uso', 'Durante el uso'),
+        ('al_finalizar', 'Al finalizar el uso'),
+        ('despues_actividad', 'Después del evento o visita'),
+    )
+    ESTADOS = (
+        ('Pendiente', 'Pendiente'),
+        ('Resuelta', 'Resuelta'),
+    )
+
+    equipo = models.ForeignKey(Equipo, on_delete=models.PROTECT, related_name='incidencias')
+    registro = models.ForeignKey(
+        Registro, on_delete=models.SET_NULL, null=True, blank=True, related_name='incidencias',
+    )
+    reportada_por = models.ForeignKey(
+        UsuarioSistema, on_delete=models.SET_NULL, null=True, blank=True, related_name='incidencias',
+    )
+    momento_deteccion = models.CharField(max_length=24, choices=MOMENTOS_DETECCION)
+    descripcion = models.TextField()
+    estado = models.CharField(max_length=10, choices=ESTADOS, default='Pendiente')
+    creada_en = models.DateTimeField(auto_now_add=True)
+    history = HistoricalRecords()
+
+    def clean(self):
+        super().clean()
+        if self.registro_id and self.registro.equipo_id != self.equipo_id:
+            raise ValidationError({'registro': 'El registro seleccionado no corresponde al equipo afectado.'})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f'Incidencia {self.pk or "nueva"} - {self.equipo}'

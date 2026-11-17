@@ -128,9 +128,19 @@
         const feedback = document.getElementById('docenteLookupFeedback');
         if (!cuentaInput || !docenteInput || !nombreDocenteInput || !carreraSelect || !materiaSelect || !grupoSelect || !feedback) return;
 
+        const carrerasDisponibles = Array.from(carreraSelect.options)
+            .filter(function(option) { return option.value; })
+            .map(function(option) { return { id: option.value, nombre: option.textContent }; });
         let solicitudActual = 0;
+
+        function restaurarCarrerasDisponibles() {
+            carreraSelect.replaceChildren(new Option('Selecciona la carrera', ''));
+            carrerasDisponibles.forEach(function(carrera) {
+                carreraSelect.add(new Option(carrera.nombre, carrera.id));
+            });
+        }
+
         function resetCatalogos() {
-            carreraSelect.replaceChildren(new Option('Busca primero al docente', ''));
             materiaSelect.replaceChildren(new Option('Primero busca al docente', ''));
             grupoSelect.replaceChildren(new Option('Primero busca al docente', ''));
         }
@@ -174,6 +184,7 @@
             const solicitud = ++solicitudActual;
             docenteInput.value = '';
             nombreDocenteInput.value = '';
+            restaurarCarrerasDisponibles();
             carreraSelect.value = '';
             resetCatalogos();
             cuentaInput.setCustomValidity('Ingresa el número de cuenta de un docente registrado.');
@@ -198,15 +209,15 @@
                 }
 
                 nombreDocenteInput.value = resultado.nombre || '';
+                docenteInput.value = resultado.persona_id;
+                cuentaInput.setCustomValidity('');
                 if (!resultado.carrera_id || !resultado.carrera) {
-                    feedback.textContent = 'El docente no tiene una carrera disponible en el catálogo.';
+                    feedback.textContent = 'Docente encontrado. Selecciona una carrera para cargar sus materias y grupos.';
                     return;
                 }
 
-                docenteInput.value = resultado.persona_id;
                 carreraSelect.replaceChildren(new Option(resultado.carrera, resultado.carrera_id));
                 carreraSelect.value = String(resultado.carrera_id);
-                cuentaInput.setCustomValidity('');
                 feedback.textContent = 'Docente encontrado: ' + resultado.nombre + '. Cargando su carrera...';
                 await cargarCatalogos(cuenta, resultado.carrera_id);
             } catch (error) {
