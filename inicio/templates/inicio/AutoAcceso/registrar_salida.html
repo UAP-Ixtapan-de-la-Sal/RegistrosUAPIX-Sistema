@@ -1,0 +1,892 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Sesiones Activas | Portal UAPIX</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+
+        /* =====================================================
+           1. IDENTIDAD VISUAL
+           ===================================================== */
+
+        :root {
+            --color-green: #526855;
+            --color-green-hover: #384033;
+            --color-gold: #CA9E52;
+            --color-light-gray: #F2F2F2;
+            --color-white: #FFFFFF;
+
+            --color-text: #263329;
+            --color-muted: #788579;
+
+            --border-main: rgba(82, 104, 85, 0.20);
+
+            --shadow-main:
+                0 10px 30px rgba(56, 64, 51, 0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--color-text);
+
+            background:
+                linear-gradient(
+                    rgba(248, 250, 248, 0.90),
+                    rgba(248, 250, 248, 0.90)
+                ),
+                url("../../images/FONDO-MODULOS/fondo-flores-blanco.jpg");
+
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-attachment: fixed;
+        }
+
+        /* =====================================================
+           2. CONTENEDOR PRINCIPAL
+           ===================================================== */
+
+        .active-page {
+            width: 100%;
+            min-height: 100vh;
+            padding: 30px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .active-container {
+            width: 100%;
+            max-width: 1350px;
+            min-height: 600px;
+            margin: 0 auto;
+            padding: 30px;
+
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+
+            background: rgba(255, 255, 255, 0.97);
+
+            border: 1px solid var(--border-main);
+            border-radius: 18px;
+
+            box-shadow: var(--shadow-main);
+
+            animation: fade-up .55s ease both;
+        }
+
+        /* =====================================================
+           3. ENCABEZADO
+           ===================================================== */
+
+        .active-header {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .active-header h1 {
+            color: var(--color-green-hover);
+            font-size: clamp(1.5rem, 2.5vw, 2rem);
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .active-header p {
+            margin-top: 5px;
+            color: var(--color-muted);
+            font-size: .9rem;
+            text-align: center;
+        }
+
+        .active-header-icon {
+            position: absolute;
+            right: 0;
+
+            width: 44px;
+            height: 44px;
+
+            display: grid;
+            place-items: center;
+
+            border-radius: 12px;
+            background: rgba(82, 104, 85, .10);
+            color: var(--color-green);
+
+            font-size: 1.1rem;
+        }
+
+        /* =====================================================
+           4. BÚSQUEDA Y FILTROS
+           ===================================================== */
+
+        .active-toolbar {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 25px;
+        }
+
+        .active-search {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 280px;
+        }
+
+        .active-search label {
+            color: var(--color-green-hover);
+            font-size: .9rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .active-search-control {
+            width: 100%;
+            max-width: 370px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .active-input,
+        .active-select {
+            width: 100%;
+            height: 46px;
+            padding: 10px 13px;
+
+            border: 1px solid var(--border-main);
+            border-radius: 10px;
+
+            background: white;
+            color: var(--color-text);
+
+            font-family: inherit;
+            font-size: .9rem;
+
+            outline: none;
+            transition: .2s ease;
+        }
+
+        .active-input:focus,
+        .active-select:focus {
+            border-color: var(--color-green);
+            box-shadow: 0 0 0 3px rgba(82, 104, 85, .12);
+        }
+
+        .active-search-btn {
+            width: 46px;
+            height: 46px;
+            flex-shrink: 0;
+
+            display: grid;
+            place-items: center;
+
+            border: none;
+            border-radius: 10px;
+
+            background: var(--color-green);
+            color: white;
+
+            font-size: 1.15rem;
+            cursor: pointer;
+            transition: .2s ease;
+        }
+
+        .active-search-btn:hover {
+            background: var(--color-green-hover);
+            transform: translateY(-2px);
+        }
+
+        .active-filter {
+            width: 230px;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .active-filter label {
+            color: var(--color-green-hover);
+            font-size: .85rem;
+            font-weight: 700;
+        }
+
+        /* =====================================================
+           5. LISTADO DE SESIONES
+           ===================================================== */
+
+        .active-list-section {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .active-list-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .active-list-heading h2 {
+            color: var(--color-green-hover);
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .active-count {
+            padding: 7px 14px;
+
+            border-radius: 20px;
+
+            background: rgba(82, 104, 85, .10);
+            color: var(--color-green);
+
+            font-size: .82rem;
+            font-weight: 700;
+        }
+
+        /* =====================================================
+           6. TABLA DE SESIONES
+           ===================================================== */
+
+        .active-table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+
+            border: 1px solid var(--border-main);
+            border-radius: 13px;
+
+            background: white;
+        }
+
+        .active-table {
+            width: 100%;
+            min-width: 900px;
+            border-collapse: separate;
+            border-spacing: 0;
+            text-align: left;
+        }
+
+        .active-table thead th {
+            padding: 16px 14px;
+
+            background: var(--color-green);
+            color: white;
+
+            font-size: .85rem;
+            font-weight: 700;
+            white-space: nowrap;
+
+            border-bottom: 3px solid var(--color-gold);
+        }
+
+        .active-table thead th:first-child {
+            border-radius: 11px 0 0 0;
+        }
+
+        .active-table thead th:last-child {
+            border-radius: 0 11px 0 0;
+        }
+
+        .active-table tbody td {
+            padding: 17px 14px;
+
+            border-bottom: 1px solid rgba(82, 104, 85, .13);
+
+            color: var(--color-text);
+            font-size: .9rem;
+            vertical-align: middle;
+        }
+
+        .active-table tbody tr {
+            background: white;
+            transition: background .2s ease;
+        }
+
+        .active-table tbody tr:nth-child(even) {
+            background: #F8F9F7;
+        }
+
+        .active-table tbody tr:hover {
+            background: rgba(202, 158, 82, .09);
+        }
+
+        .active-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* =====================================================
+           7. COLUMNA EQUIPO
+           ===================================================== */
+
+        .active-equipment {
+            width: 100px;
+            text-align: center;
+        }
+
+        .equipment-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            min-width: 43px;
+            height: 35px;
+            padding: 5px 12px;
+
+            border-radius: 8px;
+
+            background: rgba(82, 104, 85, .11);
+            color: var(--color-green-hover);
+
+            font-weight: 700;
+        }
+
+        /* =====================================================
+           8. COLUMNA NOMBRE
+           ===================================================== */
+
+        .active-name {
+            min-width: 180px;
+            font-weight: 600;
+        }
+
+        .active-empty {
+            color: #A0AAA0 !important;
+        }
+
+        /* =====================================================
+           9. TIPO DE USUARIO
+           ===================================================== */
+
+        .active-type {
+            min-width: 130px;
+        }
+
+        .type-badge {
+            display: inline-block;
+            padding: 6px 12px;
+
+            border-radius: 20px;
+
+            background: rgba(82, 104, 85, .10);
+            color: var(--color-green-hover);
+
+            font-size: .78rem;
+            font-weight: 700;
+        }
+
+        /* =====================================================
+           10. COLUMNA ACCIONES
+           ===================================================== */
+
+        .active-actions-heading {
+            min-width: 290px;
+            text-align: center;
+        }
+
+        .active-actions {
+            min-width: 290px;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            gap: 15px;
+        }
+
+        .active-exit-option {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+
+            color: var(--color-green-hover);
+
+            font-size: .88rem;
+            font-weight: 600;
+
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .active-exit-option input {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--color-green);
+            cursor: pointer;
+        }
+
+        .active-exit-time {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+
+            color: var(--color-text);
+
+            font-size: .88rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .active-exit-time i {
+            color: var(--color-gold);
+            font-size: 1rem;
+        }
+
+        /* =====================================================
+           11. PIE DEL LISTADO
+           ===================================================== */
+
+        .active-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+
+            padding-top: 10px;
+
+            border-top: 1px solid var(--border-main);
+        }
+
+        .active-footer p {
+            color: var(--color-muted);
+            font-size: .85rem;
+        }
+
+        .active-footer strong {
+            color: var(--color-green);
+        }
+
+        .active-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+
+            color: var(--color-green);
+            font-size: .85rem;
+            font-weight: 700;
+        }
+
+        .active-status i {
+            font-size: .55rem;
+            color: #6C9A70;
+        }
+
+        /* =====================================================
+           12. ANIMACIONES
+           ===================================================== */
+
+        @keyframes fade-up {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* =====================================================
+           13. RESPONSIVE
+           ===================================================== */
+
+        @media (max-width: 900px) {
+
+            .active-toolbar {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .active-search {
+                width: 100%;
+            }
+
+            .active-filter {
+                width: 100%;
+                max-width: 370px;
+            }
+
+        }
+
+        @media (max-width: 600px) {
+
+            .active-page {
+                padding: 12px;
+            }
+
+            .active-container {
+                padding: 20px 15px;
+                gap: 24px;
+                border-radius: 13px;
+            }
+
+            .active-search {
+                min-width: 0;
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .active-search-control {
+                max-width: 100%;
+            }
+
+            .active-filter {
+                max-width: 100%;
+            }
+
+            .active-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .active-list-heading {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .active-footer {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+        }
+
+    </style>
+</head>
+
+<body>
+
+    <main class="active-page">
+
+        <div class="active-container">
+
+            <!-- ==========================================
+                 ENCABEZADO
+                 ========================================== -->
+
+            <header class="active-header">
+
+                <div>
+                    <h1>Sesiones Activas</h1>
+                    <p>Consulta y seguimiento de usuarios en sala de cómputo.</p>
+                </div>
+
+                <div class="active-header-icon">
+                    <i class="fa-solid fa-desktop"></i>
+                </div>
+
+            </header>
+
+
+            <!-- ==========================================
+                 BÚSQUEDA Y FILTROS
+                 ========================================== -->
+
+            <section class="active-toolbar">
+
+                <!-- BÚSQUEDA -->
+
+                <div class="active-search">
+
+                    <label for="numero-cuenta">
+                        Buscar
+                    </label>
+
+                    <div class="active-search-control">
+
+                        <input
+                            type="text"
+                            id="numero-cuenta"
+                            class="active-input"
+                            placeholder="No. Cuenta"
+                        >
+
+                        <button
+                            type="button"
+                            class="active-search-btn"
+                            aria-label="Buscar cuenta"
+                        >
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <!-- FILTRO DE MOTIVO -->
+
+                <div class="active-filter">
+
+                    <label for="filtro-motivo">
+                        Motivo de uso
+                    </label>
+
+                    <select id="filtro-motivo" class="active-select">
+
+                        <option>Clase</option>
+                        <option>Visita (uso de PC)</option>
+                        <option>Conversación (sala de estar)</option>
+
+                    </select>
+
+                </div>
+
+            </section>
+
+
+            <!-- ==========================================
+                 LISTADO DE SESIONES ACTIVAS
+                 ========================================== -->
+
+            <section class="active-list-section">
+
+                <div class="active-list-heading">
+
+                    <h2>
+                        <i class="fa-solid fa-users"
+                           style="color: var(--color-gold); margin-right: 8px;"></i>
+                        Usuarios en sesión
+                    </h2>
+
+                    <span class="active-count">
+                        4 sesiones activas
+                    </span>
+
+                </div>
+
+
+                <!-- TABLA -->
+
+                <div class="active-table-wrapper">
+
+                    <table class="active-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>Equipo</th>
+
+                                <th>Nombre</th>
+
+                                <th>Tipo</th>
+
+                                <th class="active-actions-heading">
+                                    Acciones
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            <!-- USUARIO 1 -->
+
+                            <tr>
+
+                                <td class="active-equipment">
+                                    <span class="equipment-number">8</span>
+                                </td>
+
+                                <td class="active-name">
+                                    Carlos Mendoza
+                                </td>
+
+                                <td class="active-type">
+                                    <span class="type-badge">Visita</span>
+                                </td>
+
+                                <td>
+
+                                    <div class="active-actions">
+
+                                        <label class="active-exit-option">
+                                            <input type="radio" name="salida-1">
+                                            Marcar salida
+                                        </label>
+
+                                        <span class="active-exit-time">
+                                            <i class="fa-solid fa-clock"></i>
+                                            Hora Salida
+                                        </span>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+
+
+                            <!-- USUARIO 2 -->
+
+                            <tr>
+
+                                <td class="active-equipment">
+                                    <span class="equipment-number">3</span>
+                                </td>
+
+                                <td class="active-name">
+                                    Valeria Torres
+                                </td>
+
+                                <td class="active-type">
+                                    <span class="type-badge">Visita</span>
+                                </td>
+
+                                <td>
+
+                                    <div class="active-actions">
+
+                                        <label class="active-exit-option">
+                                            <input type="radio" name="salida-2">
+                                            Marcar salida
+                                        </label>
+
+                                        <span class="active-exit-time">
+                                            <i class="fa-solid fa-clock"></i>
+                                            Hora Salida
+                                        </span>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+
+
+                            <!-- USUARIO 3 -->
+
+                            <tr>
+
+                                <td class="active-equipment">
+                                    <span class="equipment-number">6</span>
+                                </td>
+
+                                <td class="active-name">
+                                    Luis Vargas
+                                </td>
+
+                                <td class="active-type">
+                                    <span class="type-badge">Visita</span>
+                                </td>
+
+                                <td>
+
+                                    <div class="active-actions">
+
+                                        <label class="active-exit-option">
+                                            <input type="radio" name="salida-3">
+                                            Marcar salida
+                                        </label>
+
+                                        <span class="active-exit-time">
+                                            <i class="fa-solid fa-clock"></i>
+                                            Hora Salida
+                                        </span>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+
+
+                            <!-- USUARIO 4 -->
+
+                            <tr>
+
+                                <td class="active-equipment">
+                                    <span class="equipment-number">5</span>
+                                </td>
+
+                                <td class="active-name">
+                                    Sofía Ramírez
+                                </td>
+
+                                <td class="active-type">
+                                    <span class="type-badge">Visita</span>
+                                </td>
+
+                                <td>
+
+                                    <div class="active-actions">
+
+                                        <label class="active-exit-option">
+                                            <input type="radio" name="salida-4">
+                                            Marcar salida
+                                        </label>
+
+                                        <span class="active-exit-time">
+                                            <i class="fa-solid fa-clock"></i>
+                                            Hora Salida
+                                        </span>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+
+            <!-- ==========================================
+                 PIE DE LA VISTA
+                 ========================================== -->
+
+            <footer class="active-footer">
+
+                <p>
+                    Total de sesiones:
+                    <strong>4 usuarios</strong>
+                </p>
+
+                <span class="active-status">
+                    <i class="fa-solid fa-circle"></i>
+                    Sesiones registradas
+                </span>
+
+            </footer>
+
+        </div>
+
+    </main>
+
+</body>
+</html>

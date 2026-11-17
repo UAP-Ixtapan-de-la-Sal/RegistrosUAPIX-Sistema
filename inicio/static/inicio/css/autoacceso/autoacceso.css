@@ -1,0 +1,4020 @@
+/* ==========================================================
+
+   AUTOACCESO | IDENTIDAD VISUAL INSTITUCIONAL
+
+   ========================================================== */
+
+.autoacceso-body {
+
+    --aa-green: #526855;
+
+    --aa-dark: #384033;
+
+    --aa-gold: #CA9E52;
+
+    --aa-rust: #A15C17;
+
+    --aa-gray: #F2F2F2;
+
+    --aa-border: #dce4dc;
+
+    --aa-muted: #647166;
+
+    min-height: 100vh;
+
+    font-family: 'DM Sans', sans-serif;
+
+    background:
+
+        linear-gradient(
+
+            rgba(248, 250, 252, .83),
+
+            rgba(248, 250, 252, .83)
+
+        ),
+
+        url("../../images/FONDO-MODULOS/fondo-flores-blanco.jpg")
+
+        center / cover fixed no-repeat;
+
+}
+
+/* ==========================================================
+
+   CONTENEDOR GENERAL
+
+   ========================================================== */
+
+.autoacceso-body .main-container > .header-branding {
+
+    display: none !important;
+
+}
+
+.autoacceso-body .main-container {
+
+    width: 100%;
+
+    max-width: none;
+
+    padding: 25px 5%;
+
+}
+
+.autoacceso-body .aa-page {
+
+    width: 100%;
+
+    max-width: 1450px;
+
+    margin: 0 auto;
+
+}
+
+.autoacceso-body .aa-oculto {
+
+    display: none !important;
+
+}
+
+/* ==========================================================
+
+   DASHBOARD PRINCIPAL
+
+   ========================================================== */
+
+.autoacceso-body .aa-heading {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 25px;
+
+    margin-bottom: 30px;
+
+}
+
+.autoacceso-body .aa-heading h1 {
+
+    margin: 0;
+
+    color: var(--aa-green);
+
+    font-size: 2.3rem;
+
+    font-weight: 700;
+
+}
+
+.autoacceso-body .aa-heading p {
+
+    color: var(--aa-muted);
+
+}
+
+.autoacceso-body .aa-eyebrow {
+
+    margin-bottom: 8px;
+
+    color: var(--aa-gold) !important;
+
+    font-size: .82rem;
+
+    font-weight: 700;
+
+    letter-spacing: 2px;
+
+}
+
+/* TARJETA DE REGISTROS */
+
+.autoacceso-body .aa-kiosk {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 15px;
+
+    width: 370px;
+
+    padding: 17px;
+
+    border: none;
+
+    border-radius: 15px;
+
+    background: linear-gradient(
+
+        135deg,
+
+        #526855,
+
+        #384033
+
+    );
+
+    color: #ffffff;
+
+    font: inherit;
+
+    text-align: left;
+
+    cursor: pointer;
+
+    box-shadow: 0 10px 25px rgba(56, 64, 51, .2);
+
+    transition:
+
+        transform .25s,
+
+        box-shadow .25s;
+
+}
+
+.autoacceso-body .aa-kiosk:hover {
+
+    transform: translateY(-3px);
+
+    box-shadow: 0 15px 30px rgba(56, 64, 51, .25);
+
+}
+
+.autoacceso-body .aa-kiosk-texto {
+
+    display: flex;
+
+    flex: 1;
+
+    flex-direction: column;
+
+    gap: 5px;
+
+}
+
+.autoacceso-body .aa-kiosk strong {
+
+    font-weight: 700;
+
+}
+
+.autoacceso-body .aa-kiosk small {
+
+    color: #e2e9e2;
+
+}
+
+.autoacceso-body .aa-kiosk-icon {
+
+    display: grid;
+
+    place-items: center;
+
+    width: 55px;
+
+    height: 55px;
+
+    flex-shrink: 0;
+
+    border-radius: 13px;
+
+    background: rgba(255, 255, 255, .15);
+
+    font-size: 1.5rem;
+
+}
+
+.autoacceso-body .aa-kiosk-abrir {
+
+    padding: 7px 11px;
+
+    border-radius: 20px;
+
+    background: var(--aa-gold);
+
+    color: var(--aa-dark);
+
+    font-size: .8rem;
+
+    font-weight: 700;
+
+}
+
+/* ==========================================================
+
+   ESTADO DE EQUIPOS
+
+   ========================================================== */
+
+.autoacceso-body .aa-estado {
+
+    display: grid;
+
+    grid-template-columns: 1fr 1.2fr;
+
+    gap: 20px;
+
+    padding: 25px;
+
+    margin-bottom: 25px;
+
+    border: 1px solid var(--aa-border);
+
+    border-radius: 17px;
+
+    background: white;
+
+    box-shadow: 0 8px 25px rgba(0, 0, 0, .06);
+
+}
+
+.autoacceso-body .aa-estado-titulo {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 15px;
+
+}
+
+.autoacceso-body .aa-estado-titulo h2 {
+
+    margin: 0 0 5px;
+
+    color: var(--aa-dark);
+
+    font-size: 1.2rem;
+
+}
+
+.autoacceso-body .aa-estado-titulo p {
+
+    margin: 0;
+
+    color: var(--aa-muted);
+
+}
+
+.autoacceso-body .aa-estado-icon {
+
+    display: grid;
+
+    place-items: center;
+
+    width: 55px;
+
+    height: 55px;
+
+    flex-shrink: 0;
+
+    border-radius: 13px;
+
+    background: var(--aa-green);
+
+    color: white;
+
+    font-size: 1.4rem;
+
+}
+
+.autoacceso-body .aa-estadisticas {
+
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 12px;
+
+}
+
+.autoacceso-body .aa-estadistica {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    color: var(--aa-muted);
+
+}
+
+.autoacceso-body .aa-estadistica strong {
+
+    color: var(--aa-dark);
+
+    font-size: 1.2rem;
+
+}
+
+.autoacceso-body .aa-punto {
+
+    width: 10px;
+
+    height: 10px;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+
+}
+
+.autoacceso-body .aa-ocupado {
+
+    background: var(--aa-gold);
+
+}
+
+.autoacceso-body .aa-disponible {
+
+    background: var(--aa-green);
+
+}
+
+.autoacceso-body .aa-barra {
+
+    grid-column: 1 / -1;
+
+    height: 9px;
+
+    border-radius: 20px;
+
+    background: #e2e9e2;
+
+    overflow: hidden;
+
+}
+
+.autoacceso-body .aa-barra span {
+
+    display: block;
+
+    width: 40%;
+
+    height: 100%;
+
+    background: var(--aa-green);
+
+}
+
+.autoacceso-body .aa-estadisticas small {
+
+    grid-column: 1 / -1;
+
+    color: var(--aa-muted);
+
+    text-align: right;
+
+}
+
+/* ==========================================================
+
+   HERRAMIENTAS
+
+   ========================================================== */
+
+.autoacceso-body .aa-herramientas {
+
+    padding: 30px;
+
+    border: 1px solid var(--aa-border);
+
+    border-radius: 18px;
+
+    background: white;
+
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .07);
+
+}
+
+.autoacceso-body .aa-seccion-titulo {
+
+    margin-bottom: 30px;
+
+    text-align: center;
+
+}
+
+.autoacceso-body .aa-seccion-titulo h2 {
+
+    margin: 0;
+
+    color: var(--aa-dark);
+
+}
+
+.autoacceso-body .aa-seccion-titulo p {
+
+    color: var(--aa-muted);
+
+}
+
+.autoacceso-body .aa-herramientas-grid {
+
+    display: grid;
+
+    grid-template-columns: repeat(2, minmax(0, 450px));
+
+    justify-content: center;
+
+    gap: 25px;
+
+}
+
+.autoacceso-body .aa-herramienta {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 14px;
+
+    min-height: 240px;
+
+    padding: 25px;
+
+    border: 1px solid var(--aa-border);
+
+    border-radius: 17px;
+
+    background: white;
+
+    font: inherit;
+
+    text-align: center;
+
+    cursor: pointer;
+
+    transition:
+
+        transform .25s,
+
+        box-shadow .25s;
+
+}
+
+.autoacceso-body .aa-herramienta:hover {
+
+    transform: translateY(-5px);
+
+    box-shadow: 0 12px 25px rgba(0, 0, 0, .1);
+
+}
+
+.autoacceso-body .aa-herramienta-icon {
+
+    display: grid;
+
+    place-items: center;
+
+    width: 95px;
+
+    height: 95px;
+
+    border-radius: 25px;
+
+    color: white;
+
+    font-size: 2.5rem;
+
+}
+
+.autoacceso-body .aa-dorado {
+
+    background: linear-gradient(135deg, #d4ad69, #a77d37);
+
+}
+
+.autoacceso-body .aa-verde {
+
+    background: linear-gradient(135deg, #607a64, #384033);
+
+}
+
+.autoacceso-body .aa-herramienta h3 {
+
+    margin: 0;
+
+    color: var(--aa-dark);
+
+}
+
+.autoacceso-body .aa-herramienta p {
+
+    margin: 0;
+
+    color: var(--aa-muted);
+
+}
+
+/* ==========================================================
+
+   KIOSCO DE REGISTROS
+
+   ========================================================== */
+
+.autoacceso-body .aa-kiosco {
+
+    width: 100%;
+
+    max-width: 1150px;
+
+    margin: 15px auto 35px;
+
+    border: 1px solid #dce4dc;
+
+    border-radius: 22px;
+
+    background: #ffffff;
+
+    overflow: hidden;
+
+    box-shadow: 0 18px 45px rgba(56, 64, 51, .12);
+
+}
+
+/* ENCABEZADO */
+
+.autoacceso-body .aa-kiosco-header {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding: 18px 30px;
+
+    background: #384033;
+
+    color: #ffffff;
+
+}
+
+.autoacceso-body .aa-kiosco-identidad {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+}
+
+.autoacceso-body .aa-kiosco-identidad-icono {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    width: 45px;
+
+    height: 45px;
+
+    border-radius: 12px;
+
+    background: #526855;
+
+    color: #CA9E52;
+
+    font-size: 19px;
+
+}
+
+.autoacceso-body .aa-kiosco-identidad-texto strong {
+
+    color: #ffffff;
+
+    font-size: 15px;
+
+    font-weight: 700;
+
+    letter-spacing: 1px;
+
+}
+
+.autoacceso-body .aa-kiosco-salir {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    width: 43px;
+
+    height: 43px;
+
+    padding: 0;
+
+    border: 1px solid rgba(255, 255, 255, .35);
+
+    border-radius: 10px;
+
+    background: transparent;
+
+    color: #ffffff;
+
+    font-size: 17px;
+
+    cursor: pointer;
+
+}
+
+.autoacceso-body .aa-kiosco-salir:hover {
+
+    background: rgba(255, 255, 255, .15);
+
+}
+
+/* BIENVENIDA */
+
+.autoacceso-body .aa-kiosco-contenido {
+
+    padding: 42px 45px 32px;
+
+    background: #ffffff;
+
+}
+
+.autoacceso-body .aa-kiosco-bienvenida {
+
+    margin-bottom: 35px;
+
+    text-align: center;
+
+}
+
+.autoacceso-body .aa-kiosco-distintivo {
+
+    display: inline-block;
+
+    margin-bottom: 12px;
+
+    color: #526855;
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    letter-spacing: 1px;
+
+}
+
+.autoacceso-body .aa-kiosco-bienvenida h1 {
+
+    margin: 0 0 10px;
+
+    color: #384033;
+
+    font-size: 30px;
+
+    font-weight: 700;
+
+}
+
+.autoacceso-body .aa-kiosco-bienvenida p {
+
+    margin: 0;
+
+    color: #647166;
+
+    font-size: 14px;
+
+}
+
+/* TARJETAS */
+
+.autoacceso-body .aa-kiosco-opciones {
+
+    display: grid;
+
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    gap: 26px;
+
+    max-width: 950px;
+
+    margin: 0 auto;
+
+}
+
+.autoacceso-body .aa-kiosco-tarjeta {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    width: 100%;
+
+    min-height: 295px;
+
+    padding: 30px 25px;
+
+    border: 2px solid;
+
+    border-radius: 17px;
+
+    font-family: 'DM Sans', sans-serif;
+
+    text-align: center;
+
+    cursor: pointer;
+
+    transition:
+
+        transform .25s ease,
+
+        box-shadow .25s ease;
+
+}
+
+.autoacceso-body .aa-kiosco-tarjeta:hover {
+
+    transform: translateY(-5px);
+
+    box-shadow: 0 12px 25px rgba(56, 64, 51, .12);
+
+}
+
+.autoacceso-body .aa-kiosco-tarjeta-icono {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    width: 75px;
+
+    height: 75px;
+
+    margin-bottom: 24px;
+
+    border-radius: 50%;
+
+    font-size: 30px;
+
+}
+
+.autoacceso-body .aa-kiosco-tarjeta-titulo {
+
+    display: block;
+
+    margin-bottom: 14px;
+
+    color: #384033;
+
+    font-size: 17px;
+
+    font-weight: 700;
+
+}
+
+.autoacceso-body .aa-kiosco-tarjeta-descripcion {
+
+    display: block;
+
+    max-width: 315px;
+
+    color: #647166;
+
+    font-size: 14px;
+
+    line-height: 1.5;
+
+}
+
+.autoacceso-body .aa-kiosco-tarjeta-accion {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    margin-top: 22px;
+
+    padding: 11px 18px;
+
+    border-radius: 9px;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+}
+
+/* ENTRADA */
+
+.autoacceso-body .aa-kiosco-tarjeta-entrada {
+
+    border-color: #526855;
+
+    background: #EEF5EE;
+
+}
+
+.autoacceso-body .aa-kiosco-tarjeta-entrada
+
+.aa-kiosco-tarjeta-icono {
+
+    background: #526855;
+
+    color: #ffffff;
+
+}
+
+.autoacceso-body .aa-kiosco-tarjeta-entrada
+
+.aa-kiosco-tarjeta-accion {
+
+    background: #526855;
+
+    color: #ffffff;
+
+}
+
+/* SALIDA */
+
+.autoacceso-body .aa-kiosco-tarjeta-salida {
+
+    border-color: #CA9E52;
+
+    background: #FFF8ED;
+
+}
+
+.autoacceso-body .aa-kiosco-tarjeta-salida
+
+.aa-kiosco-tarjeta-icono {
+
+    background: #CA9E52;
+
+    color: #384033;
+
+}
+
+.autoacceso-body .aa-kiosco-tarjeta-salida
+
+.aa-kiosco-tarjeta-accion {
+
+    background: #CA9E52;
+
+    color: #384033;
+
+}
+
+/* INFORMACIÓN Y PIE */
+
+.autoacceso-body .aa-kiosco-ayuda {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 9px;
+
+    margin: 28px auto 0;
+
+    color: #647166;
+
+    font-size: 12px;
+
+    text-align: center;
+
+}
+
+.autoacceso-body .aa-kiosco-ayuda i {
+
+    color: #526855;
+
+    font-size: 15px;
+
+}
+
+.autoacceso-body .aa-kiosco-footer {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    padding: 17px 30px;
+
+    border-top: 1px solid #e4e9e4;
+
+    background: #f8faf8;
+
+    color: #647166;
+
+    font-size: 12px;
+
+}
+
+/* ==========================================================
+
+   FORMULARIOS DE ENTRADA Y CLASE
+
+   ========================================================== */
+
+.autoacceso-body .aa-form-page {
+
+    width: 100%;
+
+    max-width: 1180px;
+
+    margin: auto;
+
+}
+
+.autoacceso-body .aa-form-header {
+
+    display: grid;
+
+    grid-template-columns: 1fr auto 1fr;
+
+    align-items: center;
+
+    gap: 15px;
+
+    margin-bottom: 25px;
+
+}
+
+.autoacceso-body .aa-form-header h1 {
+
+    margin: 0;
+
+    color: var(--aa-dark);
+
+    font-size: 1.8rem;
+
+    text-align: center;
+
+}
+
+.autoacceso-body .aa-btn-regresar,
+
+.autoacceso-body .aa-btn-cerrar {
+
+    border: 1px solid var(--aa-border);
+
+    border-radius: 9px;
+
+    background: white;
+
+    color: var(--aa-dark);
+
+    font: inherit;
+
+    cursor: pointer;
+
+}
+
+.autoacceso-body .aa-btn-regresar {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-self: start;
+
+    gap: 10px;
+
+    padding: 11px 18px;
+
+    font-weight: 600;
+
+}
+
+.autoacceso-body .aa-btn-cerrar {
+
+    justify-self: end;
+
+    width: 40px;
+
+    height: 40px;
+
+}
+
+.autoacceso-body .aa-form-card {
+
+    padding: 35px;
+
+    border: 1px solid var(--aa-border);
+
+    border-radius: 18px;
+
+    background: white;
+
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .08);
+
+}
+
+.autoacceso-body .aa-grid-3 {
+
+    display: grid;
+
+    grid-template-columns: 1.4fr 1fr 1fr;
+
+    gap: 20px;
+
+    margin-bottom: 28px;
+
+}
+
+.autoacceso-body .aa-campo {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 9px;
+
+    min-width: 0;
+
+}
+
+.autoacceso-body .aa-campo label {
+
+    color: var(--aa-dark);
+
+    font-size: .95rem;
+
+    font-weight: 600;
+
+}
+
+.autoacceso-body .aa-campo input,
+
+.autoacceso-body .aa-campo select,
+
+.autoacceso-body .aa-campo textarea,
+
+.autoacceso-body .aa-equipo-selector select,
+
+.autoacceso-body .aa-tabla select {
+
+    width: 100%;
+
+    min-width: 0;
+
+    padding: 11px 12px;
+
+    border: 1px solid #bdcbbf;
+
+    border-radius: 9px;
+
+    background: white;
+
+    color: var(--aa-dark);
+
+    font: inherit;
+
+    font-size: .92rem;
+
+}
+
+.autoacceso-body .aa-campo input:focus,
+
+.autoacceso-body .aa-campo select:focus,
+
+.autoacceso-body .aa-campo textarea:focus {
+
+    outline: 2px solid rgba(202, 158, 82, .4);
+
+    border-color: var(--aa-gold);
+
+}
+
+.autoacceso-body .aa-campo input[readonly] {
+
+    background: #f5f7f5;
+
+}
+
+/* ==========================================================
+
+   SELECTORES PERSONALIZADOS
+
+   MOTIVO DE USO Y MATERIA
+
+   ========================================================== */
+
+/* SELECT ORIGINAL OCULTO VISUALMENTE */
+
+.autoacceso-body select.aa-select-original {
+
+    position: absolute !important;
+
+    width: 1px !important;
+
+    height: 1px !important;
+
+    padding: 0 !important;
+
+    margin: 0 !important;
+
+    border: 0 !important;
+
+    opacity: 0 !important;
+
+    overflow: hidden !important;
+
+    pointer-events: none !important;
+
+    clip-path: inset(50%);
+
+}
+
+/* CONTENEDOR */
+
+.autoacceso-body .aa-select-personalizado {
+
+    position: relative;
+
+    width: 100%;
+
+    min-width: 0;
+
+    font-family: 'DM Sans', sans-serif;
+
+}
+
+/* BOTÓN PRINCIPAL */
+
+.autoacceso-body .aa-select-boton {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 12px;
+
+    width: 100%;
+
+    min-height: 47px;
+
+    padding: 11px 15px;
+
+    border: 1px solid #bdcbbf;
+
+    border-radius: 9px;
+
+    background-color: #ffffff;
+
+    color: #384033;
+
+    font-family: 'DM Sans', sans-serif;
+
+    font-size: 14px;
+
+    font-weight: 400;
+
+    text-align: left;
+
+    cursor: pointer;
+
+    transition:
+
+        border-color .2s ease,
+
+        box-shadow .2s ease;
+
+}
+
+.autoacceso-body .aa-select-boton:hover {
+
+    border-color: #526855;
+
+}
+
+.autoacceso-body .aa-select-personalizado.abierto
+
+.aa-select-boton {
+
+    outline: none;
+
+    border-color: #CA9E52;
+
+    box-shadow:
+
+        0 0 0 3px rgba(202, 158, 82, .18);
+
+}
+
+.autoacceso-body .aa-select-boton:focus-visible {
+
+    outline: 2px solid #CA9E52;
+
+    outline-offset: 2px;
+
+}
+
+.autoacceso-body .aa-select-texto {
+
+    flex: 1;
+
+    color: #384033;
+
+    font-size: 14px;
+
+    line-height: 1.5;
+
+}
+
+.autoacceso-body .aa-select-boton i {
+
+    color: #526855;
+
+    font-size: 12px;
+
+    transition: transform .2s ease;
+
+}
+
+.autoacceso-body .aa-select-personalizado.abierto
+
+.aa-select-boton i {
+
+    transform: rotate(180deg);
+
+}
+
+/* LISTA DESPLEGABLE */
+
+.autoacceso-body .aa-select-lista {
+
+    position: absolute;
+
+    top: calc(100% + 5px);
+
+    left: 0;
+
+    right: 0;
+
+    z-index: 1100;
+
+    max-height: 250px;
+
+    padding: 5px;
+
+    border: 1px solid #dce4dc;
+
+    border-radius: 12px;
+
+    background-color: #ffffff;
+
+    box-shadow:
+
+        0 12px 28px rgba(56, 64, 51, .16);
+
+    overflow-y: auto;
+
+}
+
+.autoacceso-body .aa-select-lista[hidden] {
+
+    display: none !important;
+
+}
+
+/* OPCIONES */
+
+.autoacceso-body .aa-select-opcion {
+
+    display: block;
+
+    width: 100%;
+
+    min-height: 43px;
+
+    padding: 12px 14px;
+
+    margin: 0;
+
+    border: none;
+
+    border-radius: 8px;
+
+    background-color: #ffffff;
+
+    color: #384033;
+
+    font-family: 'DM Sans', sans-serif;
+
+    font-size: 14px;
+
+    font-weight: 400;
+
+    text-align: left;
+
+    cursor: pointer;
+
+    transition:
+
+        background-color .15s ease,
+
+        color .15s ease;
+
+}
+
+/* HOVER VERDE */
+
+.autoacceso-body .aa-select-opcion:hover,
+
+.autoacceso-body .aa-select-opcion:focus-visible {
+
+    outline: none;
+
+    background-color: #526855;
+
+    color: #ffffff;
+
+}
+
+/* OPCIÓN SELECCIONADA */
+
+.autoacceso-body .aa-select-opcion.seleccionado {
+
+    background-color: #edf3ed;
+
+    color: #384033;
+
+    font-weight: 700;
+
+}
+
+.autoacceso-body .aa-select-opcion.seleccionado:hover,
+
+.autoacceso-body .aa-select-opcion.seleccionado:focus-visible {
+
+    background-color: #526855;
+
+    color: #ffffff;
+
+}
+
+.autoacceso-body .aa-select-opcion:disabled {
+
+    opacity: .5;
+
+    cursor: not-allowed;
+
+}
+
+/* Reloj antiguo de columnas retirado. Registro de Entrada utiliza el reloj compacto. */
+
+/* ==========================================================
+
+   CALENDARIO
+
+   ========================================================== */
+
+.autoacceso-body #aaFechaEntrada {
+
+    height: 47px;
+
+    padding: 10px 14px;
+
+    border: 1px solid #bdcbbf;
+
+    border-radius: 9px;
+
+    background: #f7f9f7;
+
+    color: #384033;
+
+    font-family: 'DM Sans', sans-serif;
+
+    font-size: 14px;
+
+    cursor: pointer;
+
+    color-scheme: light;
+
+}
+
+.autoacceso-body #aaFechaEntrada:focus {
+
+    outline: none;
+
+    border-color: #526855;
+
+    box-shadow:
+
+        0 0 0 3px rgba(82, 104, 85, .12);
+
+}
+
+.autoacceso-body
+
+#aaFechaEntrada::-webkit-calendar-picker-indicator {
+
+    cursor: pointer;
+
+    opacity: .8;
+
+}
+
+/* ==========================================================
+
+   NÚMERO DE CUENTA
+
+   ========================================================== */
+
+.autoacceso-body .aa-buscador {
+
+    display: flex;
+
+    gap: 8px;
+
+}
+
+.autoacceso-body .aa-buscador input {
+
+    flex: 1;
+
+}
+
+.autoacceso-body .aa-buscador button {
+
+    width: 43px;
+
+    min-width: 43px;
+
+    border: 1px solid var(--aa-border);
+
+    border-radius: 9px;
+
+    background: #eef3ee;
+
+    color: var(--aa-green);
+
+    cursor: pointer;
+
+}
+
+.autoacceso-body .aa-cuenta-fila {
+
+    display: flex;
+
+    align-items: end;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    margin-bottom: 20px;
+
+}
+
+.autoacceso-body .aa-cuenta-fila .aa-campo {
+
+    width: 350px;
+
+    max-width: 100%;
+
+}
+
+.autoacceso-body .aa-lectura-indicador,
+
+.autoacceso-body .aa-ayuda {
+
+    color: var(--aa-muted);
+
+    font-size: .9rem;
+
+}
+
+/* ==========================================================
+
+   DATOS DE SOLO LECTURA
+
+   ========================================================== */
+
+.autoacceso-body .aa-datos-lectura {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    align-items: center;
+
+    gap: 20px 35px;
+
+    min-height: 75px;
+
+    padding: 20px;
+
+    margin-bottom: 30px;
+
+    border: 1px solid var(--aa-border);
+
+    border-radius: 10px;
+
+    background: #f8faf8;
+
+}
+
+.autoacceso-body .aa-datos-lectura div {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+}
+
+.autoacceso-body .aa-datos-lectura span {
+
+    color: var(--aa-muted);
+
+}
+
+.autoacceso-body .aa-datos-lectura strong {
+
+    color: var(--aa-dark);
+
+}
+
+/* ==========================================================
+
+   EQUIPO DE CÓMPUTO
+
+   ========================================================== */
+
+.autoacceso-body .aa-equipo-fila {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    flex-wrap: wrap;
+
+    gap: 20px;
+
+    margin-bottom: 30px;
+
+}
+
+.autoacceso-body .aa-equipo-pregunta {
+
+    display: flex;
+
+    align-items: center;
+
+    flex-wrap: wrap;
+
+    gap: 15px;
+
+    color: var(--aa-dark);
+
+    font-weight: 600;
+
+}
+
+.autoacceso-body .aa-equipo-pregunta label {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    font-weight: 400;
+
+    cursor: pointer;
+
+}
+
+.autoacceso-body .aa-equipo-pregunta input {
+
+    accent-color: var(--aa-green);
+
+}
+
+.autoacceso-body .aa-equipo-selector {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+}
+
+.autoacceso-body .aa-equipo-selector[hidden] {
+
+    display: none !important;
+
+}
+
+.autoacceso-body .aa-equipo-selector label {
+
+    color: var(--aa-dark);
+
+    font-weight: 600;
+
+}
+
+.autoacceso-body .aa-equipo-selector select {
+
+    min-width: 185px;
+
+}
+
+/* ==========================================================
+
+   DESCRIPCIÓN DE ACTIVIDAD
+
+   ========================================================== */
+
+.autoacceso-body .aa-descripcion {
+
+    max-width: 550px;
+
+}
+
+.autoacceso-body .aa-descripcion textarea {
+
+    min-height: 110px;
+
+    resize: vertical;
+
+}
+
+/* ==========================================================
+
+   BOTÓN GUARDAR
+
+   ========================================================== */
+
+.autoacceso-body .aa-form-acciones {
+
+    display: flex;
+
+    justify-content: center;
+
+    margin-top: 30px;
+
+}
+
+.autoacceso-body .aa-btn-guardar {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 10px;
+
+    min-width: 160px;
+
+    padding: 13px 25px;
+
+    border: 1px solid #b78c43;
+
+    border-radius: 10px;
+
+    background: var(--aa-gold);
+
+    color: var(--aa-dark);
+
+    font: inherit;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+}
+
+.autoacceso-body .aa-btn-guardar:hover {
+
+    background: #dbb775;
+
+}
+
+/* ==========================================================
+
+   REGISTRO DE CLASE
+
+   ========================================================== */
+
+.autoacceso-body .aa-ayuda {
+
+    margin: 0 0 15px;
+
+    text-align: center;
+
+}
+
+.autoacceso-body .aa-clase-datos {
+
+    margin-bottom: 25px;
+
+}
+
+.autoacceso-body .aa-tabla-contenedor {
+
+    width: 100%;
+
+    max-height: 350px;
+
+    overflow: auto;
+
+    border: 1px solid var(--aa-border);
+
+    border-radius: 10px;
+
+}
+
+.autoacceso-body .aa-tabla {
+
+    width: 100%;
+
+    min-width: 850px;
+
+    border-collapse: collapse;
+
+}
+
+.autoacceso-body .aa-tabla th,
+
+.autoacceso-body .aa-tabla td {
+
+    padding: 13px 10px;
+
+    border-bottom: 1px solid var(--aa-border);
+
+    text-align: left;
+
+    font-size: .88rem;
+
+}
+
+.autoacceso-body .aa-tabla th {
+
+    position: sticky;
+
+    top: 0;
+
+    background: #edf2ed;
+
+    color: var(--aa-dark);
+
+    font-weight: 700;
+
+}
+
+.autoacceso-body .aa-tabla tbody tr:hover {
+
+    background: #f8faf8;
+
+}
+
+.autoacceso-body .aa-tabla select {
+
+    min-width: 125px;
+
+    padding: 8px;
+
+}
+
+.autoacceso-body .aa-asistencia {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 15px;
+
+    white-space: nowrap;
+
+}
+
+.autoacceso-body .aa-asistencia label {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+    cursor: pointer;
+
+}
+
+.autoacceso-body .aa-asistencia input {
+
+    accent-color: var(--aa-green);
+
+}
+
+/* ==========================================================
+
+   ACCESIBILIDAD
+
+   ========================================================== */
+
+.autoacceso-body .aa-kiosco-tarjeta:focus-visible,
+
+.autoacceso-body .aa-kiosk:focus-visible,
+
+.autoacceso-body .aa-herramienta:focus-visible,
+
+.autoacceso-body .aa-btn-guardar:focus-visible {
+
+    outline: 3px solid var(--aa-gold);
+
+    outline-offset: 3px;
+
+}
+
+/* ==========================================================
+
+   RESPONSIVE | TABLETAS
+
+   ========================================================== */
+
+@media (max-width: 900px) {
+
+    .autoacceso-body .aa-estado {
+
+        grid-template-columns: 1fr;
+
+    }
+
+    .autoacceso-body .aa-grid-3 {
+
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    }
+
+    .autoacceso-body .aa-kiosco-contenido {
+
+        padding: 35px 25px;
+
+    }
+
+    .autoacceso-body .aa-kiosco-opciones {
+
+        gap: 18px;
+
+    }
+
+}
+
+/* ==========================================================
+
+   RESPONSIVE | MÓVILES
+
+   ========================================================== */
+
+@media (max-width: 700px) {
+
+    .autoacceso-body .aa-heading {
+
+        flex-direction: column;
+
+        text-align: center;
+
+    }
+
+    .autoacceso-body .aa-kiosk {
+
+        width: 100%;
+
+    }
+
+    .autoacceso-body .aa-herramientas-grid,
+
+    .autoacceso-body .aa-grid-3 {
+
+        grid-template-columns: 1fr;
+
+    }
+
+    .autoacceso-body .aa-form-card {
+
+        padding: 20px;
+
+    }
+
+    .autoacceso-body .aa-form-header h1 {
+
+        font-size: 1.2rem;
+
+    }
+
+    .autoacceso-body .aa-cuenta-fila,
+
+    .autoacceso-body .aa-equipo-fila {
+
+        align-items: stretch;
+
+        flex-direction: column;
+
+    }
+
+    .autoacceso-body .aa-equipo-selector {
+
+        align-items: stretch;
+
+        flex-direction: column;
+
+    }
+
+    .autoacceso-body .aa-datos-lectura {
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+    }
+
+    .autoacceso-body .aa-kiosco {
+
+        border-radius: 16px;
+
+    }
+
+    .autoacceso-body .aa-kiosco-header {
+
+        padding: 18px;
+
+    }
+
+    .autoacceso-body .aa-kiosco-contenido {
+
+        padding: 30px 18px;
+
+    }
+
+    .autoacceso-body .aa-kiosco-opciones {
+
+        grid-template-columns: 1fr;
+
+        gap: 18px;
+
+    }
+
+    .autoacceso-body .aa-kiosco-bienvenida h1 {
+
+        font-size: 24px;
+
+    }
+
+    .autoacceso-body .aa-kiosco-tarjeta {
+
+        min-height: 270px;
+
+    }
+
+    .autoacceso-body .aa-kiosco-footer {
+
+        flex-direction: column;
+
+        text-align: center;
+
+    }
+
+    .autoacceso-body .aa-select-boton {
+
+        min-height: 45px;
+
+        padding: 10px 12px;
+
+    }
+
+    .autoacceso-body .aa-select-lista {
+
+        max-height: 220px;
+
+    }
+
+    .autoacceso-body .aa-select-opcion {
+
+        padding: 12px;
+
+    }
+
+}
+
+/* ==========================================================
+
+   RESPONSIVE | PANTALLAS PEQUEÑAS
+
+   ========================================================== */
+
+@media (max-width: 480px) {
+
+    .autoacceso-body .main-container {
+
+        padding: 15px;
+
+    }
+
+    .autoacceso-body .aa-herramientas {
+
+        padding: 20px;
+
+    }
+
+    .autoacceso-body .aa-form-header {
+
+        gap: 8px;
+
+    }
+
+    .autoacceso-body .aa-btn-regresar {
+
+        padding: 9px;
+
+        font-size: .8rem;
+
+    }
+
+    .autoacceso-body .aa-reloj-popup {
+
+        width: 320px;
+
+        max-width: 88vw;
+
+        padding: 12px;
+
+    }
+
+    .autoacceso-body .aa-reloj-columnas {
+
+        gap: 5px;
+
+        padding: 6px;
+
+    }
+
+}
+
+/* ==========================================================
+
+   MOVIMIENTO REDUCIDO
+
+   ========================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .autoacceso-body .aa-kiosco-tarjeta,
+
+    .autoacceso-body .aa-herramienta,
+
+    .autoacceso-body .aa-kiosk,
+
+    .autoacceso-body .aa-select-boton,
+
+    .autoacceso-body .aa-select-opcion {
+
+        transition: none;
+
+    }
+
+    .autoacceso-body .aa-kiosco-tarjeta:hover {
+
+        transform: none;
+
+    }
+
+}
+
+/* ==========================================================
+
+   AUTOACCESO | PRESENTACIÓN DE REGISTROS
+
+   Estilo de tarjeta blanca similar a Sala de Cómputo
+
+   No modifica el dashboard ni los formularios
+
+   ========================================================== */
+
+.autoacceso-body #aaRegistros {
+
+    width: 100%;
+
+    padding: 15px 0 35px;
+
+}
+
+/* Tarjeta principal de la pantalla de Registros */
+
+.autoacceso-body #aaRegistros .aa-kiosco {
+
+    width: 100%;
+
+    max-width: 1150px;
+
+    margin: 0 auto;
+
+    background: #FFFFFF;
+
+    border: 1px solid #DCE4DC;
+
+    border-radius: 18px;
+
+    overflow: hidden;
+
+    box-shadow: 0 15px 40px rgba(56, 64, 51, 0.12);
+
+}
+
+/* Encabezado institucional del kiosco */
+
+.autoacceso-body #aaRegistros .aa-kiosco-header {
+
+    background: #384033;
+
+    border-bottom: 3px solid #CA9E52;
+
+}
+
+/* Área blanca donde se encuentran las opciones */
+
+.autoacceso-body #aaRegistros .aa-kiosco-contenido {
+
+    background: #FFFFFF;
+
+    padding: 40px 45px;
+
+}
+
+/* Pie de la tarjeta */
+
+.autoacceso-body #aaRegistros .aa-kiosco-footer {
+
+    background: #F8FAF8;
+
+    border-top: 1px solid #DCE4DC;
+
+}
+
+/* Adaptación a pantallas pequeñas */
+
+@media (max-width: 700px) {
+
+    .autoacceso-body #aaRegistros .aa-kiosco-contenido {
+
+        padding: 25px 18px;
+
+    }
+
+}
+
+/* ==========================================================
+
+   AUTOACCESO | FORMULARIOS EN TARJETA INSTITUCIONAL
+
+   Solo afecta a Registro de Entrada y Registro de Clase
+
+   ========================================================== */
+
+.autoacceso-body #aaEntrada .aa-contenedor-formulario,
+
+.autoacceso-body #aaClase .aa-contenedor-formulario {
+
+    width: 100%;
+
+    max-width: 1180px;
+
+    margin: 15px auto 35px;
+
+}
+
+/* Tarjeta blanca */
+
+.autoacceso-body .aa-formulario-institucional {
+
+    width: 100%;
+
+    background: #FFFFFF;
+
+    border: 1px solid #DCE4DC;
+
+    border-radius: 18px;
+
+    overflow: visible;
+
+    box-shadow: 0 15px 40px rgba(56, 64, 51, 0.12);
+
+}
+
+/* Encabezado institucional */
+
+.autoacceso-body .aa-formulario-institucional-header {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding: 18px 30px;
+
+    background: #384033;
+
+    color: #FFFFFF;
+
+    border-bottom: 3px solid #CA9E52;
+
+    border-radius: 17px 17px 0 0;
+
+}
+
+/* Identidad del módulo */
+
+.autoacceso-body .aa-formulario-institucional-identidad {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 13px;
+
+}
+
+.autoacceso-body .aa-formulario-institucional-icono {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    width: 45px;
+
+    height: 45px;
+
+    border-radius: 12px;
+
+    background: #526855;
+
+    color: #CA9E52;
+
+    font-size: 19px;
+
+}
+
+.autoacceso-body .aa-formulario-institucional-identidad div {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 4px;
+
+}
+
+.autoacceso-body .aa-formulario-institucional-identidad strong {
+
+    color: #FFFFFF;
+
+    font-size: 15px;
+
+    font-weight: 700;
+
+}
+
+.autoacceso-body .aa-formulario-institucional-identidad small {
+
+    color: #E1E8E1;
+
+    font-size: 12px;
+
+}
+
+/* Botón para regresar */
+
+.autoacceso-body .aa-formulario-institucional-salir {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    width: 43px;
+
+    height: 43px;
+
+    flex-shrink: 0;
+
+    border: 1px solid rgba(255, 255, 255, 0.35);
+
+    border-radius: 10px;
+
+    background: transparent;
+
+    color: #FFFFFF;
+
+    font-size: 17px;
+
+    cursor: pointer;
+
+}
+
+.autoacceso-body .aa-formulario-institucional-salir:hover {
+
+    background: rgba(255, 255, 255, 0.15);
+
+}
+
+/* Contenido original de los formularios */
+
+.autoacceso-body .aa-formulario-institucional-contenido {
+
+    padding: 30px;
+
+    background: #FFFFFF;
+
+}
+
+/* Eliminar únicamente la tarjeta blanca duplicada */
+
+.autoacceso-body .aa-formulario-institucional-contenido .aa-form-card {
+
+    box-shadow: none;
+
+    border: none;
+
+    padding: 0;
+
+    border-radius: 0;
+
+}
+
+/* Mantener el ancho del formulario */
+
+.autoacceso-body .aa-formulario-institucional-contenido .aa-form-page {
+
+    width: 100%;
+
+    max-width: none;
+
+    margin: 0;
+
+}
+
+/* Pie institucional */
+
+.autoacceso-body .aa-formulario-institucional-footer {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    padding: 17px 30px;
+
+    border-top: 1px solid #E4E9E4;
+
+    border-radius: 0 0 17px 17px;
+
+    background: #F8FAF8;
+
+    color: #647166;
+
+    font-size: 12px;
+
+}
+
+/* Adaptación para móviles */
+
+@media (max-width: 700px) {
+
+    .autoacceso-body .aa-formulario-institucional-header {
+
+        padding: 15px 18px;
+
+    }
+
+    .autoacceso-body .aa-formulario-institucional-contenido {
+
+        padding: 20px 15px;
+
+    }
+
+    .autoacceso-body .aa-formulario-institucional-footer {
+
+        flex-direction: column;
+
+        text-align: center;
+
+        padding: 15px;
+
+    }
+
+}
+
+/* ==========================================================
+
+   AUTOACCESO UAPIX
+
+   ESTILOS ADICIONALES - REGISTRO DE CLASE
+
+   FECHA, HORARIO Y SALIDA AUTOMÁTICA
+
+   ========================================================== */
+
+/* CONTENEDOR GENERAL DE REGISTRO DE CLASE */
+
+.autoacceso-body .aa-clase-registro {
+
+    width: 100%;
+
+    font-family: 'DM Sans', sans-serif;
+
+    color: #384033;
+
+}
+
+/* ENCABEZADO DEL FORMULARIO */
+
+.autoacceso-body .aa-clase-barra {
+
+    display: grid;
+
+    grid-template-columns: 1fr auto 1fr;
+
+    align-items: center;
+
+    gap: 15px;
+
+    margin-bottom: 27px;
+
+}
+
+.autoacceso-body .aa-clase-titulo {
+
+    margin: 0;
+
+    color: #384033;
+
+    font-size: 29px;
+
+    font-weight: 700;
+
+    text-align: center;
+
+}
+
+.autoacceso-body .aa-clase-regresar,
+
+.autoacceso-body .aa-clase-cerrar {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 9px;
+
+    border: 1px solid #D8E1D8;
+
+    border-radius: 9px;
+
+    background: #FFFFFF;
+
+    color: #384033;
+
+    font-family: 'DM Sans', sans-serif;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: all 0.2s ease;
+
+}
+
+.autoacceso-body .aa-clase-regresar {
+
+    justify-self: start;
+
+    padding: 11px 17px;
+
+}
+
+.autoacceso-body .aa-clase-cerrar {
+
+    justify-self: end;
+
+    width: 41px;
+
+    height: 41px;
+
+}
+
+.autoacceso-body .aa-clase-regresar:hover,
+
+.autoacceso-body .aa-clase-cerrar:hover {
+
+    background: #EDF3ED;
+
+    border-color: #526855;
+
+}
+
+/* ==========================================================
+
+   CAMPOS DE MAESTRO, GRUPO Y MATERIA
+
+   ========================================================== */
+
+.autoacceso-body .aa-clase-grid {
+
+    display: grid;
+
+    grid-template-columns: 1.2fr 1fr 1fr;
+
+    gap: 20px;
+
+    margin-bottom: 25px;
+
+}
+
+.autoacceso-body .aa-clase-campo {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 9px;
+
+    min-width: 0;
+
+}
+
+.autoacceso-body .aa-clase-campo label {
+
+    color: #384033;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+}
+
+.autoacceso-body .aa-clase-campo input,
+
+.autoacceso-body .aa-clase-campo select {
+
+    width: 100%;
+
+    min-width: 0;
+
+    height: 46px;
+
+    box-sizing: border-box;
+
+    padding: 10px 13px;
+
+    border: 1px solid #BFCDBF;
+
+    border-radius: 9px;
+
+    background: #FFFFFF;
+
+    color: #384033;
+
+    font-family: 'DM Sans', sans-serif;
+
+    font-size: 14px;
+
+    transition:
+
+        border-color 0.2s ease,
+
+        box-shadow 0.2s ease;
+
+}
+
+.autoacceso-body .aa-clase-campo input:focus,
+
+.autoacceso-body .aa-clase-campo select:focus {
+
+    outline: none;
+
+    border-color: #526855;
+
+    box-shadow: 0 0 0 3px rgba(82, 104, 85, 0.12);
+
+}
+
+/* BOTONES DE BÚSQUEDA */
+
+.autoacceso-body .aa-clase-busqueda {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    min-width: 0;
+
+}
+
+.autoacceso-body .aa-clase-busqueda input {
+
+    flex: 1;
+
+}
+
+.autoacceso-body .aa-clase-boton-buscar {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    width: 44px;
+
+    height: 46px;
+
+    border: 1px solid #D8E1D8;
+
+    border-radius: 9px;
+
+    background: #EDF3ED;
+
+    color: #526855;
+
+    font-size: 14px;
+
+    cursor: pointer;
+
+    transition: background 0.2s ease;
+
+}
+
+.autoacceso-body .aa-clase-boton-buscar:hover {
+
+    background: #DFE9DF;
+
+}
+
+/* ==========================================================
+
+   NUEVA SECCIÓN: FECHA Y HORARIO DE CLASE
+
+   ========================================================== */
+
+.autoacceso-body .aa-clase-horario {
+
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 23px;
+
+    margin-bottom: 27px;
+
+    border: 1px solid #D8E1D8;
+
+    border-radius: 13px;
+
+    background: #F7F9F7;
+
+}
+
+/* TÍTULO DE LA SECCIÓN */
+
+.autoacceso-body .aa-clase-horario-titulo {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    margin-bottom: 20px;
+
+}
+
+.autoacceso-body .aa-clase-horario-icono {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    width: 38px;
+
+    height: 38px;
+
+    border-radius: 10px;
+
+    background: #E5ECE5;
+
+    color: #526855;
+
+    font-size: 17px;
+
+}
+
+.autoacceso-body .aa-clase-horario-titulo h3 {
+
+    margin: 0;
+
+    color: #384033;
+
+    font-size: 17px;
+
+    font-weight: 700;
+
+}
+
+/* DISTRIBUCIÓN EN TRES COLUMNAS */
+
+.autoacceso-body .aa-clase-grid-horario {
+
+    display: grid;
+
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+
+    gap: 20px;
+
+}
+
+/* CAMPOS DE FECHA Y HORA */
+
+.autoacceso-body .aa-clase-campo input[type="date"],
+
+.autoacceso-body .aa-clase-campo input[type="time"] {
+
+    width: 100%;
+
+    height: 46px;
+
+    box-sizing: border-box;
+
+    padding: 10px 13px;
+
+    border: 1px solid #BFCDBF;
+
+    border-radius: 9px;
+
+    background: #FFFFFF;
+
+    color: #384033;
+
+    font-family: 'DM Sans', sans-serif;
+
+    font-size: 14px;
+
+    color-scheme: light;
+
+    cursor: pointer;
+
+}
+
+.autoacceso-body .aa-clase-campo input[type="date"]:focus,
+
+.autoacceso-body .aa-clase-campo input[type="time"]:focus {
+
+    outline: none;
+
+    border-color: #526855;
+
+    box-shadow: 0 0 0 3px rgba(82, 104, 85, 0.12);
+
+}
+
+/* ICONOS NATIVOS DE FECHA Y HORA */
+
+.autoacceso-body
+
+.aa-clase-campo input[type="date"]::-webkit-calendar-picker-indicator,
+
+.autoacceso-body
+
+.aa-clase-campo input[type="time"]::-webkit-calendar-picker-indicator {
+
+    cursor: pointer;
+
+    opacity: 0.75;
+
+}
+
+/* ==========================================================
+
+   AVISO DE SALIDA AUTOMÁTICA
+
+   ========================================================== */
+
+.autoacceso-body .aa-clase-aviso-horario {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 10px;
+
+    margin-top: 18px;
+
+    padding: 12px 15px;
+
+    border-left: 3px solid #CA9E52;
+
+    border-radius: 6px;
+
+    background: #FFF8EA;
+
+    color: #65512A;
+
+    font-size: 13px;
+
+    line-height: 1.6;
+
+}
+
+.autoacceso-body .aa-clase-aviso-horario i {
+
+    flex-shrink: 0;
+
+    margin-top: 2px;
+
+    color: #A77D37;
+
+    font-size: 15px;
+
+}
+
+/* ==========================================================
+
+   DATOS DE SOLO LECTURA
+
+   ========================================================== */
+
+.autoacceso-body .aa-clase-ayuda {
+
+    margin: 0 0 14px;
+
+    color: #647166;
+
+    font-size: 14px;
+
+    text-align: center;
+
+}
+
+.autoacceso-body .aa-clase-resumen {
+
+    display: flex;
+
+    align-items: center;
+
+    flex-wrap: wrap;
+
+    gap: 25px;
+
+    min-height: 76px;
+
+    box-sizing: border-box;
+
+    padding: 18px 20px;
+
+    margin-bottom: 25px;
+
+    border: 1px solid #D8E1D8;
+
+    border-radius: 10px;
+
+    background: #F7F9F7;
+
+}
+
+.autoacceso-body .aa-clase-resumen-item {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    color: #647166;
+
+    font-size: 14px;
+
+}
+
+.autoacceso-body .aa-clase-resumen-item strong {
+
+    color: #384033;
+
+    font-weight: 700;
+
+}
+
+/* ==========================================================
+
+   TABLA DE ALUMNOS
+
+   ========================================================== */
+
+.autoacceso-body .aa-clase-tabla-contenedor {
+
+    width: 100%;
+
+    max-height: 350px;
+
+    border: 1px solid #D8E1D8;
+
+    border-radius: 10px;
+
+    overflow: auto;
+
+}
+
+.autoacceso-body .aa-clase-tabla {
+
+    width: 100%;
+
+    min-width: 850px;
+
+    border-collapse: collapse;
+
+    font-family: 'DM Sans', sans-serif;
+
+    font-size: 13px;
+
+}
+
+.autoacceso-body .aa-clase-tabla thead th {
+
+    position: sticky;
+
+    top: 0;
+
+    z-index: 1;
+
+    padding: 15px 12px;
+
+    background: #EAF0EA;
+
+    color: #384033;
+
+    text-align: left;
+
+    font-weight: 700;
+
+    white-space: nowrap;
+
+}
+
+.autoacceso-body .aa-clase-tabla tbody td {
+
+    padding: 13px 12px;
+
+    border-top: 1px solid #D8E1D8;
+
+    color: #354035;
+
+    vertical-align: middle;
+
+}
+
+.autoacceso-body .aa-clase-tabla tbody tr:nth-child(even) {
+
+    background: #F8FAF8;
+
+}
+
+.autoacceso-body .aa-clase-tabla tbody tr:hover {
+
+    background: #EDF4ED;
+
+}
+
+/* ASISTENCIA */
+
+.autoacceso-body .aa-clase-asistencia {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 15px;
+
+}
+
+.autoacceso-body .aa-clase-asistencia label {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+    color: #384033;
+
+    font-size: 13px;
+
+    cursor: pointer;
+
+    white-space: nowrap;
+
+}
+
+.autoacceso-body .aa-clase-asistencia input {
+
+    accent-color: #526855;
+
+    cursor: pointer;
+
+}
+
+/* SELECTOR DE EQUIPO */
+
+.autoacceso-body .aa-clase-equipo {
+
+    width: 100%;
+
+    min-width: 120px;
+
+    padding: 10px;
+
+    border: 1px solid #BFCDBF;
+
+    border-radius: 9px;
+
+    background: #FFFFFF;
+
+    color: #384033;
+
+    font-family: 'DM Sans', sans-serif;
+
+    font-size: 13px;
+
+}
+
+/* ==========================================================
+
+   BOTÓN GUARDAR
+
+   ========================================================== */
+
+.autoacceso-body .aa-clase-acciones {
+
+    display: flex;
+
+    justify-content: center;
+
+    margin-top: 30px;
+
+}
+
+.autoacceso-body .aa-clase-guardar {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 10px;
+
+    min-width: 160px;
+
+    padding: 13px 25px;
+
+    border: 1px solid #B78C43;
+
+    border-radius: 9px;
+
+    background: #CA9E52;
+
+    color: #384033;
+
+    font-family: 'DM Sans', sans-serif;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: background 0.2s ease;
+
+}
+
+.autoacceso-body .aa-clase-guardar:hover {
+
+    background: #DAB36E;
+
+}
+
+/* ==========================================================
+
+   MENSAJES DE VALIDACIÓN
+
+   ========================================================== */
+
+.autoacceso-body .aa-clase-mensaje {
+
+    margin-top: 17px;
+
+    padding: 13px 16px;
+
+    border: 1px solid #D9E4D9;
+
+    border-radius: 9px;
+
+    background: #EDF5ED;
+
+    color: #384033;
+
+    font-size: 13px;
+
+    line-height: 1.6;
+
+}
+
+.autoacceso-body .aa-clase-mensaje.error {
+
+    border-color: #E7B9B9;
+
+    background: #FFF0F0;
+
+    color: #9A3030;
+
+}
+
+.autoacceso-body .aa-clase-mensaje[hidden] {
+
+    display: none !important;
+
+}
+
+/* ==========================================================
+
+   DISEÑO RESPONSIVE
+
+   ========================================================== */
+
+/* TABLETS */
+
+@media (max-width: 900px) {
+
+    .autoacceso-body .aa-clase-grid {
+
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    }
+
+    .autoacceso-body .aa-clase-grid-horario {
+
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    }
+
+    .autoacceso-body .aa-clase-resumen {
+
+        gap: 15px;
+
+    }
+
+}
+
+/* CELULARES */
+
+@media (max-width: 600px) {
+
+    .autoacceso-body .aa-clase-barra {
+
+        grid-template-columns: 1fr auto;
+
+    }
+
+    .autoacceso-body .aa-clase-titulo {
+
+        grid-column: 1 / -1;
+
+        grid-row: 1;
+
+        font-size: 23px;
+
+    }
+
+    .autoacceso-body .aa-clase-regresar,
+
+    .autoacceso-body .aa-clase-cerrar {
+
+        grid-row: 2;
+
+    }
+
+    .autoacceso-body .aa-clase-grid,
+
+    .autoacceso-body .aa-clase-grid-horario {
+
+        grid-template-columns: 1fr;
+
+    }
+
+    .autoacceso-body .aa-clase-horario {
+
+        padding: 16px;
+
+    }
+
+    .autoacceso-body .aa-clase-resumen {
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        gap: 12px;
+
+    }
+
+    .autoacceso-body .aa-clase-aviso-horario {
+
+        font-size: 12px;
+
+    }
+
+    .autoacceso-body .aa-clase-tabla-contenedor {
+
+        max-height: 320px;
+
+    }
+
+    .autoacceso-body .aa-clase-acciones {
+
+        margin-top: 24px;
+
+    }
+
+    .autoacceso-body .aa-clase-guardar {
+
+        width: 100%;
+
+    }
+
+}
+
+/* ==========================================================
+
+   AUTOACCESO UAPIX
+
+   AJUSTES DE REGISTRO DE CLASE
+
+   CARRERA, TABLA AMPLIADA Y PIE INSTITUCIONAL
+
+   ========================================================== */
+
+/* CUATRO CAMPOS GENERALES */
+
+.autoacceso-body .aa-clase-grid-datos {
+
+    display: grid;
+
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+
+    gap: 18px;
+
+    margin-bottom: 25px;
+
+}
+
+.autoacceso-body .aa-clase-grid-datos .aa-clase-campo {
+
+    min-width: 0;
+
+}
+
+.autoacceso-body .aa-clase-grid-datos input,
+
+.autoacceso-body .aa-clase-grid-datos select {
+
+    width: 100%;
+
+    min-width: 0;
+
+}
+
+/* RESUMEN CON CARRERA */
+
+.autoacceso-body .aa-clase-resumen {
+
+    display: flex;
+
+    align-items: center;
+
+    flex-wrap: wrap;
+
+    gap: 18px 25px;
+
+}
+
+.autoacceso-body .aa-clase-resumen-item {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+}
+
+/* TABLA AMPLIADA DE ALUMNOS */
+
+.autoacceso-body .aa-clase-tabla-contenedor {
+
+    width: 100%;
+
+    max-height: 350px;
+
+    overflow: auto;
+
+    border: 1px solid #D8E1D8;
+
+    border-radius: 10px;
+
+}
+
+.autoacceso-body .aa-clase-tabla-ampliada {
+
+    width: 100%;
+
+    min-width: 1500px;
+
+    border-collapse: collapse;
+
+    font-family: 'DM Sans', sans-serif;
+
+    font-size: 13px;
+
+}
+
+.autoacceso-body .aa-clase-tabla-ampliada thead th {
+
+    position: sticky;
+
+    top: 0;
+
+    z-index: 2;
+
+    padding: 15px 12px;
+
+    background: #EAF0EA;
+
+    color: #384033;
+
+    text-align: left;
+
+    font-weight: 700;
+
+    white-space: nowrap;
+
+}
+
+.autoacceso-body .aa-clase-tabla-ampliada tbody td {
+
+    padding: 13px 12px;
+
+    border-top: 1px solid #D8E1D8;
+
+    color: #384033;
+
+    vertical-align: middle;
+
+    white-space: nowrap;
+
+}
+
+.autoacceso-body .aa-clase-tabla-ampliada tbody tr:nth-child(even) {
+
+    background: #F8FAF8;
+
+}
+
+.autoacceso-body .aa-clase-tabla-ampliada tbody tr:hover {
+
+    background: #EDF4ED;
+
+}
+
+.autoacceso-body .aa-clase-tabla-ampliada th:nth-child(3),
+
+.autoacceso-body .aa-clase-tabla-ampliada td:nth-child(3) {
+
+    min-width: 190px;
+
+}
+
+.autoacceso-body .aa-clase-tabla-ampliada th:nth-child(4),
+
+.autoacceso-body .aa-clase-tabla-ampliada td:nth-child(4) {
+
+    min-width: 170px;
+
+}
+
+.autoacceso-body .aa-clase-tabla-ampliada th:nth-child(6),
+
+.autoacceso-body .aa-clase-tabla-ampliada td:nth-child(6) {
+
+    min-width: 170px;
+
+}
+
+.autoacceso-body .aa-clase-tabla-ampliada th:nth-child(10),
+
+.autoacceso-body .aa-clase-tabla-ampliada td:nth-child(10) {
+
+    min-width: 160px;
+
+}
+
+.autoacceso-body .aa-clase-tabla-ampliada th:nth-child(11),
+
+.autoacceso-body .aa-clase-tabla-ampliada td:nth-child(11) {
+
+    min-width: 160px;
+
+}
+
+.autoacceso-body .aa-clase-tabla-ampliada .aa-clase-asistencia {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+}
+
+.autoacceso-body .aa-clase-tabla-ampliada .aa-clase-equipo {
+
+    width: 100%;
+
+    min-width: 130px;
+
+}
+
+/* MENSAJE CUANDO NO HAY ALUMNOS */
+
+.autoacceso-body .aa-clase-sin-alumnos {
+
+    padding: 35px 20px !important;
+
+    text-align: center;
+
+    color: #647166 !important;
+
+}
+
+.autoacceso-body .aa-clase-sin-alumnos i {
+
+    margin-right: 8px;
+
+    color: #526855;
+
+}
+
+/* EQUIPOS DESHABILITADOS */
+
+.autoacceso-body .aa-clase-equipo:disabled {
+
+    background: #F2F4F2;
+
+    color: #8A958A;
+
+    cursor: not-allowed;
+
+}
+
+/* OCULTAR LOS TEXTOS DEL PIE DE REGISTRO DE CLASE */
+
+.autoacceso-body #aaClase
+
+.aa-formulario-institucional-footer span {
+
+    display: none !important;
+
+}
+
+/* OCULTAR LOS TEXTOS DEL PIE DE REGISTROS */
+
+.autoacceso-body #aaRegistros
+
+.aa-kiosco-footer span {
+
+    display: none !important;
+
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 1100px) {
+
+    .autoacceso-body .aa-clase-grid-datos {
+
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    }
+
+}
+
+@media (max-width: 650px) {
+
+    .autoacceso-body .aa-clase-grid-datos {
+
+        grid-template-columns: 1fr;
+
+        gap: 15px;
+
+    }
+
+    .autoacceso-body .aa-clase-resumen {
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        gap: 12px;
+
+    }
+
+    .autoacceso-body .aa-clase-tabla-contenedor {
+
+        max-height: 320px;
+
+    }
+
+}
+
+/* ==========================================================
+   CORRECCIONES FINALES | AUTOACCESO UAPIX
+   ========================================================== */
+
+/* No mostrar barras inferiores institucionales vacías. */
+.autoacceso-body #aaRegistros .aa-kiosco-footer,
+.autoacceso-body #aaEntrada .aa-formulario-institucional-footer,
+.autoacceso-body #aaClase .aa-formulario-institucional-footer {
+    display: none !important;
+}
+
+/* Los campos de hora conservan su icono nativo alineado. */
+.autoacceso-body .aa-clase-grid-horario > *,
+.autoacceso-body .aa-clase-campo {
+    min-width: 0;
+}
+.autoacceso-body .aa-clase-campo input[type="time"] {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    height: 46px;
+    box-sizing: border-box;
+    padding: 10px 13px;
+    margin: 0;
+    background: #fff;
+    color: #384033;
+    border: 1px solid #BFCDBF;
+    border-radius: 9px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color-scheme: light;
+}
+.autoacceso-body .aa-clase-campo input[type="time"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: .8;
+}
+.autoacceso-body .aa-clase-campo input[type="time"]:focus {
+    outline: none;
+    border-color: #526855;
+    box-shadow: 0 0 0 3px rgba(82, 104, 85, .12);
+}
+
+/* Evitar que los selectores propios del reloj de entrada se apilen. */
+.autoacceso-body .aa-reloj-columnas {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, .75fr);
+}
+.autoacceso-body .aa-reloj-popup[hidden] {
+    display: none !important;
+}
+
+/* ==========================================================
+   REGISTRO DE CLASE | RELOJ PERSONALIZADO
+   Compatible con registro_clase.html; no afecta otros módulos.
+   ========================================================== */
+.autoacceso-body #aaClase .aa-clase-hora-personalizada {
+    position: relative;
+    display: block;
+    width: 100%;
+    min-width: 0;
+}
+.autoacceso-body #aaClase .aa-clase-hora-personalizada .aa-clase-hora-input {
+    display: block;
+    width: 100%;
+    height: 46px;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 10px 48px 10px 13px;
+    border: 1px solid #BFCDBF;
+    border-radius: 9px;
+    background: #fff;
+    color: #384033;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+}
+.autoacceso-body #aaClase .aa-clase-hora-input:focus {
+    outline: none;
+    border-color: #526855;
+    box-shadow: 0 0 0 3px rgba(82,104,85,.12);
+}
+.autoacceso-body #aaClase .aa-clase-hora-personalizada .aa-clase-hora-boton {
+    position: absolute;
+    top: 7px;
+    right: 8px;
+    left: auto;
+    transform: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: #EDF3ED;
+    color: #526855;
+    cursor: pointer;
+    z-index: 2;
+}
+.autoacceso-body #aaClase .aa-clase-hora-boton:hover {
+    background: #526855;
+    color: #fff;
+}
+.autoacceso-body #aaClase .aa-clase-hora-personalizada .aa-clase-reloj-popup {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    left: auto;
+    display: block;
+    width: 300px;
+    max-width: 90vw;
+    height: auto;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 18px;
+    border: 1px solid #D8E1D8;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 12px 30px rgba(56,64,51,.18);
+    z-index: 9999;
+}
+.autoacceso-body #aaClase .aa-clase-reloj-popup[hidden] {
+    display: none !important;
+}
+.autoacceso-body #aaClase .aa-clase-reloj-titulo {
+    display: block;
+    margin: 0 0 15px;
+    color: #384033;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: center;
+}
+.autoacceso-body #aaClase .aa-clase-reloj-controles {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) 10px minmax(0,1fr) minmax(0,1.2fr);
+    align-items: center;
+    gap: 7px;
+    width: 100%;
+    margin: 0 0 16px;
+    padding: 0;
+}
+.autoacceso-body #aaClase .aa-clase-reloj-controles select {
+    display: block;
+    position: static;
+    width: 100%;
+    min-width: 0;
+    height: 42px;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 6px 4px;
+    border: 1px solid #BFCDBF;
+    border-radius: 8px;
+    background: #F7F9F7;
+    color: #384033;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    text-align: center;
+    cursor: pointer;
+}
+.autoacceso-body #aaClase .aa-clase-reloj-controles select:focus {
+    outline: none;
+    border-color: #CA9E52;
+    box-shadow: 0 0 0 3px rgba(202,158,82,.15);
+}
+.autoacceso-body #aaClase .aa-clase-reloj-controles > span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #384033;
+    font-size: 17px;
+    font-weight: 700;
+}
+.autoacceso-body #aaClase .aa-clase-reloj-popup .aa-clase-reloj-aceptar {
+    position: static;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 42px;
+    margin: 0;
+    padding: 10px;
+    border: 0;
+    border-radius: 8px;
+    background: #526855;
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.autoacceso-body #aaClase .aa-clase-reloj-aceptar:hover {
+    background: #384033;
+}
+.autoacceso-body #aaClase .aa-clase-horario,
+.autoacceso-body #aaClase .aa-clase-grid-horario,
+.autoacceso-body #aaClase .aa-clase-campo {
+    overflow: visible;
+}
+@media (max-width: 600px) {
+    .autoacceso-body #aaClase .aa-clase-hora-personalizada .aa-clase-reloj-popup {
+        left: 0;
+        right: auto;
+        width: 280px;
+        max-width: 85vw;
+        padding: 14px;
+    }
+}
+
+
+/* ==========================================================
+   REGISTRO DE ENTRADA | RELOJ PERSONALIZADO
+   Compatible con registro_clase.html; no afecta otros módulos.
+   ========================================================== */
+.autoacceso-body #aaEntrada .aa-entrada-hora-personalizada {
+    position: relative;
+    display: block;
+    width: 100%;
+    min-width: 0;
+}
+.autoacceso-body #aaEntrada .aa-entrada-hora-personalizada .aa-entrada-hora-input {
+    display: block;
+    width: 100%;
+    height: 46px;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 10px 48px 10px 13px;
+    border: 1px solid #BFCDBF;
+    border-radius: 9px;
+    background: #fff;
+    color: #384033;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+}
+.autoacceso-body #aaEntrada .aa-entrada-hora-input:focus {
+    outline: none;
+    border-color: #526855;
+    box-shadow: 0 0 0 3px rgba(82,104,85,.12);
+}
+.autoacceso-body #aaEntrada .aa-entrada-hora-personalizada .aa-entrada-hora-boton {
+    position: absolute;
+    top: 7px;
+    right: 8px;
+    left: auto;
+    transform: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: #EDF3ED;
+    color: #526855;
+    cursor: pointer;
+    z-index: 2;
+}
+.autoacceso-body #aaEntrada .aa-entrada-hora-boton:hover {
+    background: #526855;
+    color: #fff;
+}
+.autoacceso-body #aaEntrada .aa-entrada-hora-personalizada .aa-entrada-reloj-popup {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    left: auto;
+    display: block;
+    width: 300px;
+    max-width: 90vw;
+    height: auto;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 18px;
+    border: 1px solid #D8E1D8;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 12px 30px rgba(56,64,51,.18);
+    z-index: 9999;
+}
+.autoacceso-body #aaEntrada .aa-entrada-reloj-popup[hidden] {
+    display: none !important;
+}
+.autoacceso-body #aaEntrada .aa-entrada-reloj-titulo {
+    display: block;
+    margin: 0 0 15px;
+    color: #384033;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: center;
+}
+.autoacceso-body #aaEntrada .aa-entrada-reloj-controles {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) 10px minmax(0,1fr) minmax(0,1.2fr);
+    align-items: center;
+    gap: 7px;
+    width: 100%;
+    margin: 0 0 16px;
+    padding: 0;
+}
+.autoacceso-body #aaEntrada .aa-entrada-reloj-controles select {
+    display: block;
+    position: static;
+    width: 100%;
+    min-width: 0;
+    height: 42px;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 6px 4px;
+    border: 1px solid #BFCDBF;
+    border-radius: 8px;
+    background: #F7F9F7;
+    color: #384033;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    text-align: center;
+    cursor: pointer;
+}
+.autoacceso-body #aaEntrada .aa-entrada-reloj-controles select:focus {
+    outline: none;
+    border-color: #CA9E52;
+    box-shadow: 0 0 0 3px rgba(202,158,82,.15);
+}
+.autoacceso-body #aaEntrada .aa-entrada-reloj-controles > span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #384033;
+    font-size: 17px;
+    font-weight: 700;
+}
+.autoacceso-body #aaEntrada .aa-entrada-reloj-popup .aa-entrada-reloj-aceptar {
+    position: static;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 42px;
+    margin: 0;
+    padding: 10px;
+    border: 0;
+    border-radius: 8px;
+    background: #526855;
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.autoacceso-body #aaEntrada .aa-entrada-reloj-aceptar:hover {
+    background: #384033;
+}
+.autoacceso-body #aaEntrada .aa-entrada-horario,
+.autoacceso-body #aaEntrada .aa-clase-grid-horario,
+.autoacceso-body #aaEntrada .aa-clase-campo {
+    overflow: visible;
+}
+@media (max-width: 600px) {
+    .autoacceso-body #aaEntrada .aa-entrada-hora-personalizada .aa-entrada-reloj-popup {
+        left: 0;
+        right: auto;
+        width: 280px;
+        max-width: 85vw;
+        padding: 14px;
+    }
+}
+
+/* ==========================================================
+   AJUSTE FINAL | RELOJ COMPACTO REGISTRO DE ENTRADA
+   ========================================================== */
+.autoacceso-body #aaEntrada .aa-entrada-hora-personalizada { position:relative; overflow:visible; }
+.autoacceso-body #aaEntrada .aa-entrada-reloj-popup[hidden] { display:none !important; }
+.autoacceso-body #aaEntrada .aa-entrada-reloj-controles select { appearance:auto; -webkit-appearance:auto; }
+.autoacceso-body #aaEntrada #aaRelojPopup,
+.autoacceso-body #aaEntrada .aa-reloj-popup { display:none !important; }

@@ -1,0 +1,724 @@
+{% load static %}
+
+<div class="aa-clase-registro">
+
+    <form id="aaRegistroClaseFormulario" method="post" novalidate>
+        {% csrf_token %}
+
+        <!-- ENCABEZADO DEL FORMULARIO -->
+        <div class="aa-clase-barra">
+            <button
+                type="button"
+                class="aa-clase-regresar"
+                onclick="aaRegresarClase()">
+                <i class="fa-solid fa-arrow-left"></i>
+                Regresar
+            </button>
+
+            <h2 class="aa-clase-titulo">Registro de Clase</h2>
+
+            <button
+                type="button"
+                class="aa-clase-cerrar"
+                onclick="aaRegresarClase()"
+                aria-label="Cerrar registro">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- DATOS GENERALES -->
+        <div class="aa-clase-grid-datos">
+
+            <div class="aa-clase-campo">
+                <label for="aaMaestroClase">Maestro:</label>
+
+                <div class="aa-clase-busqueda">
+                    <input
+                        type="text"
+                        id="aaMaestroClase"
+                        name="numero_cuenta_maestro"
+                        placeholder="Número de cuenta"
+                        autocomplete="off"
+                        required>
+
+                    <button
+                        type="button"
+                        class="aa-clase-boton-buscar"
+                        data-busqueda="maestro"
+                        aria-label="Buscar maestro">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="aa-clase-campo">
+                <label for="aaCarreraClase">Carrera:</label>
+
+                <select id="aaCarreraClase" name="carrera" required>
+                    <option value="">Selecciona una carrera</option>
+
+                    {% for carrera in carreras %}
+                    <option value="{{ carrera.id }}">
+                        {{ carrera.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="aa-clase-campo">
+                <label for="aaGrupoClase">Grupo:</label>
+
+                <div class="aa-clase-busqueda">
+                    <input
+                        type="text"
+                        id="aaGrupoClase"
+                        name="grupo"
+                        placeholder="No. Grupo"
+                        autocomplete="off"
+                        required>
+
+                    <button
+                        type="button"
+                        class="aa-clase-boton-buscar"
+                        data-busqueda="grupo"
+                        aria-label="Buscar grupo">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="aa-clase-campo">
+                <label for="aaMateria">Materia:</label>
+
+                <select id="aaMateria" name="materia" required>
+                    <option value="">Selecciona una materia</option>
+
+                    {% for materia in materias %}
+                    <option value="{{ materia.id }}">
+                        {{ materia.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+        </div>
+
+        <!-- FECHA Y HORARIO DE LA CLASE -->
+        <section class="aa-clase-horario">
+
+            <div class="aa-clase-horario-titulo">
+                <span class="aa-clase-horario-icono">
+                    <i class="fa-solid fa-calendar-days"></i>
+                </span>
+
+                <h3>Fecha y horario de la clase</h3>
+            </div>
+
+            <div class="aa-clase-grid-horario">
+
+                <!-- FECHA -->
+                <div class="aa-clase-campo">
+                    <label for="aaFechaClase">Fecha de clase:</label>
+
+                    <input
+                        type="date"
+                        id="aaFechaClase"
+                        name="fecha_clase"
+                        required>
+                </div>
+
+                <!-- HORA DE INICIO -->
+                <div class="aa-clase-campo">
+                    <label for="aaHoraInicioClase">
+                        Hora de inicio:
+                    </label>
+
+                    <div class="aa-clase-hora-personalizada">
+                        <input
+                            type="text"
+                            id="aaHoraInicioClase"
+                            name="hora_inicio"
+                            class="aa-clase-hora-input"
+                            placeholder="Selecciona una hora"
+                            autocomplete="off"
+                            readonly
+                            required>
+
+                        <button
+                            type="button"
+                            class="aa-clase-hora-boton"
+                            aria-label="Seleccionar hora de inicio">
+                            <i class="fa-regular fa-clock"></i>
+                        </button>
+
+                        <div class="aa-clase-reloj-popup" hidden>
+                            <div class="aa-clase-reloj-titulo">
+                                Hora de inicio
+                            </div>
+
+                            <div class="aa-clase-reloj-controles">
+                                <select
+                                    class="aa-clase-reloj-horas"
+                                    aria-label="Horas de inicio">
+                                </select>
+
+                                <span>:</span>
+
+                                <select
+                                    class="aa-clase-reloj-minutos"
+                                    aria-label="Minutos de inicio">
+                                </select>
+
+                                <select
+                                    class="aa-clase-reloj-periodo"
+                                    aria-label="Periodo de inicio">
+                                    <option value="AM">a. m.</option>
+                                    <option value="PM">p. m.</option>
+                                </select>
+                            </div>
+
+                            <button
+                                type="button"
+                                class="aa-clase-reloj-aceptar">
+                                Aceptar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- HORA DE TÉRMINO -->
+                <div class="aa-clase-campo">
+                    <label for="aaHoraFinClase">
+                        Hora de término:
+                    </label>
+
+                    <div class="aa-clase-hora-personalizada">
+                        <input
+                            type="text"
+                            id="aaHoraFinClase"
+                            name="hora_fin"
+                            class="aa-clase-hora-input"
+                            placeholder="Selecciona una hora"
+                            autocomplete="off"
+                            readonly
+                            required>
+
+                        <button
+                            type="button"
+                            class="aa-clase-hora-boton"
+                            aria-label="Seleccionar hora de término">
+                            <i class="fa-regular fa-clock"></i>
+                        </button>
+
+                        <div class="aa-clase-reloj-popup" hidden>
+                            <div class="aa-clase-reloj-titulo">
+                                Hora de término
+                            </div>
+
+                            <div class="aa-clase-reloj-controles">
+                                <select
+                                    class="aa-clase-reloj-horas"
+                                    aria-label="Horas de término">
+                                </select>
+
+                                <span>:</span>
+
+                                <select
+                                    class="aa-clase-reloj-minutos"
+                                    aria-label="Minutos de término">
+                                </select>
+
+                                <select
+                                    class="aa-clase-reloj-periodo"
+                                    aria-label="Periodo de término">
+                                    <option value="AM">a. m.</option>
+                                    <option value="PM">p. m.</option>
+                                </select>
+                            </div>
+
+                            <button
+                                type="button"
+                                class="aa-clase-reloj-aceptar">
+                                Aceptar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="aa-clase-aviso-horario">
+                <i class="fa-solid fa-circle-info"></i>
+                <span>
+                    La hora de término será utilizada por el
+                    sistema para registrar automáticamente
+                    la salida de todos los alumnos asistentes
+                    a esta clase.
+                </span>
+            </div>
+
+        </section>
+
+        <!-- DATOS DE SOLO LECTURA -->
+        <p class="aa-clase-ayuda">
+            Datos de solo lectura. Se mostrarán al seleccionar
+            el docente, carrera, grupo y materia.
+        </p>
+
+        <div class="aa-clase-resumen">
+            <div class="aa-clase-resumen-item">
+                <span>Docente:</span>
+                <strong id="aaNombreDocenteClase">—</strong>
+            </div>
+
+            <div class="aa-clase-resumen-item">
+                <span>Carrera:</span>
+                <strong id="aaNombreCarreraClase">—</strong>
+            </div>
+
+            <div class="aa-clase-resumen-item">
+                <span>Grupo:</span>
+                <strong id="aaNombreGrupoClase">—</strong>
+            </div>
+
+            <div class="aa-clase-resumen-item">
+                <span>Materia:</span>
+                <strong id="aaNombreMateriaClase">—</strong>
+            </div>
+        </div>
+
+        <!-- TABLA DE ALUMNOS -->
+        <div class="aa-clase-tabla-contenedor">
+
+            <table class="aa-clase-tabla aa-clase-tabla-ampliada">
+                <thead>
+                    <tr>
+                        <th>No.</th>
+                        <th>No. Cuenta</th>
+                        <th>Nombre del alumno</th>
+                        <th>Carrera</th>
+                        <th>Grupo</th>
+                        <th>Materia</th>
+                        <th>Fecha</th>
+                        <th>Hora Entrada</th>
+                        <th>Hora Fin</th>
+                        <th>Asistencia</th>
+                        <th>No. Equipo</th>
+                    </tr>
+                </thead>
+
+                <tbody id="aaTablaAlumnosClase">
+
+                    {% for alumno in alumnos %}
+                    <tr class="aa-clase-fila-alumno">
+                        <td>{{ forloop.counter }}</td>
+
+                        <td>
+                            {{ alumno.numero_cuenta|default:"—" }}
+                        </td>
+
+                        <td>
+                            {{ alumno.nombre|default:"—" }}
+                        </td>
+
+                        <td data-carrera>—</td>
+                        <td data-grupo>—</td>
+                        <td data-materia>—</td>
+                        <td data-fecha>—</td>
+                        <td data-hora-entrada>—</td>
+                        <td data-hora-fin>—</td>
+
+                        <td>
+                            <div class="aa-clase-asistencia">
+                                <label>
+                                    <input
+                                        type="radio"
+                                        name="asistencia_visual_{{ forloop.counter }}"
+                                        disabled>
+                                    Asistió
+                                </label>
+
+                                <label>
+                                    <input
+                                        type="radio"
+                                        name="asistencia_visual_{{ forloop.counter }}"
+                                        disabled>
+                                    Falta
+                                </label>
+                            </div>
+                        </td>
+
+                        <td>
+                            <select class="aa-clase-equipo" disabled>
+                                <option>Sin asignar</option>
+                            </select>
+                        </td>
+                    </tr>
+
+                    {% empty %}
+
+                    {% for numero in "12345" %}
+                    <tr class="aa-clase-fila-alumno">
+                        <td>{{ forloop.counter }}</td>
+                        <td>—</td>
+                        <td>—</td>
+                        <td data-carrera>—</td>
+                        <td data-grupo>—</td>
+                        <td data-materia>—</td>
+                        <td data-fecha>—</td>
+                        <td data-hora-entrada>—</td>
+                        <td data-hora-fin>—</td>
+
+                        <td>
+                            <div class="aa-clase-asistencia">
+                                <label>
+                                    <input
+                                        type="radio"
+                                        name="asistencia_ejemplo_{{ forloop.counter }}"
+                                        disabled>
+                                    Asistió
+                                </label>
+
+                                <label>
+                                    <input
+                                        type="radio"
+                                        name="asistencia_ejemplo_{{ forloop.counter }}"
+                                        disabled>
+                                    Falta
+                                </label>
+                            </div>
+                        </td>
+
+                        <td>
+                            <select class="aa-clase-equipo" disabled>
+                                <option>Sin asignar</option>
+                            </select>
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    {% endfor %}
+
+                </tbody>
+            </table>
+
+        </div>
+
+        <!-- BOTÓN GUARDAR -->
+        <div class="aa-clase-acciones">
+            <button
+                type="submit"
+                class="aa-clase-guardar">
+                <i class="fa-solid fa-floppy-disk"></i>
+                Guardar
+            </button>
+        </div>
+
+        <!-- MENSAJES -->
+        <p
+            id="aaClaseMensaje"
+            class="aa-clase-mensaje"
+            role="status"
+            aria-live="polite"
+            hidden>
+        </p>
+
+    </form>
+
+</div>
+
+<script>
+(function () {
+    "use strict";
+
+    const formulario = document.getElementById(
+        "aaRegistroClaseFormulario"
+    );
+
+    if (!formulario || formulario.dataset.inicializado === "true") {
+        return;
+    }
+
+    formulario.dataset.inicializado = "true";
+
+    const fecha = document.getElementById("aaFechaClase");
+    const inicio = document.getElementById("aaHoraInicioClase");
+    const fin = document.getElementById("aaHoraFinClase");
+    const carrera = document.getElementById("aaCarreraClase");
+    const grupo = document.getElementById("aaGrupoClase");
+    const materia = document.getElementById("aaMateria");
+    const maestro = document.getElementById("aaMaestroClase");
+    const mensaje = document.getElementById("aaClaseMensaje");
+
+    function fechaLocal() {
+        const hoy = new Date();
+
+        const anio = hoy.getFullYear();
+        const mes = String(hoy.getMonth() + 1).padStart(2, "0");
+        const dia = String(hoy.getDate()).padStart(2, "0");
+
+        return `${anio}-${mes}-${dia}`;
+    }
+
+    if (!fecha.value) {
+        fecha.value = fechaLocal();
+    }
+
+    function mostrarMensaje(texto, error = false) {
+        mensaje.textContent = texto;
+        mensaje.classList.toggle("error", error);
+        mensaje.hidden = false;
+    }
+
+    function ocultarMensaje() {
+        mensaje.hidden = true;
+    }
+
+    function textoSeleccionado(select) {
+        if (!select.value) {
+            return "—";
+        }
+
+        return select.selectedOptions[0].textContent.trim();
+    }
+
+    function actualizarResumen() {
+        document.getElementById(
+            "aaNombreCarreraClase"
+        ).textContent = textoSeleccionado(carrera);
+
+        document.getElementById(
+            "aaNombreGrupoClase"
+        ).textContent = grupo.value.trim() || "—";
+
+        document.getElementById(
+            "aaNombreMateriaClase"
+        ).textContent = textoSeleccionado(materia);
+    }
+
+    function actualizarTabla() {
+        const filas = formulario.querySelectorAll(
+            ".aa-clase-fila-alumno"
+        );
+
+        filas.forEach(function (fila) {
+            const datos = {
+                "[data-carrera]": textoSeleccionado(carrera),
+                "[data-grupo]": grupo.value.trim() || "—",
+                "[data-materia]": textoSeleccionado(materia),
+                "[data-fecha]": fecha.value || "—",
+                "[data-hora-entrada]": inicio.value || "—",
+                "[data-hora-fin]": fin.value || "—"
+            };
+
+            Object.entries(datos).forEach(function ([selector, valor]) {
+                const celda = fila.querySelector(selector);
+
+                if (celda) {
+                    celda.textContent = valor;
+                }
+            });
+        });
+    }
+
+    function actualizarVista() {
+        actualizarResumen();
+        actualizarTabla();
+        ocultarMensaje();
+    }
+
+    [carrera, grupo, materia, fecha, inicio, fin].forEach(
+        function (campo) {
+            campo.addEventListener("change", actualizarVista);
+            campo.addEventListener("input", actualizarVista);
+        }
+    );
+
+    /* SELECTORES DE HORA PERSONALIZADOS */
+
+    const relojes = formulario.querySelectorAll(
+        ".aa-clase-hora-personalizada"
+    );
+
+    function cerrarRelojes() {
+        relojes.forEach(function (contenedor) {
+            const popup = contenedor.querySelector(
+                ".aa-clase-reloj-popup"
+            );
+
+            popup.hidden = true;
+        });
+    }
+
+    relojes.forEach(function (contenedor) {
+        const campo = contenedor.querySelector(
+            ".aa-clase-hora-input"
+        );
+
+        const boton = contenedor.querySelector(
+            ".aa-clase-hora-boton"
+        );
+
+        const popup = contenedor.querySelector(
+            ".aa-clase-reloj-popup"
+        );
+
+        const horas = contenedor.querySelector(
+            ".aa-clase-reloj-horas"
+        );
+
+        const minutos = contenedor.querySelector(
+            ".aa-clase-reloj-minutos"
+        );
+
+        const periodo = contenedor.querySelector(
+            ".aa-clase-reloj-periodo"
+        );
+
+        const aceptar = contenedor.querySelector(
+            ".aa-clase-reloj-aceptar"
+        );
+
+        for (let hora = 1; hora <= 12; hora++) {
+            const opcion = document.createElement("option");
+
+            opcion.value = String(hora).padStart(2, "0");
+            opcion.textContent = opcion.value;
+
+            horas.appendChild(opcion);
+        }
+
+        for (let minuto = 0; minuto < 60; minuto++) {
+            const opcion = document.createElement("option");
+
+            opcion.value = String(minuto).padStart(2, "0");
+            opcion.textContent = opcion.value;
+
+            minutos.appendChild(opcion);
+        }
+
+        function sincronizarReloj() {
+            if (!campo.value) {
+                horas.value = "12";
+                minutos.value = "00";
+                periodo.value = "AM";
+                return;
+            }
+
+            const partes = campo.value.split(":");
+            const hora24 = Number(partes[0]);
+
+            horas.value = String(
+                hora24 % 12 || 12
+            ).padStart(2, "0");
+
+            minutos.value = partes[1];
+            periodo.value = hora24 >= 12 ? "PM" : "AM";
+        }
+
+        function abrirReloj() {
+            const estabaAbierto = !popup.hidden;
+
+            cerrarRelojes();
+
+            if (!estabaAbierto) {
+                sincronizarReloj();
+                popup.hidden = false;
+                horas.focus();
+            }
+        }
+
+        boton.addEventListener("click", abrirReloj);
+        campo.addEventListener("click", abrirReloj);
+
+        aceptar.addEventListener("click", function () {
+            const hora12 = Number(horas.value);
+            let hora24 = hora12 % 12;
+
+            if (periodo.value === "PM") {
+                hora24 += 12;
+            }
+
+            campo.value =
+                String(hora24).padStart(2, "0") +
+                ":" +
+                minutos.value;
+
+            campo.dispatchEvent(
+                new Event("input", { bubbles: true })
+            );
+
+            campo.dispatchEvent(
+                new Event("change", { bubbles: true })
+            );
+
+            popup.hidden = true;
+        });
+    });
+
+    document.addEventListener("click", function (evento) {
+        if (!evento.target.closest(
+            ".aa-clase-hora-personalizada"
+        )) {
+            cerrarRelojes();
+        }
+    });
+
+    document.addEventListener("keydown", function (evento) {
+        if (evento.key === "Escape") {
+            cerrarRelojes();
+        }
+    });
+
+    /* BÚSQUEDAS PENDIENTES DE CONECTAR A DJANGO */
+
+    formulario.querySelectorAll(
+        "[data-busqueda]"
+    ).forEach(function (boton) {
+        boton.addEventListener("click", function () {
+            const tipo = boton.dataset.busqueda;
+
+            mostrarMensaje(
+                "La búsqueda de " + tipo +
+                " se conectará con Django."
+            );
+        });
+    });
+
+    /* VALIDACIÓN VISUAL */
+
+    formulario.addEventListener("submit", function (evento) {
+        evento.preventDefault();
+        ocultarMensaje();
+
+        if (!formulario.checkValidity()) {
+            mostrarMensaje(
+                "Completa los campos obligatorios.",
+                true
+            );
+
+            formulario.reportValidity();
+            return;
+        }
+
+        if (fin.value <= inicio.value) {
+            mostrarMensaje(
+                "La hora de término debe ser posterior " +
+                "a la hora de inicio.",
+                true
+            );
+
+            fin.focus();
+            return;
+        }
+
+        mostrarMensaje(
+            "Formulario validado correctamente. " +
+            "El guardado de la clase y la salida automática " +
+            "se conectarán posteriormente con Django."
+        );
+    });
+
+    actualizarVista();
+})();
+</script>
