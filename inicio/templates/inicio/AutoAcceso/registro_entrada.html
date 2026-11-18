@@ -203,36 +203,11 @@
                         Selecciona un equipo
                     </option>
 
-                    <option value="PC-01">PC-01</option>
-                    <option value="PC-02">PC-02</option>
-                    <option value="PC-03">PC-03</option>
-                    <option value="PC-04">PC-04</option>
-                    <option value="PC-05">PC-05</option>
-                    <option value="PC-06">PC-06</option>
-                    <option value="PC-07">PC-07</option>
-                    <option value="PC-08">PC-08</option>
-                    <option value="PC-09">PC-09</option>
-                    <option value="PC-10">PC-10</option>
-                    <option value="PC-11">PC-11</option>
-                    <option value="PC-12">PC-12</option>
-                    <option value="PC-13">PC-13</option>
-                    <option value="PC-14">PC-14</option>
-                    <option value="PC-15">PC-15</option>
-                    <option value="PC-16">PC-16</option>
-                    <option value="PC-17">PC-17</option>
-                    <option value="PC-18">PC-18</option>
-                    <option value="PC-19">PC-19</option>
-                    <option value="PC-20">PC-20</option>
-                    <option value="PC-21">PC-21</option>
-                    <option value="PC-22">PC-22</option>
-                    <option value="PC-23">PC-23</option>
-                    <option value="PC-24">PC-24</option>
-                    <option value="PC-25">PC-25</option>
-                    <option value="PC-26">PC-26</option>
-                    <option value="PC-27">PC-27</option>
-                    <option value="PC-28">PC-28</option>
-                    <option value="PC-29">PC-29</option>
-                    <option value="PC-30">PC-30</option>
+                    {% for equipo in equipos_autoacceso %}
+                    <option value="{{ equipo.id_equipo }}">{{ equipo.no_equipo }}</option>
+                    {% empty %}
+                    <option value="" disabled>No hay equipos disponibles</option>
+                    {% endfor %}
 
                 </select>
 

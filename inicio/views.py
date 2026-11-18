@@ -420,6 +420,8 @@ def clases_registro_view(request):
                 ),
                 'docente': f'{clase.docente.nombre} {clase.docente.apellidos}'.strip(),
                 'cuenta_docente': clase.docente.matricula or '',
+                'materia': clase.materia.nombre_materia,
+                'grupo': str(clase.grupo),
             }
             for clase in clases
         ],
@@ -869,7 +871,24 @@ def autoacceso_view(request):
         )
         return redirect('homePage')
 
+    equipos_autoacceso = Equipo.objects.filter(lugar='Auto Acceso')
+    equipos_disponibles = _ordenar_equipos_por_numero(
+        equipos_autoacceso.filter(estado='Disponible')
+    )
+    equipos_total = equipos_autoacceso.count()
+    equipos_ocupados = equipos_autoacceso.filter(estado='Ocupado').count()
+
     return render(
         request,
-        'inicio/AutoAcceso/autoacceso.html'
+        'inicio/AutoAcceso/autoacceso.html',
+        {
+            'equipos_autoacceso': equipos_disponibles,
+            'equipos_total': equipos_total,
+            'equipos_ocupados': equipos_ocupados,
+            'equipos_disponibles': len(equipos_disponibles),
+            'equipos_ocupados_porcentaje': (
+                round(equipos_ocupados * 100 / equipos_total)
+                if equipos_total else 0
+            ),
+        },
     )
