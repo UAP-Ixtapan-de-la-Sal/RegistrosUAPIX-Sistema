@@ -1,5 +1,6 @@
-"""Importador adaptado con openpyxl (Libre de Pandas para evitar bloqueos de seguridad en Windows)."""
+"""Importador Excel con lectura limitada y normalización mediante openpyxl."""
 
+from contextlib import closing
 from dataclasses import dataclass, field
 from io import BytesIO
 import re
@@ -47,7 +48,7 @@ def cell_text(value):
         texto = str(int(value))
     else:
         texto = str(value).strip()
-    
+
     # Conversión global a mayúsculas y sin acentos
     nfkd_form = unicodedata.normalize('NFKD', texto)
     sin_acentos = ''.join(c for c in nfkd_form if not unicodedata.combining(c))
@@ -107,64 +108,58 @@ def read_workbook(data):
                 raise ExcelError('El Excel excede el límite de contenido descomprimido (50 MB).')
             if any(m.flag_bits & 1 for m in members):
                 raise ExcelError('No se admiten archivos cifrados.')
-        
-        wb = load_workbook(filename=BytesIO(data), data_only=True, read_only=True)
         plan = Plan()
         canonical = {normalize_header(name): name for name in COLUMNAS}
         seen = set()
         total = 0
 
-        for original_name in wb.sheetnames:
-            worksheet = wb[original_name]
-            raw_rows = list(worksheet.iter_rows(values_only=True))
-            if not raw_rows:
-                plan.ignored.append(original_name)
-                continue
+        with closing(load_workbook(filename=BytesIO(data), data_only=True, read_only=True)) as wb:
+            for original_name in wb.sheetnames:
+                worksheet = wb[original_name]
+                if (worksheet.max_row or 0) > MAX_ROWS + 1:
+                    raise ExcelError(f'Hoja "{original_name}": máximo {MAX_ROWS} filas después del encabezado, incluidas las vacías.')
+                if (worksheet.max_column or 0) > MAX_COLUMNS:
+                    raise ExcelError(f'Hoja "{original_name}": máximo {MAX_COLUMNS} columnas.')
 
-            non_empty_rows = [row for row in raw_rows if any(cell_text(v) for v in row)]
-            if not non_empty_rows:
-                plan.ignored.append(original_name)
-                continue
+                headers = []
+                rows = []
+                for number, row_vals in enumerate(worksheet.iter_rows(values_only=True), start=1):
+                    if number > MAX_ROWS + 1:
+                        raise ExcelError(f'Hoja "{original_name}": máximo {MAX_ROWS} filas después del encabezado, incluidas las vacías.')
+                    if len(row_vals) > MAX_COLUMNS:
+                        raise ExcelError(f'Hoja "{original_name}": máximo {MAX_COLUMNS} columnas.')
+                    if number == 1:
+                        headers = [normalize_header(value) for value in row_vals]
+                        continue
+                    values = [cell_text(value) for value in row_vals]
+                    if any(values):
+                        total += 1
+                        if total > MAX_ROWS:
+                            raise ExcelError(f'El archivo supera el máximo de {MAX_ROWS} registros.')
+                        rows.append((number, dict(zip(headers, values))))
 
-            if len(non_empty_rows) > MAX_ROWS + 1:
-                raise ExcelError(f'Hoja "{original_name}": máximo {MAX_ROWS} filas después del encabezado, incluidas las vacías.')
+                # Las hojas sin registros se ignoran antes de validar su nombre y encabezados.
+                if not rows:
+                    plan.ignored.append(original_name)
+                    continue
 
-            headers_raw = non_empty_rows[0]
-            headers = [normalize_header(v) for v in headers_raw]
-            if len(headers) > MAX_COLUMNS:
-                raise ExcelError(f'Hoja "{original_name}": máximo {MAX_COLUMNS} columnas.')
+                name = canonical.get(normalize_header(original_name))
+                if name is None:
+                    plan.errors.append(f'Hoja "{original_name}": nombre no reconocido.')
+                    continue
+                if name in seen:
+                    plan.errors.append(f'La hoja "{name}" está repetida.')
+                    continue
+                seen.add(name)
 
-            name = canonical.get(normalize_header(original_name))
-            if name is None:
-                plan.errors.append(f'Hoja "{original_name}": nombre no reconocido.')
-                continue
-            if name in seen:
-                plan.errors.append(f'La hoja "{name}" está repetida.')
-                continue
-            seen.add(name)
+                sheet = Sheet(name=name, rows=rows)
+                plan.sheets.append(sheet)
 
-            rows = []
-            for number, row_vals in enumerate(non_empty_rows[1:], start=2):
-                if any(cell_text(v) for v in row_vals):
-                    row_dict = dict(zip(headers, [cell_text(v) for v in row_vals]))
-                    rows.append((number, row_dict))
-
-            if not rows:
-                plan.ignored.append(original_name)
-                continue
-
-            total += len(rows)
-            if total > MAX_ROWS:
-                raise ExcelError(f'El archivo supera el máximo de {MAX_ROWS} registros.')
-
-            sheet = Sheet(name=name, rows=rows)
-            plan.sheets.append(sheet)
-
-            if len([h for h in headers if h]) != len(set(h for h in headers if h)):
-                sheet.errors.append(dict(row=1, field='Encabezados', message='Hay encabezados repetidos.'))
-            missing = [h for h in COLUMNAS[name] if normalize_header(h) not in headers]
-            if missing:
-                sheet.errors.append(dict(row=1, field='Encabezados', message='Faltan columnas: ' + ', '.join(missing)))
+                if len([h for h in headers if h]) != len(set(h for h in headers if h)):
+                    sheet.errors.append(dict(row=1, field='Encabezados', message='Hay encabezados repetidos.'))
+                missing = [h for h in COLUMNAS[name] if normalize_header(h) not in headers]
+                if missing:
+                    sheet.errors.append(dict(row=1, field='Encabezados', message='Faltan columnas: ' + ', '.join(missing)))
 
         if not plan.sheets and not plan.errors:
             plan.errors.append('El archivo no contiene registros para importar.')
@@ -254,7 +249,7 @@ class Planner:
                 nombre_materia=text('Materia'),
                 carrera=self.reference(Carrera, text('Carrera'), 'Carrera'), semestre=semester(),
             )
-        
+
         # Mapeo robusto para los lugares de equipos reconociendo las opciones oficiales del modelo
         places = {
             normalize_header(value): value
@@ -265,13 +260,15 @@ class Planner:
             for value, label in Equipo.LUGAR_CHOICES
         })
         places.update({
-            normalize_header('Sala de Computo'): 'Sala de Computo',
+            normalize_header('Sala de Computo'): 'Sala',
+            normalize_header('Sala de Auto Acceso'): 'Auto Acceso',
             normalize_header('Auto Acceso'): 'Auto Acceso',
+            normalize_header('Autoacceso'): 'Auto Acceso',
             normalize_header('Biblioteca Digital'): 'Biblioteca',
         })
-        
+
         place = text('Lugar')
-        
+
         return Equipo, dict(
             no_equipo=text('No. Equipo'),
             no_bien_patrimonial=text('No. Bien Patrimonial'),
