@@ -88,11 +88,13 @@
                     </label>
                     <label class="sala-form-field">
                         <span>No. de grupo</span>
-                        <input class="sala-form-control" type="text" data-search-group placeholder="Ej. 301">
+                        <input class="sala-form-control" type="text" data-search-group list="registro-grupos" placeholder="Ej. 301">
+                        <datalist id="registro-grupos"></datalist>
                     </label>
                     <label class="sala-form-field">
                         <span>Materia</span>
-                        <input class="sala-form-control" type="search" data-search-subject placeholder="Nombre de la materia">
+                        <input class="sala-form-control" type="search" data-search-subject list="registro-materias" placeholder="Nombre de la materia">
+                        <datalist id="registro-materias"></datalist>
                     </label>
                     <button class="sala-form-submit registros-search-submit" type="button" data-search-classes>
                         <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Buscar clase
@@ -281,6 +283,13 @@
             select.replaceChildren(new Option(placeholder, ''));
             items.forEach(function (item) {
                 select.add(new Option(item[labelKey], item[valueKey]));
+            });
+        }
+
+        function fillAutocomplete(list, values) {
+            list.replaceChildren();
+            Array.from(new Set(values)).forEach(function (value) {
+                list.appendChild(new Option(value));
             });
         }
 
@@ -478,6 +487,14 @@
             try {
                 const result = await requestJson('{% url "clases_registro" %}');
                 fillSelect(classSelects[0], result.clases, 'Selecciona una clase de hoy', 'id', 'nombre');
+                fillAutocomplete(
+                    document.querySelector('#registro-grupos'),
+                    result.clases.map(function (clase) { return clase.grupo; }),
+                );
+                fillAutocomplete(
+                    document.querySelector('#registro-materias'),
+                    result.clases.map(function (clase) { return clase.materia; }),
+                );
             } catch (error) {
                 fillSelect(classSelects[0], [], 'No fue posible cargar las clases', 'id', 'nombre');
                 setMessage(classFeedback, error.message, true);

@@ -70,6 +70,36 @@ class HomePageViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'inicio/homePage.html')
 
+    def test_logout_link_appears_on_homepage_but_not_in_modules(self):
+        user = UsuarioSistema.objects.create_user(
+            username='operador_auto',
+            password='Prueba-segura-123',
+            mod_auto_acceso=True,
+        )
+        self.client.force_login(user)
+
+        home_response = self.client.get(reverse('homePage'))
+        module_response = self.client.get(reverse('autoacceso'))
+
+        self.assertContains(home_response, f'href="{reverse("logout")}"')
+        self.assertNotContains(module_response, f'href="{reverse("logout")}"')
+        self.assertContains(module_response, f'href="{reverse("homePage")}"')
+
+    def test_admin_dropdown_is_only_shown_on_homepage_for_superusers(self):
+        user = UsuarioSistema.objects.create_superuser(
+            username='administrador',
+            password='Prueba-segura-123',
+        )
+        self.client.force_login(user)
+
+        home_response = self.client.get(reverse('homePage'))
+        module_response = self.client.get(reverse('autoacceso'))
+
+        self.assertContains(home_response, 'class="admin-btn header-action"')
+        self.assertContains(home_response, f'href="{reverse("logout")}"')
+        self.assertNotContains(module_response, 'class="admin-btn header-action"')
+        self.assertNotContains(module_response, f'href="{reverse("logout")}"')
+
     def test_splash_is_shown_only_once_after_successful_login(self):
         password = 'Prueba-segura-123'
         UsuarioSistema.objects.create_user(username='operador', password=password)
@@ -110,6 +140,45 @@ class AutoAccesoViewTests(TestCase):
 
         home_response = self.client.get(reverse('homePage'))
         self.assertContains(home_response, f'href="{reverse("auto_acceso")}"')
+
+    def test_autoacceso_dashboard_uses_only_available_equipment_from_its_module(self):
+        disponible = Equipo.objects.create(
+            no_equipo='AA-01',
+            lugar='Auto Acceso',
+            estado='Disponible',
+        )
+        Equipo.objects.create(
+            no_equipo='AA-02',
+            lugar='Auto Acceso',
+            estado='Ocupado',
+        )
+        Equipo.objects.create(
+            no_equipo='AA-03',
+            lugar='Auto Acceso',
+            estado='Mantenimiento',
+        )
+        Equipo.objects.create(
+            no_equipo='SALA-01',
+            lugar='Sala',
+            estado='Disponible',
+        )
+
+        response = self.client.get(reverse('autoacceso'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['equipos_total'], 3)
+        self.assertEqual(response.context['equipos_ocupados'], 1)
+        self.assertEqual(response.context['equipos_disponibles'], 1)
+        self.assertEqual(response.context['equipos_ocupados_porcentaje'], 33)
+        self.assertContains(response, 'data-ocupados-porcentaje="33"')
+        self.assertEqual(
+            list(response.context['equipos_autoacceso']),
+            [disponible],
+        )
+        self.assertContains(response, 'AA-01')
+        self.assertNotContains(response, 'AA-02')
+        self.assertNotContains(response, 'AA-03')
+        self.assertNotContains(response, 'SALA-01')
 
     def test_auto_access_lookup_returns_student_details_and_excludes_non_students(self):
         career = Carrera.objects.create(nombre_carrera='Sistemas')
@@ -212,6 +281,8 @@ class SalaComputoViewTests(TestCase):
         self.assertContains(response, 'data-register-attendance')
         self.assertContains(response, 'name="csrfmiddlewaretoken"')
         self.assertNotContains(response, 'data-demo-save')
+        self.assertContains(response, 'list="registro-grupos"')
+        self.assertContains(response, 'list="registro-materias"')
 
     def test_scheduling_forms_use_styled_time_picker_with_native_form_values(self):
         response = self.client.get(reverse('sala_computo'))
@@ -241,6 +312,45 @@ class SalaComputoViewTests(TestCase):
                 (str(accounting.pk), 'Contabilidad'),
                 (str(systems.pk), 'Sistemas'),
             ],
+        )
+
+    def test_today_classes_include_group_and_subject_for_registration_suggestions(self):
+        career = Carrera.objects.create(nombre_carrera='Sistemas')
+        subject = Materia.objects.create(nombre_materia='Programación', carrera=career)
+        group = Grupo.objects.create(nombre_grupo='301', carrera=career)
+        teacher = Persona.objects.create(
+            perfil='Docente',
+            matricula='DOC-REGISTRO-1',
+            nombre='Ana',
+            apellidos='Pérez',
+        )
+        with patch(
+            'inicio.models.timezone.localtime',
+            return_value=datetime.combine(timezone.localdate(), time(8, 0)),
+        ):
+            Clase.objects.create(
+                materia=subject,
+                grupo=group,
+                docente=teacher,
+                fecha=timezone.localdate(),
+                hora_inicio=time(9, 0),
+                hora_fin=time(10, 0),
+            )
+        Clase.objects.create(
+            materia=subject,
+            grupo=group,
+            docente=teacher,
+            fecha=timezone.localdate() + timedelta(days=1),
+            hora_inicio=time(9, 0),
+            hora_fin=time(10, 0),
+        )
+
+        response = self.client.get(reverse('clases_registro'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [(clase['materia'], clase['grupo']) for clase in response.json()['clases']],
+            [('Programación', str(group))],
         )
 
     def test_class_submission_renders_date_validation_errors(self):

@@ -72,22 +72,22 @@
 
                 <div class="aa-estadistica">
                     <span class="aa-punto aa-ocupado"></span>
-                    <strong>12</strong>
+                    <strong>{{ equipos_ocupados }}</strong>
                     <span>Ocupados</span>
                 </div>
 
                 <div class="aa-estadistica">
                     <span class="aa-punto aa-disponible"></span>
-                    <strong>18</strong>
+                    <strong>{{ equipos_disponibles }}</strong>
                     <span>Disponibles</span>
                 </div>
 
                 <div class="aa-barra">
-                    <span></span>
+                    <span data-ocupados-porcentaje="{{ equipos_ocupados_porcentaje }}"></span>
                 </div>
 
                 <small>
-                    30 equipos en total · Datos de ejemplo
+                    {{ equipos_total }} equipos en total
                 </small>
 
             </div>
@@ -1231,6 +1231,14 @@ function aaAviso(funcion) {
 document.addEventListener('DOMContentLoaded', function () {
 
     aaInicializarSelectores();
+
+    const barraOcupacion = document.querySelector(
+        '[data-ocupados-porcentaje]'
+    );
+    if (barraOcupacion) {
+        barraOcupacion.style.width =
+            barraOcupacion.dataset.ocupadosPorcentaje + '%';
+    }
 
     aaCambiarEquipo();
     aaActualizarFechaHora();
