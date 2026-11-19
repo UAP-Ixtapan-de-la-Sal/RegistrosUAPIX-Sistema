@@ -180,6 +180,201 @@ class AutoAccesoViewTests(TestCase):
         self.assertNotContains(response, 'AA-03')
         self.assertNotContains(response, 'SALA-01')
 
+    def test_autoacceso_entry_wires_student_lookup_to_readonly_fields(self):
+        response = self.client.get(reverse('autoacceso'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse('buscar_alumno_auto_acceso'))
+        self.assertContains(response, 'id="aaNombreUsuario"')
+        self.assertContains(response, 'id="aaTipoUsuario"')
+        self.assertContains(response, "numeroCuenta.addEventListener('input'")
+
+    def test_autoacceso_entry_registers_without_equipment_using_server_time(self):
+        student = Persona.objects.create(
+            perfil='Alumno',
+            matricula='ALU-AUTO-ENTRY-1',
+            nombre='Ana',
+            apellidos='Pérez',
+        )
+        server_time = timezone.make_aware(datetime(2026, 1, 15, 9, 30))
+
+        with patch('inicio.views.timezone.localtime', return_value=server_time):
+            response = self.client.post(reverse('autoacceso'), {
+                'numero_cuenta': student.matricula,
+                'motivo_uso': 'conversacion',
+                'fecha_entrada': '2099-12-31',
+                'hora_entrada': '11:59 p. m.',
+                'aaNecesitaEquipo': 'no',
+                'descripcion_actividad': 'Consulta académica',
+            })
+
+        self.assertEqual(response.status_code, 201)
+        registro = Registro.objects.get(modulo='Auto_Acceso')
+        self.assertEqual(registro.persona, student)
+        self.assertEqual(registro.motivo_uso, 'Conversacion')
+        self.assertEqual(registro.fecha, server_time.date())
+        self.assertEqual(registro.hora_entrada, server_time.time())
+        self.assertIsNone(registro.equipo)
+        self.assertEqual(registro.observaciones, 'Consulta académica')
+
+    def test_autoacceso_entry_assigns_available_equipment(self):
+        student = Persona.objects.create(
+            perfil='Alumno',
+            matricula='ALU-AUTO-ENTRY-2',
+            nombre='Carlos',
+            apellidos='Ruiz',
+        )
+        equipment = Equipo.objects.create(
+            no_equipo='AA-ENTRY-01',
+            lugar='Auto Acceso',
+            estado='Disponible',
+        )
+
+        response = self.client.post(reverse('autoacceso'), {
+            'numero_cuenta': student.matricula,
+            'motivo_uso': 'visita',
+            'aaNecesitaEquipo': 'si',
+            'numero_equipo': str(equipment.pk),
+            'descripcion_actividad': '',
+        })
+
+        self.assertEqual(response.status_code, 201)
+        registro = Registro.objects.get(modulo='Auto_Acceso')
+        self.assertEqual(registro.equipo, equipment)
+        equipment.refresh_from_db()
+        self.assertEqual(equipment.estado, 'Ocupado')
+
+    def test_autoacceso_entry_rejects_equipment_that_is_not_available(self):
+        student = Persona.objects.create(
+            perfil='Alumno',
+            matricula='ALU-AUTO-ENTRY-3',
+            nombre='Elena',
+            apellidos='Díaz',
+        )
+        equipment = Equipo.objects.create(
+            no_equipo='AA-ENTRY-02',
+            lugar='Auto Acceso',
+            estado='Ocupado',
+        )
+
+        response = self.client.post(reverse('autoacceso'), {
+            'numero_cuenta': student.matricula,
+            'motivo_uso': 'visita',
+            'aaNecesitaEquipo': 'si',
+            'numero_equipo': str(equipment.pk),
+        })
+
+        self.assertEqual(response.status_code, 409)
+        self.assertIn('ya no está disponible', response.json()['error'])
+        self.assertFalse(Registro.objects.filter(modulo='Auto_Acceso').exists())
+
+    def test_autoacceso_class_page_receives_career_and_subject_catalogs(self):
+        career = Carrera.objects.create(nombre_carrera='Sistemas')
+        subject = Materia.objects.create(
+            nombre_materia='Programación',
+            carrera=career,
+        )
+
+        response = self.client.get(reverse('autoacceso'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(list(response.context['carreras']), [career])
+        self.assertEqual(list(response.context['materias']), [subject])
+        self.assertContains(
+            response,
+            f'data-carrera-id="{career.pk}"',
+        )
+        self.assertContains(response, 'Programación')
+
+    def test_autoacceso_class_group_lookup_returns_only_students_in_that_group(self):
+        career = Carrera.objects.create(nombre_carrera='Sistemas')
+        subject = Materia.objects.create(
+            nombre_materia='Programación',
+            carrera=career,
+        )
+        group = Grupo.objects.create(
+            nombre_grupo='A',
+            semestre=1,
+            turno='Matutino',
+            carrera=career,
+        )
+        other_group = Grupo.objects.create(
+            nombre_grupo='B',
+            semestre=1,
+            turno='Matutino',
+            carrera=career,
+        )
+        student = Persona.objects.create(
+            perfil='Alumno',
+            matricula='ALU-CLASE-1',
+            nombre='Ana',
+            apellidos='Pérez',
+            carrera=career,
+            grupo=group,
+        )
+        Persona.objects.create(
+            perfil='Alumno',
+            matricula='ALU-CLASE-2',
+            nombre='Luis',
+            apellidos='López',
+            carrera=career,
+            grupo=other_group,
+        )
+        Persona.objects.create(
+            perfil='Docente',
+            matricula='DOC-CLASE-1',
+            nombre='Eva',
+            apellidos='Díaz',
+            carrera=career,
+            grupo=group,
+        )
+
+        response = self.client.get(reverse('alumnos_autoacceso_grupo'), {
+            'carrera': career.pk,
+            'grupo': 'A',
+            'materia': subject.pk,
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['grupo'], str(group))
+        self.assertEqual(response.json()['alumnos'], [{
+            'id': student.pk,
+            'matricula': student.matricula,
+            'nombre': 'Ana Pérez',
+            'carrera': 'Sistemas',
+            'grupo': str(group),
+        }])
+        self.assertFalse(Clase.objects.exists())
+        self.assertFalse(Asistencia.objects.exists())
+
+    def test_autoacceso_class_group_lookup_rejects_ambiguous_group_name(self):
+        career = Carrera.objects.create(nombre_carrera='Sistemas')
+        subject = Materia.objects.create(
+            nombre_materia='Programación',
+            carrera=career,
+        )
+        Grupo.objects.create(
+            nombre_grupo='A',
+            semestre=1,
+            turno='Matutino',
+            carrera=career,
+        )
+        Grupo.objects.create(
+            nombre_grupo='A',
+            semestre=2,
+            turno='Vespertino',
+            carrera=career,
+        )
+
+        response = self.client.get(reverse('alumnos_autoacceso_grupo'), {
+            'carrera': career.pk,
+            'grupo': 'A',
+            'materia': subject.pk,
+        })
+
+        self.assertEqual(response.status_code, 409)
+        self.assertIn('varios grupos', response.json()['error'])
+
     def test_auto_access_lookup_returns_student_details_and_excludes_non_students(self):
         career = Carrera.objects.create(nombre_carrera='Sistemas')
         group = Grupo.objects.create(nombre_grupo='A', carrera=career)
@@ -253,6 +448,41 @@ class AutoAccesoViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn('numero_cuenta', response.context['form'].errors)
         self.assertFalse(Registro.objects.filter(modulo='Auto_Acceso').exists())
+
+    def test_autoacceso_class_view_uses_career_subject_catalog(self):
+        response = self.client.get(reverse('autoacceso'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse('materias_autoacceso_carrera'))
+        self.assertContains(
+            response,
+            '<select id="aaGrupoClase" name="grupo" required>',
+        )
+        self.assertNotContains(response, 'list="aaGruposClase"')
+        self.assertNotContains(response, 'Primero busca al docente')
+
+    def test_autoacceso_career_catalog_returns_only_its_subjects(self):
+        career = Carrera.objects.create(nombre_carrera='Sistemas')
+        other_career = Carrera.objects.create(nombre_carrera='Contabilidad')
+        subject = Materia.objects.create(
+            nombre_materia='Programación',
+            carrera=career,
+        )
+        Materia.objects.create(
+            nombre_materia='Contabilidad financiera',
+            carrera=other_career,
+        )
+
+        response = self.client.get(
+            reverse('materias_autoacceso_carrera'),
+            {'carrera': career.pk},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {'materias': [{'id': subject.pk, 'nombre': 'Programación'}]},
+        )
 
     def test_auto_access_requires_module_permission(self):
         self.client.logout()
