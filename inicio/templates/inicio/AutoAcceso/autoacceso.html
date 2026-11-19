@@ -541,30 +541,40 @@ function aaCambiarEquipo() {
    FECHA Y HORA ACTUALES
    ========================================================== */
 
+function aaFechaLocal() {
+
+    const hoy = new Date();
+
+    const anio = hoy.getFullYear();
+
+    const mes = String(
+        hoy.getMonth() + 1
+    ).padStart(2, '0');
+
+    const dia = String(
+        hoy.getDate()
+    ).padStart(2, '0');
+
+    return `${anio}-${mes}-${dia}`;
+
+}
+
 function aaActualizarFechaHora() {
 
     const ahora = new Date();
 
     const fecha = document.getElementById('aaFechaEntrada');
     const hora = document.getElementById('aaHoraEntrada');
-
-    const anio = ahora.getFullYear();
-
-    const mes = String(
-        ahora.getMonth() + 1
-    ).padStart(2, '0');
-
-    const dia = String(
-        ahora.getDate()
-    ).padStart(2, '0');
+    const fechaHoy = aaFechaLocal();
 
     const horas = ahora.getHours();
     const minutos = ahora.getMinutes();
 
-    if (fecha && !fecha.value) {
-
-        fecha.value = `${anio}-${mes}-${dia}`;
-
+    if (fecha) {
+        fecha.min = fechaHoy;
+        if (!fecha.value || fecha.value < fechaHoy) {
+            fecha.value = fechaHoy;
+        }
     }
 
     if (hora && !hora.value) {
@@ -707,37 +717,46 @@ function aaInicializarSelectorPersonalizado(selector) {
 
     }
 
-    Array.from(selector.options).forEach(opcion => {
+    function reconstruirOpciones() {
 
-        const item = document.createElement('button');
+        botones.length = 0;
+        lista.replaceChildren();
 
-        item.type = 'button';
-        item.className = 'aa-select-opcion';
+        Array.from(selector.options).forEach(opcion => {
 
-        item.textContent = opcion.textContent.trim();
-        item.dataset.value = opcion.value;
+            const item = document.createElement('button');
 
-        item.setAttribute('role', 'option');
-        item.disabled = opcion.disabled;
+            item.type = 'button';
+            item.className = 'aa-select-opcion';
 
-        item.addEventListener('click', function () {
+            item.textContent = opcion.textContent.trim();
+            item.dataset.value = opcion.value;
 
-            selector.value = opcion.value;
+            item.setAttribute('role', 'option');
+            item.disabled = opcion.disabled;
 
-            selector.dispatchEvent(
-                new Event('change', { bubbles: true })
-            );
+            item.addEventListener('click', function () {
 
-            sincronizar();
-            cerrar();
-            boton.focus();
+                selector.value = opcion.value;
+
+                selector.dispatchEvent(
+                    new Event('change', { bubbles: true })
+                );
+
+                sincronizar();
+                cerrar();
+                boton.focus();
+
+            });
+
+            lista.appendChild(item);
+            botones.push(item);
 
         });
 
-        lista.appendChild(item);
-        botones.push(item);
+        sincronizar();
 
-    });
+    }
 
     boton.addEventListener('click', function () {
 
@@ -830,7 +849,14 @@ function aaInicializarSelectorPersonalizado(selector) {
 
     contenedor.append(boton, lista);
 
-    sincronizar();
+    reconstruirOpciones();
+
+    if (selector.id === 'aaMateria') {
+        new MutationObserver(reconstruirOpciones).observe(
+            selector,
+            { childList: true }
+        );
+    }
 
 }
 
@@ -1232,6 +1258,113 @@ document.addEventListener('DOMContentLoaded', function () {
 
     aaInicializarSelectores();
 
+    const formularioEntrada = document.getElementById('aaFormularioEntrada');
+    const numeroCuenta = document.getElementById('aaNumeroCuenta');
+    const motivoUso = document.getElementById('aaMotivoUso');
+    const nombreUsuario = document.getElementById('aaNombreUsuario');
+    const tipoUsuario = document.getElementById('aaTipoUsuario');
+    const indicadorLectura = document.querySelector('.aa-lectura-indicador');
+    const botonBuscarAlumno = document.querySelector(
+        '[aria-label="Buscar número de cuenta"]'
+    );
+    let temporizadorBusqueda;
+    let versionBusqueda = 0;
+
+    function limpiarDatosAlumno(mensaje) {
+        versionBusqueda += 1;
+        nombreUsuario.textContent = '—';
+        tipoUsuario.textContent = '—';
+        indicadorLectura.textContent = mensaje || 'Datos de solo lectura';
+    }
+
+    async function buscarAlumno() {
+        window.clearTimeout(temporizadorBusqueda);
+        const cuenta = numeroCuenta.value.trim();
+        if (!cuenta) {
+            limpiarDatosAlumno('Ingresa el número de cuenta del alumno.');
+            return;
+        }
+        if (!['visita', 'conversacion'].includes(motivoUso.value)) {
+            limpiarDatosAlumno();
+            return;
+        }
+
+        const versionActual = ++versionBusqueda;
+        nombreUsuario.textContent = '—';
+        tipoUsuario.textContent = '—';
+        indicadorLectura.textContent = 'Buscando alumno...';
+
+        const url = new URL(
+            '{% url "buscar_alumno_auto_acceso" %}',
+            window.location.origin
+        );
+        url.searchParams.set('cuenta', cuenta);
+
+        try {
+            const response = await fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            });
+            const resultado = await response.json();
+            if (
+                versionActual !== versionBusqueda
+                || numeroCuenta.value.trim() !== cuenta
+            ) {
+                return;
+            }
+            if (!response.ok || !resultado.encontrado) {
+                throw new Error(resultado.error || 'No se encontró al alumno.');
+            }
+
+            nombreUsuario.textContent = [
+                resultado.nombre,
+                resultado.apellidos,
+            ].filter(Boolean).join(' ');
+            tipoUsuario.textContent = 'Alumno';
+            indicadorLectura.textContent = 'Alumno verificado';
+        } catch (error) {
+            if (
+                versionActual !== versionBusqueda
+                || numeroCuenta.value.trim() !== cuenta
+            ) {
+                return;
+            }
+            limpiarDatosAlumno(
+                error.message || 'No fue posible consultar al alumno.'
+            );
+        }
+    }
+
+    numeroCuenta.addEventListener('input', function () {
+        window.clearTimeout(temporizadorBusqueda);
+        limpiarDatosAlumno();
+        if (
+            numeroCuenta.value.trim()
+            && ['visita', 'conversacion'].includes(motivoUso.value)
+        ) {
+            indicadorLectura.textContent = 'Buscando alumno...';
+            temporizadorBusqueda = window.setTimeout(buscarAlumno, 350);
+        }
+    });
+
+    numeroCuenta.addEventListener('keydown', function (evento) {
+        if (evento.key === 'Enter') {
+            evento.preventDefault();
+            buscarAlumno();
+        }
+    });
+
+    botonBuscarAlumno.addEventListener('click', buscarAlumno);
+    motivoUso.addEventListener('change', function () {
+        window.clearTimeout(temporizadorBusqueda);
+        limpiarDatosAlumno();
+        if (
+            motivoUso.value !== 'clase'
+            && numeroCuenta.value.trim()
+        ) {
+            buscarAlumno();
+        }
+    });
+
     const barraOcupacion = document.querySelector(
         '[data-ocupados-porcentaje]'
     );
@@ -1267,21 +1400,62 @@ document.addEventListener('DOMContentLoaded', function () {
 
     });
 
-    /* FORMULARIOS DE DEMOSTRACIÓN */
+    formularioEntrada.addEventListener('submit', async function (evento) {
+        evento.preventDefault();
 
-    document.querySelectorAll('.aa-form-demo').forEach(form => {
+        const fecha = formularioEntrada.querySelector('#aaFechaEntrada');
+        if (fecha) {
+            const fechaHoy = aaFechaLocal();
+            fecha.min = fechaHoy;
 
-        form.addEventListener('submit', function (evento) {
+            if (fecha.value < fechaHoy) {
+                alert('La fecha no puede ser anterior a hoy.');
+                fecha.focus();
+                return;
+            }
+        }
 
-            evento.preventDefault();
+        const botonGuardar = formularioEntrada.querySelector(
+            'button[type="submit"]'
+        );
+        botonGuardar.disabled = true;
 
-            alert(
-                'Vista de demostración. ' +
-                'El guardado se implementará con Django.'
-            );
+        try {
+            const respuesta = await fetch(formularioEntrada.action, {
+                method: 'POST',
+                body: new FormData(formularioEntrada),
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
 
-        });
+            let resultado;
+            try {
+                resultado = await respuesta.json();
+            } catch (error) {
+                throw new Error(
+                    'El servidor no devolvió JSON (HTTP ' +
+                    respuesta.status +
+                    ').'
+                );
+            }
 
+            if (!respuesta.ok) {
+                throw new Error(
+                    resultado.error || 'No fue posible registrar la entrada.'
+                );
+            }
+
+            alert(resultado.message);
+            window.location.reload();
+        } catch (error) {
+            indicadorLectura.textContent =
+                'No fue posible registrar la entrada: ' +
+                (error.message || 'error inesperado.');
+        } finally {
+            botonGuardar.disabled = false;
+        }
     });
 
 });
