@@ -1,9 +1,6 @@
-"""Importador conservador, adaptado de PRUEBAS-EXCEL.
+"""Importador Excel con lectura limitada y normalización mediante openpyxl."""
 
-Se reutilizan el orden de catálogos, encabezados, normalización y mapeos de
-la referencia. La planificación es de solo lectura; se guarda al confirmar.
-"""
-
+from contextlib import closing
 from dataclasses import dataclass, field
 from io import BytesIO
 import re
@@ -12,6 +9,7 @@ from zipfile import BadZipFile, ZipFile
 from xml.etree.ElementTree import ParseError
 
 import pandas as pd
+from openpyxl import load_workbook
 from openpyxl.utils.exceptions import InvalidFileException
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -44,16 +42,22 @@ def normalize_header(value):
 
 
 def cell_text(value):
-    if pd.isna(value):
+    if value is None:
         return ''
     if isinstance(value, float) and value.is_integer():
-        return str(int(value))
-    return str(value).strip()
+        texto = str(int(value))
+    else:
+        texto = str(value).strip()
+
+    # Conversión global a mayúsculas y sin acentos
+    nfkd_form = unicodedata.normalize('NFKD', texto)
+    sin_acentos = ''.join(c for c in nfkd_form if not unicodedata.combining(c))
+    return sin_acentos.upper()
 
 
 def equivalent(value):
-    """Comparar sin alterar el texto que se guardará ni quitar sus acentos."""
-    return ' '.join(unicodedata.normalize('NFKC', str(value)).split()).casefold()
+    """Comparar sin distinguir mayúsculas, acentos ni espacios repetidos."""
+    return ' '.join(cell_text(value).split()).casefold()
 
 
 class ExcelError(ValueError):
@@ -108,35 +112,37 @@ def read_workbook(data):
         canonical = {normalize_header(name): name for name in COLUMNAS}
         seen = set()
         total = 0
-        with pd.ExcelFile(BytesIO(data), engine='openpyxl') as book:
-            for original_name in book.sheet_names:
-                worksheet = book.book[original_name]
+
+        with closing(load_workbook(filename=BytesIO(data), data_only=True, read_only=True)) as wb:
+            for original_name in wb.sheetnames:
+                worksheet = wb[original_name]
                 if (worksheet.max_row or 0) > MAX_ROWS + 1:
                     raise ExcelError(f'Hoja "{original_name}": máximo {MAX_ROWS} filas después del encabezado, incluidas las vacías.')
                 if (worksheet.max_column or 0) > MAX_COLUMNS:
                     raise ExcelError(f'Hoja "{original_name}": máximo {MAX_COLUMNS} columnas.')
-                # header=None permite detectar encabezados duplicados antes de que
-                # Pandas les añada sufijos. Una hoja vacía no exige encabezados.
-                frame = pd.read_excel(
-                    book, sheet_name=original_name, header=None, dtype=object,
-                    keep_default_na=False, nrows=MAX_ROWS + 2,
-                )
-                if frame.shape[1] > MAX_COLUMNS:
-                    raise ExcelError(f'Hoja "{original_name}": máximo {MAX_COLUMNS} columnas.')
-                if frame.empty or not any(cell_text(v) for row in frame.values for v in row):
-                    plan.ignored.append(original_name)
-                    continue
-                rows = [
-                    (number, [cell_text(v) for v in row])
-                    for number, row in enumerate(frame.values[1:], start=2)
-                    if any(cell_text(v) for v in row)
-                ]
+
+                headers = []
+                rows = []
+                for number, row_vals in enumerate(worksheet.iter_rows(values_only=True), start=1):
+                    if number > MAX_ROWS + 1:
+                        raise ExcelError(f'Hoja "{original_name}": máximo {MAX_ROWS} filas después del encabezado, incluidas las vacías.')
+                    if len(row_vals) > MAX_COLUMNS:
+                        raise ExcelError(f'Hoja "{original_name}": máximo {MAX_COLUMNS} columnas.')
+                    if number == 1:
+                        headers = [normalize_header(value) for value in row_vals]
+                        continue
+                    values = [cell_text(value) for value in row_vals]
+                    if any(values):
+                        total += 1
+                        if total > MAX_ROWS:
+                            raise ExcelError(f'El archivo supera el máximo de {MAX_ROWS} registros.')
+                        rows.append((number, dict(zip(headers, values))))
+
+                # Las hojas sin registros se ignoran antes de validar su nombre y encabezados.
                 if not rows:
                     plan.ignored.append(original_name)
                     continue
-                total += len(rows)
-                if total > MAX_ROWS:
-                    raise ExcelError(f'El archivo supera el máximo de {MAX_ROWS} registros.')
+
                 name = canonical.get(normalize_header(original_name))
                 if name is None:
                     plan.errors.append(f'Hoja "{original_name}": nombre no reconocido.')
@@ -145,14 +151,16 @@ def read_workbook(data):
                     plan.errors.append(f'La hoja "{name}" está repetida.')
                     continue
                 seen.add(name)
-                headers = [normalize_header(v) for v in frame.values[0]]
-                sheet = Sheet(name=name, rows=[(n, dict(zip(headers, r))) for n, r in rows])
+
+                sheet = Sheet(name=name, rows=rows)
                 plan.sheets.append(sheet)
+
                 if len([h for h in headers if h]) != len(set(h for h in headers if h)):
                     sheet.errors.append(dict(row=1, field='Encabezados', message='Hay encabezados repetidos.'))
                 missing = [h for h in COLUMNAS[name] if normalize_header(h) not in headers]
                 if missing:
                     sheet.errors.append(dict(row=1, field='Encabezados', message='Faltan columnas: ' + ', '.join(missing)))
+
         if not plan.sheets and not plan.errors:
             plan.errors.append('El archivo no contiene registros para importar.')
         plan.sheets.sort(key=lambda s: list(COLUMNAS).index(s.name))
@@ -188,8 +196,6 @@ class Planner:
         if isinstance(obj, Persona):
             return equivalent(obj.matricula or '')
         if isinstance(obj, Materia):
-            # Identidad usada por la referencia; nunca se presupone UNIQUE.
-            # Varias coincidencias de la misma combinación siguen bloqueando.
             return (equivalent(obj.nombre_materia), Planner.related_key(obj.carrera), obj.semestre)
         return equivalent(obj.no_bien_patrimonial or '')
 
@@ -237,19 +243,35 @@ class Planner:
             if sheet == 'Alumnos':
                 group = self.reference(Grupo, text('Grupo'), 'Grupo')
                 data.update(grupo=group, carrera=group.carrera)
-            # Docente/Administrador son perfiles de Persona, nunca usuarios ni permisos.
             return Persona, data
         if sheet == 'Materias':
             return Materia, dict(
                 nombre_materia=text('Materia'),
                 carrera=self.reference(Carrera, text('Carrera'), 'Carrera'), semestre=semester(),
             )
-        places = {normalize_header(value): value for value, _ in Equipo.LUGAR_CHOICES}
-        places.update({normalize_header(label): value for value, label in Equipo.LUGAR_CHOICES})
-        places.update({normalize_header('Sala de Auto Acceso'): 'Auto Acceso', normalize_header('Biblioteca Digital'): 'Biblioteca'})
+
+        # Mapeo robusto para los lugares de equipos reconociendo las opciones oficiales del modelo
+        places = {
+            normalize_header(value): value
+            for value, _ in Equipo.LUGAR_CHOICES
+        }
+        places.update({
+            normalize_header(label): value
+            for value, label in Equipo.LUGAR_CHOICES
+        })
+        places.update({
+            normalize_header('Sala de Computo'): 'Sala',
+            normalize_header('Sala de Auto Acceso'): 'Auto Acceso',
+            normalize_header('Auto Acceso'): 'Auto Acceso',
+            normalize_header('Autoacceso'): 'Auto Acceso',
+            normalize_header('Biblioteca Digital'): 'Biblioteca',
+        })
+
         place = text('Lugar')
+
         return Equipo, dict(
-            no_equipo=text('No. Equipo'), no_bien_patrimonial=text('No. Bien Patrimonial'),
+            no_equipo=text('No. Equipo'),
+            no_bien_patrimonial=text('No. Bien Patrimonial'),
             lugar=places.get(normalize_header(place), place),
         )
 
@@ -260,8 +282,6 @@ class Planner:
             if isinstance(obj, Persona):
                 if name == 'perfil':
                     continue
-                # Incorporar una relación académica ausente no sustituye una
-                # relación existente. Los valores no vacíos deben coincidir.
                 if name in ('grupo', 'carrera') and old is None:
                     continue
             if hasattr(value, '_meta') or hasattr(old, '_meta'):
@@ -282,8 +302,6 @@ class Planner:
                 try:
                     model, values = self.values(sheet.name, row)
                     candidate = model(**values)
-                    # Las referencias nuevas aún no tienen PK; sus propios campos
-                    # ya se validaron en la hoja anterior. No se escribe para validar.
                     exclude = [name for name, value in values.items() if hasattr(value, '_meta') and value.pk is None]
                     candidate.full_clean(exclude=exclude, validate_unique=False, validate_constraints=False)
                     key = self.identity(candidate)
@@ -308,8 +326,6 @@ class Planner:
                     else:
                         if model is Materia and self.index[Materia].get((*key[:2], None)):
                             raise ValidationError({'semestre': 'Hay una materia existente sin semestre con este nombre y carrera. Resuelve esa ambigüedad antes de importar; no se actualizará ni duplicará.'})
-                        # Respetar también la collation y las restricciones únicas
-                        # reales del motor (p. ej. matrícula/bien patrimonial).
                         candidate.validate_unique(exclude=exclude)
                         self.index[model].setdefault(key, []).append(candidate)
                         self.plan.entries.append((candidate, values, sheet.name, number))
@@ -344,11 +360,7 @@ def confirm(data, user):
     from django.contrib.contenttypes.models import ContentType
 
     with transaction.atomic():
-        # Punto común de serialización entre confirmaciones del importador.
-        # No crea ni modifica ContentType. La fila ya existe tras migrate.
         ContentType.objects.select_for_update().get(app_label='inicio', model='carrera')
-        # Bloquear registros existentes mientras se revalidan también protege
-        # la incorporación de relaciones ausentes frente a ediciones paralelas.
         plan = Planner(read_workbook(data), lock=True).build()
         if not plan.valid:
             raise ExcelError('La revalidación detectó errores o cambios desde la vista previa. Vuelve a cargar el archivo para revisar los detalles.')

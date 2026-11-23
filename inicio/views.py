@@ -420,6 +420,8 @@ def clases_registro_view(request):
                 ),
                 'docente': f'{clase.docente.nombre} {clase.docente.apellidos}'.strip(),
                 'cuenta_docente': clase.docente.matricula or '',
+                'materia': clase.materia.nombre_materia,
+                'grupo': str(clase.grupo),
             }
             for clase in clases
         ],
@@ -852,3 +854,199 @@ def buscar_ponente_sala_view(request):
 def auditoria_reportes_view(request):
     # Lógica para la vista de auditoría y reportes
     return render(request, 'inicio/auditoria_reportes.html')
+# ==================================================
+# MÓDULO AUTOACCESO
+# ==================================================
+
+@login_required
+def autoacceso_view(request):
+
+    if not (
+        request.user.is_superuser
+        or request.user.mod_auto_acceso
+    ):
+        messages.error(
+            request,
+            "No tienes permisos para acceder al módulo AutoAcceso."
+        )
+        return redirect('homePage')
+
+    if request.method == 'POST':
+        datos_formulario = request.POST.copy()
+        motivo_ui = datos_formulario.get('motivo_uso', '')
+        datos_formulario['motivo_uso'] = {
+            'visita': 'Visita',
+            'conversacion': 'Conversacion',
+        }.get(motivo_ui, motivo_ui)
+        form = AutoAccesoForm(datos_formulario)
+
+        if not form.is_valid():
+            errores = [
+                str(error)
+                for errores_campo in form.errors.values()
+                for error in errores_campo
+            ]
+            return JsonResponse({'error': ' '.join(errores)}, status=400)
+
+        necesita_equipo = request.POST.get('aaNecesitaEquipo')
+        if necesita_equipo not in ('si', 'no'):
+            return JsonResponse(
+                {'error': 'Indica si necesitas equipo de cómputo.'},
+                status=400,
+            )
+
+        equipo_id = request.POST.get('numero_equipo', '').strip()
+        if necesita_equipo == 'si' and not equipo_id.isdecimal():
+            return JsonResponse(
+                {'error': 'Selecciona un equipo disponible.'},
+                status=400,
+            )
+
+        equipo = None
+        try:
+            with transaction.atomic():
+                if necesita_equipo == 'si':
+                    equipo = Equipo.objects.select_for_update().filter(
+                        pk=equipo_id,
+                        lugar='Auto Acceso',
+                        estado='Disponible',
+                    ).first()
+                    if equipo is None:
+                        return JsonResponse(
+                            {'error': 'El equipo seleccionado ya no está disponible.'},
+                            status=409,
+                        )
+
+                ahora = timezone.localtime()
+                registro = Registro(
+                    modulo='Auto_Acceso',
+                    motivo_uso=form.cleaned_data['motivo_uso'],
+                    fecha=ahora.date(),
+                    hora_entrada=ahora.time(),
+                    persona=form.cleaned_data['alumno'],
+                    equipo=equipo,
+                    observaciones=request.POST.get(
+                        'descripcion_actividad',
+                        '',
+                    ).strip(),
+                    registrado_por=request.user,
+                )
+                registro.save()
+        except ValidationError as error:
+            return JsonResponse(
+                {'error': ' '.join(error.messages)},
+                status=409 if equipo is not None else 400,
+            )
+
+        return JsonResponse(
+            {'message': 'La entrada de Auto Acceso se registró correctamente.'},
+            status=201,
+        )
+
+    equipos_autoacceso = Equipo.objects.filter(lugar='Auto Acceso')
+    equipos_disponibles = _ordenar_equipos_por_numero(
+        equipos_autoacceso.filter(estado='Disponible')
+    )
+    equipos_total = equipos_autoacceso.count()
+    equipos_ocupados = equipos_autoacceso.filter(estado='Ocupado').count()
+
+    return render(
+        request,
+        'inicio/AutoAcceso/autoacceso.html',
+        {
+            'equipos_autoacceso': equipos_disponibles,
+            'carreras': Carrera.objects.order_by('nombre_carrera'),
+            'materias': Materia.objects.select_related('carrera').order_by('nombre_materia'),
+            'grupos': Grupo.objects.order_by(
+                'carrera_id', 'nombre_grupo', 'semestre', 'turno',
+            ),
+            'equipos_total': equipos_total,
+            'equipos_ocupados': equipos_ocupados,
+            'equipos_disponibles': len(equipos_disponibles),
+            'equipos_ocupados_porcentaje': (
+                round(equipos_ocupados * 100 / equipos_total)
+                if equipos_total else 0
+            ),
+        },
+    )
+
+
+@login_required
+@user_passes_test(puede_acceder_auto_acceso, login_url='homePage')
+def materias_autoacceso_carrera_view(request):
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Método no permitido.'}, status=405)
+
+    carrera_id = request.GET.get('carrera', '').strip()
+    if not carrera_id.isdecimal():
+        return JsonResponse({'error': 'Selecciona una carrera válida.'}, status=400)
+
+    carrera = Carrera.objects.filter(pk=carrera_id).first()
+    if carrera is None:
+        return JsonResponse({'error': 'No se encontró la carrera seleccionada.'}, status=404)
+
+    return JsonResponse({
+        'materias': [
+            {'id': materia.pk, 'nombre': materia.nombre_materia}
+            for materia in Materia.objects.filter(carrera=carrera).order_by(
+                'nombre_materia',
+            )
+        ],
+    })
+
+
+@login_required
+@user_passes_test(puede_acceder_auto_acceso, login_url='homePage')
+def alumnos_autoacceso_grupo_view(request):
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Método no permitido.'}, status=405)
+
+    carrera_id = request.GET.get('carrera', '').strip()
+    materia_id = request.GET.get('materia', '').strip()
+    grupo_texto = request.GET.get('grupo', '').strip()
+    if not carrera_id.isdecimal() or not materia_id.isdecimal() or not grupo_texto:
+        return JsonResponse({
+            'error': 'Selecciona carrera y materia e indica el grupo.',
+        }, status=400)
+
+    carrera = Carrera.objects.filter(pk=carrera_id).first()
+    materia = Materia.objects.filter(pk=materia_id, carrera_id=carrera_id).first()
+    if carrera is None or materia is None:
+        return JsonResponse({
+            'error': 'La materia seleccionada no corresponde a la carrera.',
+        }, status=400)
+
+    grupos = list(Grupo.objects.filter(carrera=carrera))
+    grupos_coincidentes = [
+        grupo for grupo in grupos
+        if grupo.nombre_grupo.casefold() == grupo_texto.casefold()
+        or str(grupo).casefold() == grupo_texto.casefold()
+    ]
+    if not grupos_coincidentes:
+        return JsonResponse({'error': 'No se encontró el grupo en esa carrera.'}, status=404)
+    if len(grupos_coincidentes) > 1:
+        return JsonResponse({
+            'error': 'Hay varios grupos con ese nombre. Especifica semestre y turno.',
+        }, status=409)
+
+    grupo = grupos_coincidentes[0]
+    alumnos = Persona.objects.con_perfiles('Alumno').filter(
+        grupo=grupo,
+    ).select_related('carrera', 'grupo').order_by(
+        'apellidos', 'nombre',
+    ).distinct()
+    return JsonResponse({
+        'alumnos': [
+            {
+                'id': alumno.pk,
+                'matricula': alumno.matricula or '',
+                'nombre': f'{alumno.nombre} {alumno.apellidos}'.strip(),
+                'carrera': alumno.carrera.nombre_carrera if alumno.carrera_id else '',
+                'grupo': str(grupo),
+            }
+            for alumno in alumnos
+        ],
+        'grupo': str(grupo),
+        'carrera': carrera.nombre_carrera,
+        'materia': materia.nombre_materia,
+    })

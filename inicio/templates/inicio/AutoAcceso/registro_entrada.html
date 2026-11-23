@@ -1,0 +1,252 @@
+
+<!-- ==========================================
+     REGISTRO DE ENTRADA | AUTOACCESO UAPIX
+     ========================================== -->
+
+<div class="aa-form-page">
+
+    <!-- ENCABEZADO -->
+    <div class="aa-form-header">
+
+        <button type="button"
+                class="aa-btn-regresar"
+                onclick="aaMostrar('registros')">
+            <i class="fa-solid fa-arrow-left"></i>
+            Regresar
+        </button>
+
+        <h1>Registro de Entrada</h1>
+
+        <button type="button"
+                class="aa-btn-cerrar"
+                onclick="aaMostrar('registros')"
+                aria-label="Cerrar formulario">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+    </div>
+
+    <!-- FORMULARIO -->
+    <form class="aa-form-card"
+          id="aaFormularioEntrada"
+          method="post"
+          action="{% url 'autoacceso' %}">
+        {% csrf_token %}
+
+        <!-- FILA: MOTIVO, HORA Y FECHA -->
+        <div class="aa-grid-3">
+
+            <!-- MOTIVO DE USO -->
+            <div class="aa-campo">
+                <label for="aaMotivoUso">Motivo de uso:</label>
+
+                <select id="aaMotivoUso"
+                        name="motivo_uso"
+                        onchange="aaCambiarMotivo()"
+                        required>
+
+                    <option value="visita">
+                        Visita (uso de PC)
+                    </option>
+
+                    <option value="conversacion">
+                        Conversación
+                    </option>
+
+                    <option value="clase">
+                        Clase
+                    </option>
+
+                </select>
+            </div>
+
+            <!-- HORA DE ENTRADA: MISMO RELOJ QUE REGISTRO DE CLASE -->
+            <div class="aa-campo aa-hora-campo">
+                <label for="aaHoraEntrada">Hora Entrada:</label>
+                <div class="aa-entrada-hora-personalizada">
+                    <input type="text" id="aaHoraEntrada" name="hora_entrada"
+                           class="aa-entrada-hora-input" placeholder="Selecciona una hora"
+                           autocomplete="off" readonly required>
+                    <button type="button" class="aa-entrada-hora-boton"
+                            aria-label="Seleccionar hora de entrada" aria-expanded="false">
+                        <i class="fa-regular fa-clock"></i>
+                    </button>
+                    <div class="aa-entrada-reloj-popup" hidden>
+                        <div class="aa-entrada-reloj-titulo">Hora de entrada</div>
+                        <div class="aa-entrada-reloj-controles">
+                            <select class="aa-entrada-reloj-horas" aria-label="Horas"></select>
+                            <span>:</span>
+                            <select class="aa-entrada-reloj-minutos" aria-label="Minutos"></select>
+                            <select class="aa-entrada-reloj-periodo" aria-label="Periodo">
+                                <option value="AM">a. m.</option>
+                                <option value="PM">p. m.</option>
+                            </select>
+                        </div>
+                        <button type="button" class="aa-entrada-reloj-aceptar">Aceptar</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FECHA -->
+            <div class="aa-campo">
+
+                <label for="aaFechaEntrada">
+                    FECHA:
+                </label>
+
+                <input
+                    type="date"
+                    id="aaFechaEntrada"
+                    name="fecha_entrada"
+                    required
+                >
+
+            </div>
+
+        </div>
+
+        <!-- NÚMERO DE CUENTA -->
+        <div class="aa-cuenta-fila">
+
+            <div class="aa-campo">
+
+                <label for="aaNumeroCuenta">
+                    No. Cuenta:
+                </label>
+
+                <div class="aa-buscador">
+
+                    <input
+                        type="text"
+                        id="aaNumeroCuenta"
+                        name="numero_cuenta"
+                        placeholder="Ingresa tu número de cuenta"
+                        autocomplete="off"
+                        required
+                    >
+
+                    <button
+                        type="button"
+                        aria-label="Buscar número de cuenta">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+
+                </div>
+
+            </div>
+
+            <span class="aa-lectura-indicador">
+                Datos de solo lectura
+            </span>
+
+        </div>
+
+        <!-- INFORMACIÓN DEL USUARIO -->
+        <div class="aa-datos-lectura">
+
+            <div>
+                <span>Nombre:</span>
+                <strong id="aaNombreUsuario">—</strong>
+            </div>
+
+            <div>
+                <span>Usuario:</span>
+                <strong id="aaTipoUsuario">—</strong>
+            </div>
+
+        </div>
+
+        <!-- EQUIPO DE CÓMPUTO -->
+        <div class="aa-equipo-fila">
+
+            <div class="aa-equipo-pregunta">
+
+                <span>
+                    ¿Necesitas equipo de cómputo?
+                </span>
+
+                <label>
+                    <input
+                        type="radio"
+                        name="aaNecesitaEquipo"
+                        value="si"
+                        checked
+                        onchange="aaCambiarEquipo()"
+                    >
+                    Sí
+                </label>
+
+                <label>
+                    <input
+                        type="radio"
+                        name="aaNecesitaEquipo"
+                        value="no"
+                        onchange="aaCambiarEquipo()"
+                    >
+                    No
+                </label>
+
+            </div>
+
+            <!-- SE OCULTA CUANDO SELECCIONA NO -->
+            <div class="aa-equipo-selector"
+                 id="aaSelectorEquipo">
+
+                <label for="aaNumeroEquipo">
+                    No. de Equipo:
+                </label>
+
+                <select
+                    id="aaNumeroEquipo"
+                    name="numero_equipo"
+                    required>
+
+                    <option value="">
+                        Selecciona un equipo
+                    </option>
+
+                    {% for equipo in equipos_autoacceso %}
+                    <option value="{{ equipo.id_equipo }}">{{ equipo.no_equipo }}</option>
+                    {% empty %}
+                    <option value="" disabled>No hay equipos disponibles</option>
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+        </div>
+
+        <!-- DESCRIPCIÓN -->
+        <div class="aa-campo aa-descripcion">
+
+            <label for="aaDescripcionActividad">
+                Descripción de la actividad:
+            </label>
+
+            <textarea
+                id="aaDescripcionActividad"
+                name="descripcion_actividad"
+                rows="4"
+                placeholder="Describe brevemente la actividad que realizarás"
+            ></textarea>
+
+        </div>
+
+        <!-- GUARDAR -->
+        <div class="aa-form-acciones">
+
+            <button
+                type="submit"
+                class="aa-btn-guardar">
+
+                <i class="fa-solid fa-floppy-disk"></i>
+                Guardar
+
+            </button>
+
+        </div>
+
+    </form>
+
+</div>

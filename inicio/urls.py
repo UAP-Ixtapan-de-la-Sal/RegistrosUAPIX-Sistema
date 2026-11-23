@@ -42,5 +42,32 @@ urlpatterns = [
     path('exportar-auditoria/', views.exportar_auditoria_excel, name='exportar_auditoria'),
     path('logout/', views.logout_view, name='logout'),
 
+   # ==================================================
+    # MÓDULO AUTOACCESO
+    # ==================================================
+
+    path(
+        'autoacceso/',
+        views.autoacceso_view,
+        name='autoacceso'
+    ),
+    path(
+        'autoacceso/materias-carrera/',
+        views.materias_autoacceso_carrera_view,
+        name='materias_autoacceso_carrera',
+    ),
+    path(
+        'autoacceso/alumnos-grupo/',
+        views.alumnos_autoacceso_grupo_view,
+        name='alumnos_autoacceso_grupo',
+    ),
+
+    #Ruta para la vista de agregar usuario y logout
+    path('agregar-usuario/', views.agregar_usuario_view, name='agregar_usuario'),
+    # Ruta obligatoria para que el botón de cerrar sesión funcione
+    path('auditoria-reportes/', views.auditoria_reportes_view, name='auditoria_reportes'),
+    path('exportar-auditoria/', views.exportar_auditoria_excel, name='exportar_auditoria'),
+    path('logout/', views.logout_view, name='logout'),
+
    
 ]

@@ -1,0 +1,1465 @@
+
+{% extends 'inicio/base.html' %}
+{% load static %}
+
+{% block title %}Autoacceso | UAPIX{% endblock %}
+{% block body_class %}autoacceso-body{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet"
+      href="{% static 'inicio/css/autoacceso/autoacceso.css' %}?v=22">
+{% endblock %}
+
+{% block content %}
+
+<main class="aa-page">
+
+    <!-- ==========================================
+         PANEL PRINCIPAL DE AUTOACCESO
+         SE CONSERVA EL DISEÑO ORIGINAL
+         ========================================== -->
+
+    <section id="aaDashboard">
+
+        <div class="aa-heading">
+
+            <div>
+                <p class="aa-eyebrow">MÓDULO OPERATIVO</p>
+                <h1>Autoacceso</h1>
+                <p>
+                    Gestión de accesos y administración del espacio.
+                </p>
+            </div>
+
+            <button
+                type="button"
+                class="aa-kiosk"
+                onclick="aaMostrar('registros')">
+
+                <span class="aa-kiosk-icon">
+                    <i class="fa-solid fa-tablet-screen-button"></i>
+                </span>
+
+                <span class="aa-kiosk-texto">
+                    <strong>REGISTROS</strong>
+                    <small>Acceso de autoservicio</small>
+                </span>
+
+                <span class="aa-kiosk-abrir">Abrir</span>
+
+            </button>
+
+        </div>
+
+        <!-- ESTADO DE EQUIPOS -->
+
+        <section class="aa-estado">
+
+            <div class="aa-estado-titulo">
+
+                <span class="aa-estado-icon">
+                    <i class="fa-solid fa-computer"></i>
+                </span>
+
+                <div>
+                    <h2>Estado de equipos</h2>
+                    <p>Disponibilidad de la sala</p>
+                </div>
+
+            </div>
+
+            <div class="aa-estadisticas">
+
+                <div class="aa-estadistica">
+                    <span class="aa-punto aa-ocupado"></span>
+                    <strong>{{ equipos_ocupados }}</strong>
+                    <span>Ocupados</span>
+                </div>
+
+                <div class="aa-estadistica">
+                    <span class="aa-punto aa-disponible"></span>
+                    <strong>{{ equipos_disponibles }}</strong>
+                    <span>Disponibles</span>
+                </div>
+
+                <div class="aa-barra">
+                    <span data-ocupados-porcentaje="{{ equipos_ocupados_porcentaje }}"></span>
+                </div>
+
+                <small>
+                    {{ equipos_total }} equipos en total
+                </small>
+
+            </div>
+
+        </section>
+
+        <!-- HERRAMIENTAS -->
+
+        <section class="aa-herramientas">
+
+            <div class="aa-seccion-titulo">
+                <h2>Herramientas del módulo</h2>
+                <p>
+                    Accesos de apoyo para la administración
+                    de Autoacceso.
+                </p>
+            </div>
+
+            <div class="aa-herramientas-grid">
+
+                <button
+                    type="button"
+                    class="aa-herramienta"
+                    onclick="aaAviso('Incidencias y reportes')">
+
+                    <span class="aa-herramienta-icon aa-dorado">
+                        <i class="fa-solid fa-screwdriver-wrench"></i>
+                    </span>
+
+                    <h3>Incidencias y reportes</h3>
+
+                    <p>
+                        Registra observaciones y fallas de equipos.
+                    </p>
+
+                </button>
+
+                <button
+                    type="button"
+                    class="aa-herramienta"
+                    onclick="aaAviso('Historial y bitácora')">
+
+                    <span class="aa-herramienta-icon aa-verde">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </span>
+
+                    <h3>Historial y bitácora</h3>
+
+                    <p>
+                        Consulta las sesiones y actividades del día.
+                    </p>
+
+                </button>
+
+            </div>
+
+        </section>
+
+    </section>
+
+
+    <!-- ==========================================
+         PANTALLA DE REGISTROS
+         SE CONSERVAN LAS TARJETAS ORIGINALES
+         ========================================== -->
+
+    <section id="aaRegistros" class="aa-oculto">
+
+        <div class="aa-kiosco">
+
+            <!-- ENCABEZADO VERDE -->
+
+            <header class="aa-kiosco-header">
+
+                <div class="aa-kiosco-identidad">
+
+                    <span class="aa-kiosco-identidad-icono">
+                        <i class="fa-solid fa-computer"></i>
+                    </span>
+
+                    <div class="aa-kiosco-identidad-texto">
+                        <strong>AUTOACCESO</strong>
+                    </div>
+
+                </div>
+
+                <button
+                    type="button"
+                    class="aa-kiosco-salir"
+                    onclick="aaMostrar('dashboard')"
+                    aria-label="Volver al panel"
+                    title="Panel Operador / Salir">
+
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+
+                </button>
+
+            </header>
+
+            <!-- CONTENIDO -->
+
+            <div class="aa-kiosco-contenido">
+
+                <div class="aa-kiosco-bienvenida">
+
+                    <span class="aa-kiosco-distintivo">
+                        SISTEMA DE CONTROL DE ACCESO
+                    </span>
+
+                    <h1>Bienvenido a Autoacceso</h1>
+
+                    <p>
+                        Selecciona la operación que deseas realizar
+                    </p>
+
+                </div>
+
+                <!-- TARJETAS DE ENTRADA Y SALIDA -->
+
+                <div class="aa-kiosco-opciones">
+
+                    <!-- REGISTRO DE ENTRADA -->
+
+                    <button
+                        type="button"
+                        class="aa-kiosco-tarjeta aa-kiosco-tarjeta-entrada"
+                        onclick="aaMostrar('entrada')">
+
+                        <span class="aa-kiosco-tarjeta-icono">
+                            <i class="fa-solid fa-right-to-bracket"></i>
+                        </span>
+
+                        <span class="aa-kiosco-tarjeta-titulo">
+                            Registro de Entrada
+                        </span>
+
+                        <span class="aa-kiosco-tarjeta-descripcion">
+                            Registra tu llegada y el motivo de uso.
+                        </span>
+
+                        <span class="aa-kiosco-tarjeta-accion">
+                            Comenzar registro
+                        </span>
+
+                    </button>
+
+                    <!-- REGISTRO DE SALIDA -->
+
+                    <button
+                        type="button"
+                        class="aa-kiosco-tarjeta aa-kiosco-tarjeta-salida"
+                        onclick="aaAviso('Registro de salida')">
+
+                        <span class="aa-kiosco-tarjeta-icono">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                        </span>
+
+                        <span class="aa-kiosco-tarjeta-titulo">
+                            Registro de Salida
+                        </span>
+
+                        <span class="aa-kiosco-tarjeta-descripcion">
+                            Finaliza tu sesión en las instalaciones.
+                        </span>
+
+                        <span class="aa-kiosco-tarjeta-accion">
+                            Finalizar sesión
+                        </span>
+
+                    </button>
+
+                </div>
+
+                <div class="aa-kiosco-ayuda">
+
+                    <i class="fa-solid fa-circle-info"></i>
+
+                    <span>
+                        Ten a la mano tu número de cuenta.
+                    </span>
+
+                </div>
+
+            </div>
+
+            <!-- PIE -->
+
+          <footer class="aa-kiosco-footer"></footer>
+
+        </div>
+
+    </section>
+
+
+    <!-- ==========================================
+         REGISTRO DE ENTRADA
+         NUEVA TARJETA BLANCA INSTITUCIONAL
+         ========================================== -->
+
+    <section id="aaEntrada" class="aa-oculto">
+
+        <div class="aa-contenedor-formulario">
+
+            <div class="aa-formulario-institucional">
+
+                <!-- ENCABEZADO VERDE -->
+
+                <div class="aa-formulario-institucional-header">
+
+                    <div class="aa-formulario-institucional-identidad">
+
+                        <span class="aa-formulario-institucional-icono">
+                            <i class="fa-solid fa-right-to-bracket"></i>
+                        </span>
+
+                        <div>
+                            <strong>Autoacceso</strong>
+                            <small>Registro de Entrada</small>
+                        </div>
+
+                    </div>
+
+                    <button
+                        type="button"
+                        class="aa-formulario-institucional-salir"
+                        onclick="aaMostrar('registros')"
+                        title="Volver a Registros"
+                        aria-label="Volver a Registros">
+
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+
+                    </button>
+
+                </div>
+
+                <!--
+                    FORMULARIO ORIGINAL
+                    NO SE MODIFICAN SUS CAMPOS
+                -->
+
+                <div class="aa-formulario-institucional-contenido">
+
+                    {% include 'inicio/AutoAcceso/registro_entrada.html' %}
+
+                </div>
+
+               
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ==========================================
+         REGISTRO DE CLASE
+         NUEVA TARJETA BLANCA INSTITUCIONAL
+         ========================================== -->
+
+    <section id="aaClase" class="aa-oculto">
+
+        <div class="aa-contenedor-formulario">
+
+            <div class="aa-formulario-institucional">
+
+                <!-- ENCABEZADO VERDE -->
+
+                <div class="aa-formulario-institucional-header">
+
+                    <div class="aa-formulario-institucional-identidad">
+
+                        <span class="aa-formulario-institucional-icono">
+                            <i class="fa-solid fa-chalkboard-user"></i>
+                        </span>
+
+                        <div>
+                            <strong>Autoacceso</strong>
+                            <small>Registro de Clase</small>
+                        </div>
+
+                    </div>
+
+                    <button
+                        type="button"
+                        class="aa-formulario-institucional-salir"
+                        onclick="aaRegresarClase()"
+                        title="Volver al Registro de Entrada"
+                        aria-label="Volver al Registro de Entrada">
+
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+
+                    </button>
+
+                </div>
+
+                <!--
+                    FORMULARIO ORIGINAL DE CLASE
+                    SE CONSERVAN MATERIA, GRUPO Y ALUMNOS
+                -->
+
+                <div class="aa-formulario-institucional-contenido">
+
+                    {% include 'inicio/AutoAcceso/registro_clase.html' %}
+
+                </div>
+
+                <!-- PIE INSTITUCIONAL -->
+
+                <div class="aa-formulario-institucional-footer">
+
+                    <span>Sistema Institucional UAPIX</span>
+
+                    <span>Control de Acceso</span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+{% endblock %}
+
+
+{% block extra_js %}
+
+<script>
+
+/* ==========================================================
+   NAVEGACIÓN ENTRE PANTALLAS
+   ========================================================== */
+
+const aaPantallas = {
+    dashboard: 'aaDashboard',
+    registros: 'aaRegistros',
+    entrada: 'aaEntrada',
+    clase: 'aaClase'
+};
+
+function aaMostrar(pantalla) {
+
+    Object.values(aaPantallas).forEach(id => {
+
+        const seccion = document.getElementById(id);
+
+        if (seccion) {
+            seccion.classList.add('aa-oculto');
+        }
+
+    });
+
+    const destino = document.getElementById(
+        aaPantallas[pantalla]
+    );
+
+    if (destino) {
+        destino.classList.remove('aa-oculto');
+    }
+
+    aaCerrarTodosLosSelectores();
+    aaCerrarReloj();
+
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+    });
+
+}
+
+
+/* ==========================================================
+   MOTIVO DE USO
+   ========================================================== */
+
+function aaCambiarMotivo() {
+
+    const selector = document.getElementById('aaMotivoUso');
+
+    if (!selector) return;
+
+    if (selector.value === 'clase') {
+        aaMostrar('clase');
+    }
+
+}
+
+
+/* ==========================================================
+   REGRESAR DESDE REGISTRO DE CLASE
+   ========================================================== */
+
+function aaRegresarClase() {
+
+    const selector = document.getElementById('aaMotivoUso');
+
+    if (selector) {
+
+        selector.value = 'visita';
+
+        selector.dispatchEvent(
+            new Event('change', { bubbles: true })
+        );
+
+    }
+
+    aaMostrar('entrada');
+
+}
+
+
+/* ==========================================================
+   MOSTRAR / OCULTAR EQUIPO
+   ========================================================== */
+
+function aaCambiarEquipo() {
+
+    const opcion = document.querySelector(
+        'input[name="aaNecesitaEquipo"]:checked'
+    );
+
+    const contenedor = document.getElementById(
+        'aaSelectorEquipo'
+    );
+
+    const selector = document.getElementById(
+        'aaNumeroEquipo'
+    );
+
+    if (!contenedor || !selector) return;
+
+    const mostrar = Boolean(
+        opcion && opcion.value === 'si'
+    );
+
+    contenedor.hidden = !mostrar;
+    selector.disabled = !mostrar;
+    selector.required = mostrar;
+
+    if (!mostrar) {
+        selector.value = '';
+    }
+
+}
+
+
+/* ==========================================================
+   FECHA Y HORA ACTUALES
+   ========================================================== */
+
+function aaFechaLocal() {
+
+    const hoy = new Date();
+
+    const anio = hoy.getFullYear();
+
+    const mes = String(
+        hoy.getMonth() + 1
+    ).padStart(2, '0');
+
+    const dia = String(
+        hoy.getDate()
+    ).padStart(2, '0');
+
+    return `${anio}-${mes}-${dia}`;
+
+}
+
+function aaActualizarFechaHora() {
+
+    const ahora = new Date();
+
+    const fecha = document.getElementById('aaFechaEntrada');
+    const hora = document.getElementById('aaHoraEntrada');
+    const fechaHoy = aaFechaLocal();
+
+    const horas = ahora.getHours();
+    const minutos = ahora.getMinutes();
+
+    if (fecha) {
+        fecha.min = fechaHoy;
+        if (!fecha.value || fecha.value < fechaHoy) {
+            fecha.value = fechaHoy;
+        }
+    }
+
+    if (hora && !hora.value) {
+
+        const hora12 = horas % 12 || 12;
+
+        const periodo = horas >= 12
+            ? 'p. m.'
+            : 'a. m.';
+
+        hora.value =
+            `${String(hora12).padStart(2, '0')}:` +
+            `${String(minutos).padStart(2, '0')} ${periodo}`;
+
+    }
+
+}
+
+
+/* ==========================================================
+   SELECTORES PERSONALIZADOS
+   ========================================================== */
+
+function aaCerrarTodosLosSelectores(excepto = null) {
+
+    document.querySelectorAll(
+        '.aa-select-personalizado.abierto'
+    ).forEach(contenedor => {
+
+        if (contenedor === excepto) return;
+
+        const lista = contenedor.querySelector(
+            '.aa-select-lista'
+        );
+
+        const boton = contenedor.querySelector(
+            '.aa-select-boton'
+        );
+
+        if (lista) lista.hidden = true;
+
+        if (boton) {
+            boton.setAttribute('aria-expanded', 'false');
+        }
+
+        contenedor.classList.remove('abierto');
+
+    });
+
+}
+
+
+function aaInicializarSelectorPersonalizado(selector) {
+
+    if (!selector) return;
+
+    if (selector.dataset.aaPersonalizado === 'true') {
+        return;
+    }
+
+    selector.dataset.aaPersonalizado = 'true';
+
+    const contenedor = document.createElement('div');
+    contenedor.className = 'aa-select-personalizado';
+
+    const boton = document.createElement('button');
+    boton.type = 'button';
+    boton.className = 'aa-select-boton';
+    boton.setAttribute('aria-haspopup', 'listbox');
+    boton.setAttribute('aria-expanded', 'false');
+
+    const texto = document.createElement('span');
+    texto.className = 'aa-select-texto';
+
+    const flecha = document.createElement('i');
+    flecha.className = 'fa-solid fa-chevron-down';
+    flecha.setAttribute('aria-hidden', 'true');
+
+    boton.append(texto, flecha);
+
+    const lista = document.createElement('div');
+    lista.className = 'aa-select-lista';
+    lista.setAttribute('role', 'listbox');
+    lista.hidden = true;
+
+    const botones = [];
+
+    function sincronizar() {
+
+        const opcionActual = selector.selectedOptions[0];
+
+        texto.textContent = opcionActual
+            ? opcionActual.textContent.trim()
+            : 'Selecciona una opción';
+
+        botones.forEach(item => {
+
+            const seleccionado =
+                item.dataset.value === selector.value;
+
+            item.classList.toggle(
+                'seleccionado',
+                seleccionado
+            );
+
+            item.setAttribute(
+                'aria-selected',
+                String(seleccionado)
+            );
+
+        });
+
+    }
+
+    function cerrar() {
+
+        lista.hidden = true;
+
+        boton.setAttribute(
+            'aria-expanded',
+            'false'
+        );
+
+        contenedor.classList.remove('abierto');
+
+    }
+
+    function abrir() {
+
+        aaCerrarTodosLosSelectores(contenedor);
+
+        lista.hidden = false;
+
+        boton.setAttribute(
+            'aria-expanded',
+            'true'
+        );
+
+        contenedor.classList.add('abierto');
+
+    }
+
+    function reconstruirOpciones() {
+
+        botones.length = 0;
+        lista.replaceChildren();
+
+        Array.from(selector.options).forEach(opcion => {
+
+            const item = document.createElement('button');
+
+            item.type = 'button';
+            item.className = 'aa-select-opcion';
+
+            item.textContent = opcion.textContent.trim();
+            item.dataset.value = opcion.value;
+
+            item.setAttribute('role', 'option');
+            item.disabled = opcion.disabled;
+
+            item.addEventListener('click', function () {
+
+                selector.value = opcion.value;
+
+                selector.dispatchEvent(
+                    new Event('change', { bubbles: true })
+                );
+
+                sincronizar();
+                cerrar();
+                boton.focus();
+
+            });
+
+            lista.appendChild(item);
+            botones.push(item);
+
+        });
+
+        sincronizar();
+
+    }
+
+    boton.addEventListener('click', function () {
+
+        if (lista.hidden) {
+            abrir();
+        } else {
+            cerrar();
+        }
+
+    });
+
+    boton.addEventListener('keydown', function (evento) {
+
+        if (
+            evento.key === 'ArrowDown' ||
+            evento.key === 'ArrowUp'
+        ) {
+
+            evento.preventDefault();
+            abrir();
+
+            const habilitados = botones.filter(
+                item => !item.disabled
+            );
+
+            const seleccionado = habilitados.find(
+                item => item.dataset.value === selector.value
+            );
+
+            (seleccionado || habilitados[0])?.focus();
+
+        }
+
+    });
+
+    lista.addEventListener('keydown', function (evento) {
+
+        if (evento.key === 'Escape') {
+
+            cerrar();
+            boton.focus();
+            return;
+
+        }
+
+        if (
+            evento.key === 'ArrowDown' ||
+            evento.key === 'ArrowUp'
+        ) {
+
+            evento.preventDefault();
+
+            const habilitados = botones.filter(
+                item => !item.disabled
+            );
+
+            if (!habilitados.length) return;
+
+            const indice = habilitados.indexOf(
+                document.activeElement
+            );
+
+            const siguiente = evento.key === 'ArrowDown'
+                ? (indice + 1) % habilitados.length
+                : (indice - 1 + habilitados.length)
+                    % habilitados.length;
+
+            habilitados[siguiente]?.focus();
+
+        }
+
+    });
+
+    document.addEventListener('click', function (evento) {
+
+        if (!contenedor.contains(evento.target)) {
+            cerrar();
+        }
+
+    });
+
+    selector.addEventListener('change', sincronizar);
+
+    selector.classList.add('aa-select-original');
+
+    selector.insertAdjacentElement(
+        'afterend',
+        contenedor
+    );
+
+    contenedor.append(boton, lista);
+
+    reconstruirOpciones();
+
+    if (selector.id === 'aaMateria') {
+        new MutationObserver(reconstruirOpciones).observe(
+            selector,
+            { childList: true }
+        );
+    }
+
+}
+
+
+/* ==========================================================
+   IDENTIFICAR SELECTOR DE MATERIA
+   ========================================================== */
+
+function aaBuscarSelectorMateria() {
+
+    const porId = document.getElementById('aaMateria');
+
+    if (porId && porId.tagName === 'SELECT') {
+        return porId;
+    }
+
+    const etiquetas = document.querySelectorAll(
+        '#aaClase label'
+    );
+
+    for (const etiqueta of etiquetas) {
+
+        const texto = etiqueta.textContent
+            .trim()
+            .toLowerCase();
+
+        if (texto === 'materia:' || texto === 'materia') {
+
+            const campo = etiqueta.closest('.aa-campo');
+
+            if (campo) {
+
+                const selector = campo.querySelector('select');
+
+                if (selector) return selector;
+
+            }
+
+            const id = etiqueta.getAttribute('for');
+
+            if (id) {
+
+                const selector = document.getElementById(id);
+
+                if (selector?.tagName === 'SELECT') {
+                    return selector;
+                }
+
+            }
+
+        }
+
+    }
+
+    return null;
+
+}
+
+
+function aaInicializarSelectores() {
+
+    const motivo = document.getElementById('aaMotivoUso');
+
+    const materia = aaBuscarSelectorMateria();
+
+    aaInicializarSelectorPersonalizado(motivo);
+    aaInicializarSelectorPersonalizado(materia);
+
+}
+
+
+/* ==========================================================
+   RELOJ PERSONALIZADO
+   ========================================================== */
+
+let aaRelojHora = 12;
+let aaRelojMinuto = 0;
+let aaRelojPeriodo = 'AM';
+
+
+function aaFormatearHora(hora, minuto, periodo) {
+
+    const h = String(hora).padStart(2, '0');
+    const m = String(minuto).padStart(2, '0');
+
+    const sufijo = periodo === 'AM'
+        ? 'a. m.'
+        : 'p. m.';
+
+    return `${h}:${m} ${sufijo}`;
+
+}
+
+
+function aaActualizarVistaReloj() {
+
+    const vista = document.getElementById(
+        'aaRelojVistaPrevia'
+    );
+
+    if (vista) {
+
+        vista.textContent = aaFormatearHora(
+            aaRelojHora,
+            aaRelojMinuto,
+            aaRelojPeriodo
+        );
+
+    }
+
+    document.querySelectorAll(
+        '#aaListaHoras .aa-reloj-opcion'
+    ).forEach(boton => {
+
+        boton.classList.toggle(
+            'activo',
+            Number(boton.dataset.hora) === aaRelojHora
+        );
+
+    });
+
+    document.querySelectorAll(
+        '#aaListaMinutos .aa-reloj-opcion'
+    ).forEach(boton => {
+
+        boton.classList.toggle(
+            'activo',
+            Number(boton.dataset.minuto) === aaRelojMinuto
+        );
+
+    });
+
+    document.querySelectorAll(
+        '#aaListaPeriodos .aa-reloj-opcion'
+    ).forEach(boton => {
+
+        boton.classList.toggle(
+            'activo',
+            boton.dataset.periodo === aaRelojPeriodo
+        );
+
+    });
+
+}
+
+
+function aaSeleccionarHora(hora) {
+
+    aaRelojHora = hora;
+    aaActualizarVistaReloj();
+
+}
+
+
+function aaSeleccionarMinuto(minuto) {
+
+    aaRelojMinuto = minuto;
+    aaActualizarVistaReloj();
+
+}
+
+
+function aaSeleccionarPeriodo(periodo) {
+
+    aaRelojPeriodo = periodo;
+    aaActualizarVistaReloj();
+
+}
+
+
+function aaCrearOpcionesReloj() {
+
+    const listaHoras = document.getElementById(
+        'aaListaHoras'
+    );
+
+    const listaMinutos = document.getElementById(
+        'aaListaMinutos'
+    );
+
+    if (!listaHoras || !listaMinutos) return;
+
+    listaHoras.innerHTML = '';
+    listaMinutos.innerHTML = '';
+
+    /* HORAS 01 A 12 */
+
+    for (let hora = 1; hora <= 12; hora++) {
+
+        const boton = document.createElement('button');
+
+        boton.type = 'button';
+        boton.className = 'aa-reloj-opcion';
+
+        boton.textContent = String(hora).padStart(2, '0');
+        boton.dataset.hora = hora;
+
+        boton.addEventListener('click', function () {
+            aaSeleccionarHora(hora);
+        });
+
+        listaHoras.appendChild(boton);
+
+    }
+
+    /* MINUTOS 00 A 59 */
+
+    for (let minuto = 0; minuto <= 59; minuto++) {
+
+        const boton = document.createElement('button');
+
+        boton.type = 'button';
+        boton.className = 'aa-reloj-opcion';
+
+        boton.textContent = String(minuto).padStart(2, '0');
+        boton.dataset.minuto = minuto;
+
+        boton.addEventListener('click', function () {
+            aaSeleccionarMinuto(minuto);
+        });
+
+        listaMinutos.appendChild(boton);
+
+    }
+
+    aaActualizarVistaReloj();
+
+}
+
+
+function aaAbrirReloj() {
+
+    const popup = document.getElementById('aaRelojPopup');
+    const input = document.getElementById('aaHoraEntrada');
+
+    if (!popup) return;
+
+    aaCerrarTodosLosSelectores();
+
+    if (input?.value) {
+
+        const coincidencia = input.value.match(
+            /(\d{1,2}):(\d{2})\s*(a\.\s*m\.|p\.\s*m\.)/i
+        );
+
+        if (coincidencia) {
+
+            aaRelojHora = Number(coincidencia[1]);
+            aaRelojMinuto = Number(coincidencia[2]);
+
+            aaRelojPeriodo = coincidencia[3]
+                .toLowerCase()
+                .startsWith('a')
+                ? 'AM'
+                : 'PM';
+
+        }
+
+    }
+
+    aaActualizarVistaReloj();
+
+    popup.classList.remove('aa-oculto');
+
+    requestAnimationFrame(() => {
+
+        popup.querySelectorAll(
+            '.aa-reloj-opcion.activo'
+        ).forEach(boton => {
+
+            boton.scrollIntoView({
+                block: 'center',
+                behavior: 'instant'
+            });
+
+        });
+
+    });
+
+}
+
+
+function aaCerrarReloj() {
+
+    const popup = document.getElementById('aaRelojPopup');
+
+    if (popup) {
+        popup.classList.add('aa-oculto');
+    }
+
+}
+
+
+function aaAplicarReloj() {
+
+    const input = document.getElementById('aaHoraEntrada');
+
+    if (input) {
+
+        input.value = aaFormatearHora(
+            aaRelojHora,
+            aaRelojMinuto,
+            aaRelojPeriodo
+        );
+
+        input.dispatchEvent(
+            new Event('change', { bubbles: true })
+        );
+
+    }
+
+    aaCerrarReloj();
+
+}
+
+
+
+/* RELOJ COMPACTO: REGISTRO DE ENTRADA */
+function aaInicializarRelojEntradaCompacto() {
+    const wrapper = document.querySelector('#aaEntrada .aa-entrada-hora-personalizada');
+    if (!wrapper || wrapper.dataset.relojListo === '1') return;
+    const campo = wrapper.querySelector('#aaHoraEntrada');
+    const boton = wrapper.querySelector('.aa-entrada-hora-boton');
+    const popup = wrapper.querySelector('.aa-entrada-reloj-popup');
+    const horas = wrapper.querySelector('.aa-entrada-reloj-horas');
+    const minutos = wrapper.querySelector('.aa-entrada-reloj-minutos');
+    const periodo = wrapper.querySelector('.aa-entrada-reloj-periodo');
+    const aceptar = wrapper.querySelector('.aa-entrada-reloj-aceptar');
+    if (![campo, boton, popup, horas, minutos, periodo, aceptar].every(Boolean)) return;
+    wrapper.dataset.relojListo = '1';
+    horas.replaceChildren();
+    minutos.replaceChildren();
+    for (let i = 1; i <= 12; i++) {
+        const op = new Option(String(i).padStart(2, '0'), String(i).padStart(2, '0'));
+        horas.add(op);
+    }
+    for (let i = 0; i < 60; i++) {
+        const op = new Option(String(i).padStart(2, '0'), String(i).padStart(2, '0'));
+        minutos.add(op);
+    }
+    function sincronizar() {
+        const match = campo.value.trim().match(/^(\d{1,2}):(\d{2})\s*(a\.?\s*m\.?|p\.?\s*m\.?|AM|PM)$/i);
+        if (match) {
+            horas.value = match[1].padStart(2, '0');
+            minutos.value = match[2];
+            periodo.value = /^p/i.test(match[3]) ? 'PM' : 'AM';
+        } else {
+            const ahora = new Date();
+            horas.value = String(ahora.getHours() % 12 || 12).padStart(2, '0');
+            minutos.value = String(ahora.getMinutes()).padStart(2, '0');
+            periodo.value = ahora.getHours() >= 12 ? 'PM' : 'AM';
+        }
+    }
+    function cerrar() {
+        popup.hidden = true;
+        boton.setAttribute('aria-expanded', 'false');
+    }
+    function alternar() {
+        if (popup.hidden) {
+            sincronizar();
+            popup.hidden = false;
+            boton.setAttribute('aria-expanded', 'true');
+        } else cerrar();
+    }
+    boton.addEventListener('click', alternar);
+    campo.addEventListener('click', alternar);
+    aceptar.addEventListener('click', () => {
+        campo.value = horas.value + ':' + minutos.value + ' ' + (periodo.value === 'AM' ? 'a. m.' : 'p. m.');
+        campo.dispatchEvent(new Event('input', {bubbles:true}));
+        campo.dispatchEvent(new Event('change', {bubbles:true}));
+        cerrar();
+    });
+    document.addEventListener('click', (event) => {
+        if (!wrapper.contains(event.target)) cerrar();
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') cerrar();
+    });
+}
+
+/* ==========================================================
+   AVISOS DE DEMOSTRACIÓN
+   ========================================================== */
+
+function aaAviso(funcion) {
+
+    alert(
+        funcion + ': función pendiente de implementar.'
+    );
+
+}
+
+
+/* ==========================================================
+   INICIALIZACIÓN
+   ========================================================== */
+
+document.addEventListener('DOMContentLoaded', function () {
+
+    aaInicializarSelectores();
+
+    const formularioEntrada = document.getElementById('aaFormularioEntrada');
+    const numeroCuenta = document.getElementById('aaNumeroCuenta');
+    const motivoUso = document.getElementById('aaMotivoUso');
+    const nombreUsuario = document.getElementById('aaNombreUsuario');
+    const tipoUsuario = document.getElementById('aaTipoUsuario');
+    const indicadorLectura = document.querySelector('.aa-lectura-indicador');
+    const botonBuscarAlumno = document.querySelector(
+        '[aria-label="Buscar número de cuenta"]'
+    );
+    let temporizadorBusqueda;
+    let versionBusqueda = 0;
+
+    function limpiarDatosAlumno(mensaje) {
+        versionBusqueda += 1;
+        nombreUsuario.textContent = '—';
+        tipoUsuario.textContent = '—';
+        indicadorLectura.textContent = mensaje || 'Datos de solo lectura';
+    }
+
+    async function buscarAlumno() {
+        window.clearTimeout(temporizadorBusqueda);
+        const cuenta = numeroCuenta.value.trim();
+        if (!cuenta) {
+            limpiarDatosAlumno('Ingresa el número de cuenta del alumno.');
+            return;
+        }
+        if (!['visita', 'conversacion'].includes(motivoUso.value)) {
+            limpiarDatosAlumno();
+            return;
+        }
+
+        const versionActual = ++versionBusqueda;
+        nombreUsuario.textContent = '—';
+        tipoUsuario.textContent = '—';
+        indicadorLectura.textContent = 'Buscando alumno...';
+
+        const url = new URL(
+            '{% url "buscar_alumno_auto_acceso" %}',
+            window.location.origin
+        );
+        url.searchParams.set('cuenta', cuenta);
+
+        try {
+            const response = await fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            });
+            const resultado = await response.json();
+            if (
+                versionActual !== versionBusqueda
+                || numeroCuenta.value.trim() !== cuenta
+            ) {
+                return;
+            }
+            if (!response.ok || !resultado.encontrado) {
+                throw new Error(resultado.error || 'No se encontró al alumno.');
+            }
+
+            nombreUsuario.textContent = [
+                resultado.nombre,
+                resultado.apellidos,
+            ].filter(Boolean).join(' ');
+            tipoUsuario.textContent = 'Alumno';
+            indicadorLectura.textContent = 'Alumno verificado';
+        } catch (error) {
+            if (
+                versionActual !== versionBusqueda
+                || numeroCuenta.value.trim() !== cuenta
+            ) {
+                return;
+            }
+            limpiarDatosAlumno(
+                error.message || 'No fue posible consultar al alumno.'
+            );
+        }
+    }
+
+    numeroCuenta.addEventListener('input', function () {
+        window.clearTimeout(temporizadorBusqueda);
+        limpiarDatosAlumno();
+        if (
+            numeroCuenta.value.trim()
+            && ['visita', 'conversacion'].includes(motivoUso.value)
+        ) {
+            indicadorLectura.textContent = 'Buscando alumno...';
+            temporizadorBusqueda = window.setTimeout(buscarAlumno, 350);
+        }
+    });
+
+    numeroCuenta.addEventListener('keydown', function (evento) {
+        if (evento.key === 'Enter') {
+            evento.preventDefault();
+            buscarAlumno();
+        }
+    });
+
+    botonBuscarAlumno.addEventListener('click', buscarAlumno);
+    motivoUso.addEventListener('change', function () {
+        window.clearTimeout(temporizadorBusqueda);
+        limpiarDatosAlumno();
+        if (
+            motivoUso.value !== 'clase'
+            && numeroCuenta.value.trim()
+        ) {
+            buscarAlumno();
+        }
+    });
+
+    const barraOcupacion = document.querySelector(
+        '[data-ocupados-porcentaje]'
+    );
+    if (barraOcupacion) {
+        barraOcupacion.style.width =
+            barraOcupacion.dataset.ocupadosPorcentaje + '%';
+    }
+
+    aaCambiarEquipo();
+    aaActualizarFechaHora();
+
+    aaInicializarRelojEntradaCompacto();
+
+    /* CERRAR RELOJ AL HACER CLIC FUERA */
+
+    document.addEventListener('click', function (evento) {
+
+        const popup = document.getElementById('aaRelojPopup');
+
+        const contenedor = document.querySelector(
+            '.aa-hora-wrapper'
+        );
+
+        if (
+            popup &&
+            contenedor &&
+            !contenedor.contains(evento.target)
+        ) {
+
+            aaCerrarReloj();
+
+        }
+
+    });
+
+    formularioEntrada.addEventListener('submit', async function (evento) {
+        evento.preventDefault();
+
+        const fecha = formularioEntrada.querySelector('#aaFechaEntrada');
+        if (fecha) {
+            const fechaHoy = aaFechaLocal();
+            fecha.min = fechaHoy;
+
+            if (fecha.value < fechaHoy) {
+                alert('La fecha no puede ser anterior a hoy.');
+                fecha.focus();
+                return;
+            }
+        }
+
+        const botonGuardar = formularioEntrada.querySelector(
+            'button[type="submit"]'
+        );
+        botonGuardar.disabled = true;
+
+        try {
+            const respuesta = await fetch(formularioEntrada.action, {
+                method: 'POST',
+                body: new FormData(formularioEntrada),
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+
+            let resultado;
+            try {
+                resultado = await respuesta.json();
+            } catch (error) {
+                throw new Error(
+                    'El servidor no devolvió JSON (HTTP ' +
+                    respuesta.status +
+                    ').'
+                );
+            }
+
+            if (!respuesta.ok) {
+                throw new Error(
+                    resultado.error || 'No fue posible registrar la entrada.'
+                );
+            }
+
+            alert(resultado.message);
+            window.location.reload();
+        } catch (error) {
+            indicadorLectura.textContent =
+                'No fue posible registrar la entrada: ' +
+                (error.message || 'error inesperado.');
+        } finally {
+            botonGuardar.disabled = false;
+        }
+    });
+
+});
+
+</script>
+
+{% endblock %}

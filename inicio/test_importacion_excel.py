@@ -15,13 +15,14 @@ from django.test import Client, TestCase
 from django.test.utils import CaptureQueriesContext
 from django.db import connection
 from django.urls import reverse
-from openpyxl import Workbook
+from openpyxl import Workbook, load_workbook
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from .models import Carrera, Equipo, Grupo, Materia, Persona, UsuarioSistema
 from .services import importacion_temporal
 from .services.importacion_excel import (
-    COLUMNAS, ExcelError, IMPORT_PERMISSIONS, MAX_FILE_SIZE, confirm, preview,
+    COLUMNAS, ExcelError, IMPORT_PERMISSIONS, MAX_FILE_SIZE, cell_text, confirm,
+    preview, read_workbook,
 )
 
 
@@ -66,24 +67,48 @@ class ExcelServiceTests(TestCase):
         self.assertEqual([m.objects.count() for m in (Carrera, Grupo, Persona, Materia, Equipo)], [1, 1, 3, 1, 1])
         student = Persona.objects.get(matricula='00123')
         self.assertEqual(student.carrera, student.grupo.carrera)
-        self.assertEqual(student.apellidos, 'Pérez López')
-        self.assertEqual(Materia.objects.get().semestre, 2)
-        self.assertEqual(Equipo.objects.get().no_bien_patrimonial, '00050')
+        self.assertEqual(student.apellidos, 'PEREZ LOPEZ')
+        self.assertEqual(Carrera.objects.get().nombre_carrera, 'INFORMATICA')
+        self.assertEqual(Grupo.objects.get().turno, 'MATUTINO')
+        subject = Materia.objects.get()
+        self.assertEqual((subject.nombre_materia, subject.semestre), ('PROGRAMACION', 2))
+        equipment = Equipo.objects.get()
+        self.assertEqual((equipment.no_bien_patrimonial, equipment.lugar), ('00050', 'Sala'))
+        for account, name, surnames, profile in (
+            ('00123', 'ANA', 'PEREZ LOPEZ', 'Alumno'),
+            ('D001', 'LUIS', 'DIAZ', 'Docente'),
+            ('A001', 'EVA', 'RUIZ', 'Administrador'),
+        ):
+            with self.subTest(account=account):
+                person = Persona.objects.get(matricula=account)
+                self.assertEqual((person.nombre, person.apellidos), (name, surnames))
+                self.assertEqual(person.perfil, profile)
+                self.assertEqual(person.perfiles_actuales, {profile})
         self.assertEqual(UsuarioSistema.objects.count(), 1)
 
     def test_one_sheet_ignores_missing_sheets(self):
         data = workbook({'Carreras': [['Carrera'], ['Informática']]})
         plan = confirm(data, self.user)
         self.assertEqual(len(plan.sheets), 1)
-        self.assertEqual(Carrera.objects.get().nombre_carrera, 'Informática')
+        self.assertEqual(Carrera.objects.get().nombre_carrera, 'INFORMATICA')
+
+    def test_normalization_handles_decomposed_accents_empty_cells_and_identifiers(self):
+        for original, expected in (
+            ('  José Muñoz  ', 'JOSE MUNOZ'),
+            ('a\u0301e\u0301i\u0301o\u0301u\u0301', 'AEIOU'),
+            (None, ''), ('  ', ''), ('00050', '00050'), (1.0, '1'),
+        ):
+            with self.subTest(original=original):
+                self.assertEqual(cell_text(original), expected)
 
     def test_empty_sheets_and_headers_only_are_ignored_before_header_validation(self):
         data = workbook({
             'Carreras': [['Carrera'], ['Informática']], 'Grupos': [],
             'Alumnos': [['solo encabezado']], 'Materias': [[None], ['  ']],
+            'Notas': [['solo encabezado']],
         })
         plan = confirm(data, self.user)
-        self.assertEqual(plan.ignored, ['Grupos', 'Alumnos', 'Materias'])
+        self.assertEqual(plan.ignored, ['Grupos', 'Alumnos', 'Materias', 'Notas'])
         self.assertEqual(Carrera.objects.count(), 1)
 
     def test_entirely_empty_workbook_is_not_confirmable(self):
@@ -108,13 +133,26 @@ class ExcelServiceTests(TestCase):
         self.assertEqual(Carrera.objects.count(), 1)
         self.assertEqual(plan.sheets[0].new, 1)
         self.assertEqual(plan.sheets[0].existing, 1)
-        self.assertEqual(Carrera.objects.get().nombre_carrera, 'Informática')
+        self.assertEqual(Carrera.objects.get().nombre_carrera, 'INFORMATICA')
 
     def test_existing_case_and_whitespace_match_without_changing_stored_text(self):
         Carrera.objects.create(nombre_carrera='  Ingeniería   en Computación ')
         data = workbook({'Carreras': [[' CARRÉRA '], ['ingeniería en computación']]})
         self.assertEqual(confirm(data, self.user).sheets[0].existing, 1)
         self.assertEqual(Carrera.objects.get().nombre_carrera, '  Ingeniería   en Computación ')
+
+    def test_unaccented_import_reuses_existing_accented_catalog(self):
+        career = Carrera.objects.create(nombre_carrera='Informática')
+        data = workbook({
+            'Carreras': [['Carrera'], ['INFORMATICA']],
+            'Grupos': [COLUMNAS['Grupos'], ['x1', 'informatica', 2, 'matutino']],
+        })
+        plan = confirm(data, self.user)
+        self.assertEqual(plan.sheets[0].existing, 1)
+        self.assertEqual(Carrera.objects.count(), 1)
+        self.assertEqual(Grupo.objects.get().carrera, career)
+        career.refresh_from_db()
+        self.assertEqual(career.nombre_carrera, 'Informática')
 
     def test_conflicting_existing_record_blocks_confirmation(self):
         Persona.objects.create(matricula='D01', nombre='Luis', apellidos='Pérez', perfil='Docente')
@@ -185,6 +223,48 @@ class ExcelServiceTests(TestCase):
         self.assertEqual(equipment.no_bien_patrimonial, '00050')
         self.assertEqual(equipment.lugar, 'Biblioteca')
 
+    def test_equipment_place_aliases_validate_and_reimport_without_changes(self):
+        aliases = (
+            ('Sala de Cómputo', 'Sala'),
+            ('sala de computo', 'Sala'),
+            ('SALA', 'Sala'),
+            ('Sala de Auto Acceso', 'Auto Acceso'),
+            ('Auto Acceso', 'Auto Acceso'),
+            ('Autoacceso', 'Auto Acceso'),
+            ('  ÁUTO   ACCÉSO  ', 'Auto Acceso'),
+            ('Biblioteca Digital', 'Biblioteca'),
+            ('biblioteca', 'Biblioteca'),
+        )
+        for number, (alias, official) in enumerate(aliases, start=1):
+            with self.subTest(alias=alias):
+                inventory = f'EQ-{number:03}'
+                data = workbook({'Equipos': [COLUMNAS['Equipos'], [str(number), inventory, alias]]})
+                plan = preview(data)
+                self.assertTrue(plan.valid, plan)
+                confirm(data, self.user)
+                equipment = Equipo.objects.get(no_bien_patrimonial=inventory)
+                self.assertEqual(equipment.lugar, official)
+                equipment.full_clean()
+                self.assertEqual(confirm(data, self.user).sheets[0].existing, 1)
+                self.assertEqual(equipment.history.count(), 1)
+
+    def test_unknown_equipment_place_blocks_confirmation(self):
+        data = workbook({'Equipos': [COLUMNAS['Equipos'], ['01', '00050', 'Lugar desconocido']]})
+        plan = preview(data)
+        self.assertFalse(plan.valid)
+        self.assertEqual(plan.sheets[0].errors[0]['field'], 'lugar')
+        with self.assertRaises(ExcelError):
+            confirm(data, self.user)
+        self.assertFalse(Equipo.objects.exists())
+
+    def test_blank_rows_preserve_original_excel_error_numbers(self):
+        data = workbook({'Carreras': [['Carrera'], ['Informática'], [], ['A' * 101]]})
+        plan = preview(data)
+        self.assertFalse(plan.valid)
+        self.assertEqual([number for number, row in plan.sheets[0].rows], [2, 4])
+        self.assertEqual(plan.sheets[0].errors[0]['row'], 4)
+        self.assertFalse(Carrera.objects.exists())
+
     def test_invalid_and_oversized_file_are_rejected(self):
         for data in (b'no soy excel', b'', b'x' * (MAX_FILE_SIZE + 1)):
             with self.assertRaises(ExcelError):
@@ -201,6 +281,57 @@ class ExcelServiceTests(TestCase):
         with patch('inicio.services.importacion_excel.MAX_EXPANDED_SIZE', 10):
             with self.assertRaisesMessage(ExcelError, 'descomprimido'):
                 preview(data)
+
+    def test_row_limit_counts_blank_rows(self):
+        data = workbook({'Carreras': [['Carrera'], ['Informática'], [], ['Otra']]})
+        with patch('inicio.services.importacion_excel.MAX_ROWS', 2):
+            with self.assertRaisesMessage(ExcelError, 'máximo 2 filas'):
+                read_workbook(data)
+
+    def test_combined_sheet_rows_respect_global_limit(self):
+        data = workbook({
+            'Carreras': [['Carrera'], ['Informática'], ['Otra']],
+            'Docentes': [COLUMNAS['Docentes'], ['D001', 'Luis', 'Díaz', '']],
+        })
+        with patch('inicio.services.importacion_excel.MAX_ROWS', 2):
+            with self.assertRaisesMessage(ExcelError, 'máximo de 2 registros'):
+                read_workbook(data)
+
+    def test_limits_are_enforced_when_sheet_dimensions_are_unavailable(self):
+        cases = (
+            ('MAX_ROWS', 1, [['Carrera'], ['A'], ['B']], 'máximo 1 filas'),
+            ('MAX_COLUMNS', 1, [['Carrera'], ['A', 'B']], 'máximo 1 columnas'),
+        )
+        for limit, value, rows, message in cases:
+            with self.subTest(limit=limit):
+                data = workbook({'Carreras': rows})
+                book = load_workbook(BytesIO(data), read_only=True, data_only=True)
+                book['Carreras'].reset_dimensions()
+                try:
+                    with patch('inicio.services.importacion_excel.load_workbook', return_value=book):
+                        with patch(f'inicio.services.importacion_excel.{limit}', value):
+                            with self.assertRaisesMessage(ExcelError, message):
+                                read_workbook(data)
+                finally:
+                    book.close()
+
+    def test_workbook_is_closed_on_success_and_validation_error(self):
+        data = workbook({'Carreras': [['Carrera'], ['A'], ['B']]})
+        for limit in (2, 1):
+            with self.subTest(limit=limit):
+                book = load_workbook(BytesIO(data), read_only=True, data_only=True)
+                try:
+                    with patch.object(book, 'close', wraps=book.close) as close:
+                        with patch('inicio.services.importacion_excel.load_workbook', return_value=book):
+                            with patch('inicio.services.importacion_excel.MAX_ROWS', limit):
+                                if limit == 1:
+                                    with self.assertRaises(ExcelError):
+                                        read_workbook(data)
+                                else:
+                                    self.assertTrue(read_workbook(data).valid)
+                        close.assert_called_once_with()
+                finally:
+                    book.close()
 
     def test_malformed_excel_xml_is_a_validation_error(self):
         original = workbook({'Carreras': [['Carrera'], ['Informática']]})

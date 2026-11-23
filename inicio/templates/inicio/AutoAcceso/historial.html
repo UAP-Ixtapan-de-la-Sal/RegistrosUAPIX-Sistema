@@ -1,0 +1,954 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Resumen e Historial | Portal UAPIX</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+
+        /* =====================================================
+           1. IDENTIDAD VISUAL
+           ===================================================== */
+
+        :root {
+            --color-green: #526855;
+            --color-green-hover: #384033;
+            --color-gold: #CA9E52;
+            --color-light-gray: #F2F2F2;
+            --color-white: #FFFFFF;
+
+            --color-text: #263329;
+            --color-muted: #788579;
+
+            --border-main: rgba(82, 104, 85, 0.18);
+
+            --shadow-main:
+                0 10px 30px rgba(56, 64, 51, 0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--color-text);
+
+            background:
+                linear-gradient(
+                    rgba(248, 250, 248, 0.90),
+                    rgba(248, 250, 248, 0.90)
+                ),
+                url("../../images/FONDO-MODULOS/fondo-flores-blanco.jpg");
+
+            background-position: center;
+            background-size: cover;
+            background-attachment: fixed;
+        }
+
+        /* =====================================================
+           2. CONTENEDOR GENERAL
+           ===================================================== */
+
+        .history-page {
+            width: 100%;
+            min-height: 100vh;
+            padding: 25px 30px;
+        }
+
+        .history-container {
+            width: 100%;
+            max-width: 1450px;
+            min-height: calc(100vh - 50px);
+            margin: 0 auto;
+
+            padding: 22px 28px 30px;
+
+            background: rgba(255, 255, 255, 0.96);
+
+            border: 1px solid var(--border-main);
+            border-radius: 18px;
+
+            box-shadow: var(--shadow-main);
+
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+
+            animation: fade-up .55s ease both;
+        }
+
+        /* =====================================================
+           3. BARRA SUPERIOR
+           ===================================================== */
+
+        .history-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 35px;
+        }
+
+        .history-menu {
+            width: 42px;
+            height: 42px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border: none;
+            border-radius: 10px;
+
+            background: transparent;
+            color: var(--color-green-hover);
+
+            font-size: 1.5rem;
+            cursor: pointer;
+
+            transition: .2s ease;
+        }
+
+        .history-menu:hover {
+            background: var(--color-light-gray);
+        }
+
+        .history-close {
+            width: 38px;
+            height: 38px;
+
+            display: grid;
+            place-items: center;
+
+            border: 1px solid var(--border-main);
+            border-radius: 9px;
+
+            background: white;
+            color: var(--color-green);
+
+            cursor: pointer;
+            transition: .2s ease;
+        }
+
+        .history-close:hover {
+            background: var(--color-green);
+            color: white;
+        }
+
+        /* =====================================================
+           4. FILTROS Y ACCIONES
+           ===================================================== */
+
+        .history-toolbar {
+            display: flex;
+            align-items: end;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .history-filter {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+
+        .history-filter label {
+            color: var(--color-green-hover);
+            font-size: .9rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .history-control {
+            height: 40px;
+            min-width: 115px;
+            padding: 8px 11px;
+
+            border: 1px solid var(--border-main);
+            border-radius: 9px;
+
+            background: white;
+            color: var(--color-text);
+
+            font-family: inherit;
+            font-size: .85rem;
+
+            outline: none;
+            transition: .2s ease;
+        }
+
+        .history-control:focus {
+            border-color: var(--color-green);
+            box-shadow: 0 0 0 3px rgba(82, 104, 85, .12);
+        }
+
+        .history-date {
+            width: 145px;
+        }
+
+        .history-filter select {
+            min-width: 175px;
+        }
+
+        .history-export {
+            height: 40px;
+            padding: 0 15px;
+
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+
+            border: 1px solid var(--color-green);
+            border-radius: 9px;
+
+            background: var(--color-green);
+            color: white;
+
+            font-family: inherit;
+            font-size: .85rem;
+            font-weight: 600;
+
+            cursor: pointer;
+            transition: .2s ease;
+        }
+
+        .history-export i {
+            color: #F3D99D;
+        }
+
+        .history-export:hover {
+            background: var(--color-green-hover);
+        }
+
+        .history-report-select {
+            min-width: 185px;
+        }
+
+        /* =====================================================
+           5. TÍTULO DEL RESUMEN
+           ===================================================== */
+
+        .history-section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            margin-bottom: 12px;
+        }
+
+        .history-section-title i {
+            color: var(--color-gold);
+            font-size: 1rem;
+        }
+
+        .history-section-title h2 {
+            color: var(--color-green-hover);
+            font-size: 1.15rem;
+            font-weight: 700;
+        }
+
+        .history-section-title span {
+            color: var(--color-muted);
+            font-size: .9rem;
+            font-weight: 500;
+        }
+
+        /* =====================================================
+           6. TARJETAS DE INDICADORES
+           ===================================================== */
+
+        .history-summary {
+            width: 100%;
+            padding: 25px;
+
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 24px;
+
+            border: 1px solid var(--border-main);
+            border-radius: 15px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(82, 104, 85, .045),
+                    rgba(202, 158, 82, .035)
+                );
+        }
+
+        .summary-card {
+            min-height: 175px;
+            padding: 24px;
+
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 14px;
+
+            border: 1px solid var(--border-main);
+            border-radius: 13px;
+
+            background: white;
+
+            box-shadow:
+                0 5px 16px rgba(56, 64, 51, .05);
+
+            transition: transform .2s ease,
+                        box-shadow .2s ease;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-3px);
+
+            box-shadow:
+                0 10px 22px rgba(56, 64, 51, .09);
+        }
+
+        .summary-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .summary-icon {
+            width: 40px;
+            height: 40px;
+
+            display: grid;
+            place-items: center;
+
+            border-radius: 11px;
+
+            background: rgba(82, 104, 85, .10);
+            color: var(--color-green);
+
+            font-size: 1rem;
+        }
+
+        .summary-card h3 {
+            color: var(--color-green-hover);
+            font-size: .95rem;
+            font-weight: 700;
+        }
+
+        .summary-card p {
+            color: var(--color-text);
+            font-size: .92rem;
+            line-height: 1.65;
+        }
+
+        .summary-card strong {
+            color: var(--color-green);
+            font-size: 1.15rem;
+            font-weight: 700;
+        }
+
+        .summary-highlight {
+            color: var(--color-gold);
+            font-weight: 700;
+        }
+
+        /* =====================================================
+           7. HISTORIAL DETALLADO
+           ===================================================== */
+
+        .history-detail {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .history-detail-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .history-detail-header h2 {
+            color: var(--color-green-hover);
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .history-record-count {
+            padding: 6px 12px;
+
+            border-radius: 20px;
+
+            background: rgba(82, 104, 85, .09);
+            color: var(--color-green);
+
+            font-size: .8rem;
+            font-weight: 700;
+        }
+
+        /* CONTENEDOR DE TABLA */
+
+        .history-table-wrapper {
+            width: 100%;
+            max-height: 390px;
+            overflow: auto;
+
+            border: 1px solid var(--border-main);
+            border-radius: 12px;
+
+            background: white;
+        }
+
+        .history-table {
+            width: 100%;
+            min-width: 930px;
+
+            border-collapse: separate;
+            border-spacing: 0;
+
+            text-align: left;
+        }
+
+        .history-table thead {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .history-table thead th {
+            padding: 15px 13px;
+
+            background: var(--color-green);
+            color: white;
+
+            font-size: .78rem;
+            font-weight: 700;
+            white-space: nowrap;
+
+            border-bottom: 2px solid var(--color-gold);
+        }
+
+        .history-table thead th:first-child {
+            border-radius: 10px 0 0 0;
+        }
+
+        .history-table thead th:last-child {
+            border-radius: 0 10px 0 0;
+        }
+
+        .history-table tbody td {
+            padding: 13px;
+
+            border-bottom: 1px solid rgba(82, 104, 85, .12);
+
+            color: var(--color-text);
+            font-size: .82rem;
+            white-space: nowrap;
+        }
+
+        .history-table tbody tr {
+            background: white;
+            transition: background .2s ease;
+        }
+
+        .history-table tbody tr:nth-child(even) {
+            background: #F8F9F7;
+        }
+
+        .history-table tbody tr:hover {
+            background: rgba(202, 158, 82, .10);
+        }
+
+        .history-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .history-table .table-account {
+            color: var(--color-green);
+            font-weight: 700;
+        }
+
+        .history-table .table-name {
+            font-weight: 600;
+        }
+
+        /* ETIQUETAS DE TIPO */
+
+        .user-type {
+            display: inline-block;
+            padding: 5px 10px;
+
+            border-radius: 20px;
+
+            background: rgba(82, 104, 85, .10);
+            color: var(--color-green-hover);
+
+            font-size: .75rem;
+            font-weight: 700;
+        }
+
+        .table-duration {
+            color: var(--color-green);
+            font-weight: 700;
+        }
+
+        /* SCROLLBAR */
+
+        .history-table-wrapper::-webkit-scrollbar {
+            width: 9px;
+            height: 9px;
+        }
+
+        .history-table-wrapper::-webkit-scrollbar-track {
+            background: #F1F3F0;
+            border-radius: 10px;
+        }
+
+        .history-table-wrapper::-webkit-scrollbar-thumb {
+            background: #A6B3A4;
+            border-radius: 10px;
+        }
+
+        .history-table-wrapper::-webkit-scrollbar-thumb:hover {
+            background: var(--color-green);
+        }
+
+        /* =====================================================
+           8. ANIMACIONES
+           ===================================================== */
+
+        @keyframes fade-up {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* =====================================================
+           9. RESPONSIVE
+           ===================================================== */
+
+        @media (max-width: 1050px) {
+
+            .history-toolbar {
+                justify-content: flex-start;
+            }
+
+            .history-summary {
+                gap: 15px;
+                padding: 18px;
+            }
+
+            .summary-card {
+                padding: 18px;
+            }
+
+        }
+
+        @media (max-width: 760px) {
+
+            .history-page {
+                padding: 15px;
+            }
+
+            .history-container {
+                padding: 20px 16px;
+            }
+
+            .history-toolbar {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                align-items: end;
+            }
+
+            .history-filter {
+                flex-wrap: wrap;
+            }
+
+            .history-filter select,
+            .history-filter input {
+                width: 100%;
+            }
+
+            .history-summary {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-card {
+                min-height: 135px;
+            }
+
+        }
+
+        @media (max-width: 480px) {
+
+            .history-page {
+                padding: 10px;
+            }
+
+            .history-container {
+                padding: 16px 12px;
+                border-radius: 13px;
+            }
+
+            .history-toolbar {
+                grid-template-columns: 1fr;
+            }
+
+            .history-filter {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .history-export,
+            .history-report-select {
+                width: 100%;
+            }
+
+            .history-section-title {
+                align-items: flex-start;
+                flex-wrap: wrap;
+            }
+
+            .history-detail-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+        }
+
+    </style>
+</head>
+
+<body>
+
+    <main class="history-page">
+
+        <div class="history-container">
+
+            <!-- ==========================================
+                 BARRA SUPERIOR
+                 ========================================== -->
+
+            <header class="history-topbar">
+
+                <button type="button" class="history-menu"
+                        aria-label="Menú">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+
+                <button type="button" class="history-close"
+                        aria-label="Cerrar">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </header>
+
+
+            <!-- ==========================================
+                 FILTROS Y EXPORTACIÓN
+                 ========================================== -->
+
+            <section class="history-toolbar">
+
+                <div class="history-filter">
+
+                    <label for="fecha-inicio">Rango:</label>
+
+                    <input type="date"
+                           id="fecha-inicio"
+                           class="history-control history-date">
+
+                </div>
+
+                <div class="history-filter">
+
+                    <label for="fecha-fin">Al</label>
+
+                    <input type="date"
+                           id="fecha-fin"
+                           class="history-control history-date">
+
+                </div>
+
+                <div class="history-filter">
+
+                    <select id="motivo-filtro"
+                            class="history-control">
+
+                        <option>Clase</option>
+                        <option>Todos</option>
+                        <option>Visita (uso de PC)</option>
+                        <option>Conversación (sala de estar)</option>
+                        <option>Observaciones</option>
+
+                    </select>
+
+                </div>
+
+                <button type="button" class="history-export">
+                    Exportar
+                    <i class="fa-solid fa-file-excel"></i>
+                </button>
+
+                <div class="history-filter">
+
+                    <select class="history-control history-report-select">
+
+                        <option>Resumen e historial</option>
+                        <option>Historial detallado</option>
+                        <option>Resumen general</option>
+
+                    </select>
+
+                </div>
+
+            </section>
+
+
+            <!-- ==========================================
+                 RESUMEN GENERAL
+                 ========================================== -->
+
+            <section class="history-summary-section">
+
+                <div class="history-section-title">
+
+                    <i class="fa-solid fa-chart-pie"></i>
+
+                    <h2>Resumen general</h2>
+
+                    <span>(Del 01/10/26 al 13/10/26)</span>
+
+                </div>
+
+
+                <div class="history-summary">
+
+                    <!-- TARJETA 1 -->
+
+                    <article class="summary-card">
+
+                        <div class="summary-card-header">
+
+                            <div class="summary-icon">
+                                <i class="fa-solid fa-users"></i>
+                            </div>
+
+                            <h3>Total de usuarios atendidos</h3>
+
+                        </div>
+
+                        <p>
+                            <strong>145</strong> usuarios registrados.
+                            <br>
+                            (120 Alumnos, 25 Docentes)
+                        </p>
+
+                    </article>
+
+
+                    <!-- TARJETA 2 -->
+
+                    <article class="summary-card">
+
+                        <div class="summary-card-header">
+
+                            <div class="summary-icon">
+                                <i class="fa-regular fa-clock"></i>
+                            </div>
+
+                            <h3>Tiempo promedio de permanencia</h3>
+
+                        </div>
+
+                        <p>
+                            <strong>45 minutos</strong>
+                            <br>
+                            Tiempo promedio de uso de las instalaciones.
+                        </p>
+
+                    </article>
+
+
+                    <!-- TARJETA 3 -->
+
+                    <article class="summary-card">
+
+                        <div class="summary-card-header">
+
+                            <div class="summary-icon">
+                                <i class="fa-solid fa-chart-column"></i>
+                            </div>
+
+                            <h3>Horario de mayor demanda</h3>
+
+                        </div>
+
+                        <p>
+                            <strong>11:00 a 13:00 hrs</strong>
+                            <br>
+                            (45 usuarios)
+                        </p>
+
+                    </article>
+
+                </div>
+
+            </section>
+
+
+            <!-- ==========================================
+                 HISTORIAL DETALLADO
+                 ========================================== -->
+
+            <section class="history-detail">
+
+                <div class="history-detail-header">
+
+                    <h2>Historial detallado</h2>
+
+                    <span class="history-record-count">
+                        5 registros
+                    </span>
+
+                </div>
+
+
+                <!-- TABLA -->
+
+                <div class="history-table-wrapper">
+
+                    <table class="history-table">
+
+                        <thead>
+
+                            <tr>
+                                <th>No. Cuenta / Empleado</th>
+                                <th>Nombre</th>
+                                <th>Tipo</th>
+                                <th>Motivo de uso</th>
+                                <th>Equipo</th>
+                                <th>Fecha</th>
+                                <th>Hora E/S</th>
+                                <th>Permanencia</th>
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            <tr>
+
+                                <td class="table-account">1234567</td>
+                                <td class="table-name">Carlos Mendoza</td>
+                                <td>
+                                    <span class="user-type">Docente</span>
+                                </td>
+                                <td>Clase</td>
+                                <td>N/A</td>
+                                <td>13/10/2026</td>
+                                <td>10:00-11:30</td>
+                                <td class="table-duration">1h 30m</td>
+
+                            </tr>
+
+
+                            <tr>
+
+                                <td class="table-account">1234567</td>
+                                <td class="table-name">Valeria Torres</td>
+                                <td>
+                                    <span class="user-type">Alumno</span>
+                                </td>
+                                <td>Visita (uso de PC)</td>
+                                <td>Computadora 5</td>
+                                <td>13/10/2026</td>
+                                <td>10:00-11:30</td>
+                                <td class="table-duration">1h 30m</td>
+
+                            </tr>
+
+
+                            <tr>
+
+                                <td class="table-account">1234567</td>
+                                <td class="table-name">Luis Vargas</td>
+                                <td>
+                                    <span class="user-type">Alumno</span>
+                                </td>
+                                <td>Revisión de portafolio</td>
+                                <td>Computadora 5</td>
+                                <td>13/10/2026</td>
+                                <td>10:00-11:30</td>
+                                <td class="table-duration">1h 30m</td>
+
+                            </tr>
+
+
+                            <tr>
+
+                                <td class="table-account">1234567</td>
+                                <td class="table-name">Sofía Ramírez</td>
+                                <td>
+                                    <span class="user-type">Alumno</span>
+                                </td>
+                                <td>Proyecto integrador</td>
+                                <td>Computadora 5</td>
+                                <td>13/10/2026</td>
+                                <td>10:00-11:30</td>
+                                <td class="table-duration">1h 30m</td>
+
+                            </tr>
+
+
+                            <tr>
+
+                                <td class="table-account">1234567</td>
+                                <td class="table-name">Jazmín Gómez</td>
+                                <td>
+                                    <span class="user-type">Alumno</span>
+                                </td>
+                                <td>Tutoría académica</td>
+                                <td>Computadora 5</td>
+                                <td>13/10/2026</td>
+                                <td>10:00-11:30</td>
+                                <td class="table-duration">1h 30m</td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+</body>
+</html>

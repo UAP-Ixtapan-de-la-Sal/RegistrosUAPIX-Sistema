@@ -1,0 +1,1229 @@
+{% load static %}
+
+<div class="aa-clase-registro">
+
+    <form id="aaRegistroClaseFormulario" method="post" novalidate>
+        {% csrf_token %}
+
+        <!-- ENCABEZADO DEL FORMULARIO -->
+        <div class="aa-clase-barra">
+            <button
+                type="button"
+                class="aa-clase-regresar"
+                onclick="aaRegresarClase()">
+                <i class="fa-solid fa-arrow-left"></i>
+                Regresar
+            </button>
+
+            <h2 class="aa-clase-titulo">Registro de Clase</h2>
+
+            <button
+                type="button"
+                class="aa-clase-cerrar"
+                onclick="aaRegresarClase()"
+                aria-label="Cerrar registro">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- DATOS GENERALES -->
+        <div class="aa-clase-grid-datos">
+
+            <div class="aa-clase-campo">
+                <label for="aaMaestroClase">Maestro:</label>
+
+                <div class="aa-clase-busqueda">
+                    <input
+                        type="text"
+                        id="aaMaestroClase"
+                        name="numero_cuenta_maestro"
+                        placeholder="Número de cuenta"
+                        autocomplete="off"
+                        required>
+
+                    <button
+                        type="button"
+                        class="aa-clase-boton-buscar"
+                        data-busqueda="maestro"
+                        aria-label="Buscar maestro">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="aa-clase-campo">
+                <label for="aaCarreraClase">Carrera:</label>
+
+                <select id="aaCarreraClase" name="carrera" required>
+                    <option value="">Selecciona una carrera</option>
+
+                    {% for carrera in carreras %}
+                    <option value="{{ carrera.id_carrera }}">
+                        {{ carrera.nombre_carrera }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="aa-clase-campo">
+                <label for="aaGrupoClase">Grupo:</label>
+
+                <div class="aa-clase-busqueda">
+                    <select id="aaGrupoClase" name="grupo" required>
+                        <option value="">Primero selecciona una carrera</option>
+                        {% for grupo in grupos %}
+                        <option
+                            value="{{ grupo }}"
+                            data-carrera-id="{{ grupo.carrera_id }}">{{ grupo }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <button
+                        type="button"
+                        class="aa-clase-boton-buscar"
+                        data-busqueda="grupo"
+                        aria-label="Buscar grupo">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="aa-clase-campo">
+                <label for="aaMateria">Materia:</label>
+
+                <select id="aaMateria" name="materia" required>
+                    <option value="">Selecciona una materia</option>
+                </select>
+            </div>
+
+        </div>
+
+        <!-- FECHA Y HORARIO DE LA CLASE -->
+        <section class="aa-clase-horario">
+
+            <div class="aa-clase-horario-titulo">
+                <span class="aa-clase-horario-icono">
+                    <i class="fa-solid fa-calendar-days"></i>
+                </span>
+
+                <h3>Fecha y horario de la clase</h3>
+            </div>
+
+            <div class="aa-clase-grid-horario">
+
+                <!-- FECHA -->
+                <div class="aa-clase-campo">
+                    <label for="aaFechaClase">Fecha de clase:</label>
+
+                    <input
+                        type="date"
+                        id="aaFechaClase"
+                        name="fecha_clase"
+                        required>
+                </div>
+
+                <!-- HORA DE INICIO -->
+                <div class="aa-clase-campo">
+                    <label for="aaHoraInicioClase">
+                        Hora de inicio:
+                    </label>
+
+                    <div class="aa-clase-hora-personalizada">
+                        <input
+                            type="text"
+                            id="aaHoraInicioClase"
+                            name="hora_inicio"
+                            class="aa-clase-hora-input"
+                            placeholder="Selecciona una hora"
+                            autocomplete="off"
+                            readonly
+                            required>
+
+                        <button
+                            type="button"
+                            class="aa-clase-hora-boton"
+                            aria-label="Seleccionar hora de inicio">
+                            <i class="fa-regular fa-clock"></i>
+                        </button>
+
+                        <div class="aa-clase-reloj-popup" hidden>
+                            <div class="aa-clase-reloj-titulo">
+                                Hora de inicio
+                            </div>
+
+                            <div class="aa-clase-reloj-controles">
+                                <select
+                                    class="aa-clase-reloj-horas"
+                                    aria-label="Horas de inicio">
+                                </select>
+
+                                <span>:</span>
+
+                                <select
+                                    class="aa-clase-reloj-minutos"
+                                    aria-label="Minutos de inicio">
+                                </select>
+
+                                <select
+                                    class="aa-clase-reloj-periodo"
+                                    aria-label="Periodo de inicio">
+                                    <option value="AM">a. m.</option>
+                                    <option value="PM">p. m.</option>
+                                </select>
+                            </div>
+
+                            <button
+                                type="button"
+                                class="aa-clase-reloj-aceptar">
+                                Aceptar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- HORA DE TÉRMINO -->
+                <div class="aa-clase-campo">
+                    <label for="aaHoraFinClase">
+                        Hora de término:
+                    </label>
+
+                    <div class="aa-clase-hora-personalizada">
+                        <input
+                            type="text"
+                            id="aaHoraFinClase"
+                            name="hora_fin"
+                            class="aa-clase-hora-input"
+                            placeholder="Selecciona una hora"
+                            autocomplete="off"
+                            readonly
+                            required>
+
+                        <button
+                            type="button"
+                            class="aa-clase-hora-boton"
+                            aria-label="Seleccionar hora de término">
+                            <i class="fa-regular fa-clock"></i>
+                        </button>
+
+                        <div class="aa-clase-reloj-popup" hidden>
+                            <div class="aa-clase-reloj-titulo">
+                                Hora de término
+                            </div>
+
+                            <div class="aa-clase-reloj-controles">
+                                <select
+                                    class="aa-clase-reloj-horas"
+                                    aria-label="Horas de término">
+                                </select>
+
+                                <span>:</span>
+
+                                <select
+                                    class="aa-clase-reloj-minutos"
+                                    aria-label="Minutos de término">
+                                </select>
+
+                                <select
+                                    class="aa-clase-reloj-periodo"
+                                    aria-label="Periodo de término">
+                                    <option value="AM">a. m.</option>
+                                    <option value="PM">p. m.</option>
+                                </select>
+                            </div>
+
+                            <button
+                                type="button"
+                                class="aa-clase-reloj-aceptar">
+                                Aceptar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="aa-clase-aviso-horario">
+                <i class="fa-solid fa-circle-info"></i>
+                <span>
+                    La hora de término será utilizada por el
+                    sistema para registrar automáticamente
+                    la salida de todos los alumnos asistentes
+                    a esta clase.
+                </span>
+            </div>
+
+        </section>
+
+        <!-- DATOS DE SOLO LECTURA -->
+        <p class="aa-clase-ayuda">
+            Datos de solo lectura. Se mostrarán al seleccionar
+            el docente, carrera, grupo y materia.
+        </p>
+
+        <div class="aa-clase-resumen">
+            <div class="aa-clase-resumen-item">
+                <span>Docente:</span>
+                <strong id="aaNombreDocenteClase">—</strong>
+            </div>
+
+            <div class="aa-clase-resumen-item">
+                <span>Carrera:</span>
+                <strong id="aaNombreCarreraClase">—</strong>
+            </div>
+
+            <div class="aa-clase-resumen-item">
+                <span>Grupo:</span>
+                <strong id="aaNombreGrupoClase">—</strong>
+            </div>
+
+            <div class="aa-clase-resumen-item">
+                <span>Materia:</span>
+                <strong id="aaNombreMateriaClase">—</strong>
+            </div>
+        </div>
+
+        <!-- TABLA DE ALUMNOS -->
+        <div class="aa-clase-tabla-contenedor">
+
+            <table class="aa-clase-tabla aa-clase-tabla-ampliada">
+                <thead>
+                    <tr>
+                        <th>No.</th>
+                        <th>No. Cuenta</th>
+                        <th>Nombre del alumno</th>
+                        <th>Carrera</th>
+                        <th>Grupo</th>
+                        <th>Materia</th>
+                        <th>Fecha</th>
+                        <th>Hora Entrada</th>
+                        <th>Hora Fin</th>
+                        <th>Asistencia</th>
+                        <th>No. Equipo</th>
+                    </tr>
+                </thead>
+
+                <tbody id="aaTablaAlumnosClase"></tbody>
+            </table>
+
+        </div>
+
+        <!-- BOTÓN GUARDAR -->
+        <div class="aa-clase-acciones">
+            <button
+                type="submit"
+                class="aa-clase-guardar">
+                <i class="fa-solid fa-floppy-disk"></i>
+                Guardar
+            </button>
+        </div>
+
+        <!-- MENSAJES -->
+        <p
+            id="aaClaseMensaje"
+            class="aa-clase-mensaje"
+            role="status"
+            aria-live="polite"
+            hidden>
+        </p>
+
+    </form>
+
+</div>
+
+<script>
+(function () {
+    "use strict";
+
+    const formulario = document.getElementById(
+        "aaRegistroClaseFormulario"
+    );
+
+    if (!formulario || formulario.dataset.inicializado === "true") {
+        return;
+    }
+
+    formulario.dataset.inicializado = "true";
+
+    const fecha = document.getElementById("aaFechaClase");
+    const inicio = document.getElementById("aaHoraInicioClase");
+    const fin = document.getElementById("aaHoraFinClase");
+    const carrera = document.getElementById("aaCarreraClase");
+    const grupo = document.getElementById("aaGrupoClase");
+    const materia = document.getElementById("aaMateria");
+    const maestro = document.getElementById("aaMaestroClase");
+    const mensaje = document.getElementById("aaClaseMensaje");
+    const datosGenerales = formulario.querySelector(
+        ".aa-clase-grid-datos"
+    );
+    const tablaAlumnos = document.getElementById(
+        "aaTablaAlumnosClase"
+    );
+    const opcionesGrupo = Array.from(grupo.options)
+        .filter(function (opcion) {
+            return opcion.value;
+        })
+        .map(function (opcion) {
+            return {
+                nombre: opcion.value.trim(),
+                carreraId: opcion.dataset.carreraId
+            };
+        });
+
+    let docenteVerificado = false;
+    let docenteCuentaVerificada = "";
+    let docenteNombre = "";
+    let docenteCarreraId = "";
+    let versionMaterias = 0;
+    let versionDocente = 0;
+    let versionAlumnos = 0;
+    let temporizadorCarga = null;
+    let claveAlumnosCargados = "";
+
+    function fechaLocal() {
+        const hoy = new Date();
+
+        const anio = hoy.getFullYear();
+        const mes = String(hoy.getMonth() + 1).padStart(2, "0");
+        const dia = String(hoy.getDate()).padStart(2, "0");
+
+        return `${anio}-${mes}-${dia}`;
+    }
+
+    if (!fecha.value) {
+        fecha.value = fechaLocal();
+    }
+    fecha.min = fechaLocal();
+    if (fecha.value < fecha.min) {
+        fecha.value = fecha.min;
+    }
+
+    function mostrarMensaje(texto, error = false) {
+        mensaje.textContent = texto;
+        mensaje.classList.toggle("error", error);
+        mensaje.hidden = false;
+    }
+
+    function ocultarMensaje() {
+        mensaje.hidden = true;
+    }
+
+    function textoSeleccionado(select) {
+        if (!select.value) {
+            return "—";
+        }
+
+        return select.selectedOptions[0].textContent.trim();
+    }
+
+    async function actualizarMaterias(
+        carreraSeleccionada = carrera.value,
+        informarValorVacio = false
+    ) {
+        const version = ++versionMaterias;
+        const carreraId = String(carreraSeleccionada || "").trim();
+        materia.replaceChildren(
+            new Option(
+                carreraId
+                    ? "Selecciona una materia"
+                    : "Primero selecciona una carrera",
+                ""
+            )
+        );
+
+        if (!carreraId) {
+            if (informarValorVacio) {
+                mostrarMensaje(
+                    "El selector notificó un cambio, pero su valor de carrera llegó vacío.",
+                    true
+                );
+            }
+            return null;
+        }
+
+        mostrarMensaje(
+            "Consultando materias para la carrera ID " + carreraId + "..."
+        );
+
+        const url = new URL(
+            "{% url 'materias_autoacceso_carrera' %}",
+            window.location.origin
+        );
+        url.searchParams.set("carrera", carreraId);
+
+        try {
+            const respuesta = await fetch(url.toString(), {
+                headers: { "Accept": "application/json" }
+            });
+
+            if (version !== versionMaterias) {
+                return null;
+            }
+
+            let resultado;
+            try {
+                resultado = await respuesta.json();
+            } catch (error) {
+                throw new Error(
+                    "El servidor no devolvió JSON (HTTP " +
+                    respuesta.status +
+                    ")."
+                );
+            }
+
+            if (!respuesta.ok) {
+                throw new Error(
+                    "HTTP " +
+                    respuesta.status +
+                    ": " +
+                    (resultado.error || "No se pudieron cargar las materias.")
+                );
+            }
+
+            if (!Array.isArray(resultado.materias)) {
+                throw new Error("La respuesta de materias no es válida.");
+            }
+
+            resultado.materias.forEach(function (opcion) {
+                materia.add(
+                    new Option(opcion.nombre, opcion.id)
+                );
+            });
+
+            if (!resultado.materias.length) {
+                mostrarMensaje(
+                    "HTTP " +
+                    respuesta.status +
+                    ": La carrera ID " +
+                    carreraId +
+                    " no tiene materias asociadas en el catálogo.",
+                    true
+                );
+                return 0;
+            }
+
+            mostrarMensaje(
+                "HTTP " +
+                respuesta.status +
+                ": se cargaron " +
+                resultado.materias.length +
+                " materias para la carrera ID " +
+                carreraId +
+                "."
+            );
+            return resultado.materias.length;
+        } catch (error) {
+            if (version !== versionMaterias) {
+                return null;
+            }
+
+            mostrarMensaje(
+                "No fue posible cargar materias para la carrera ID " +
+                carreraId +
+                ": " +
+                (error.message || "error inesperado."),
+                true
+            );
+            return null;
+        }
+    }
+
+    function grupoValido() {
+        const valor = grupo.value.trim().toLocaleLowerCase();
+        return opcionesGrupo.some(function (opcion) {
+            return opcion.carreraId === carrera.value &&
+                opcion.nombre.toLocaleLowerCase() === valor;
+        });
+    }
+
+    function validarGrupo() {
+        grupo.setCustomValidity(
+            grupo.value.trim() && !grupoValido()
+                ? "Selecciona un grupo de la carrera elegida."
+                : ""
+        );
+    }
+
+    function actualizarGrupos() {
+        const grupoAnterior = grupo.value.trim();
+        const gruposCarrera = opcionesGrupo.filter(function (opcion) {
+            return opcion.carreraId === carrera.value;
+        });
+
+        grupo.replaceChildren(
+            new Option(
+                carrera.value
+                    ? "Selecciona un grupo"
+                    : "Primero selecciona una carrera",
+                ""
+            )
+        );
+
+        gruposCarrera.forEach(function (opcion) {
+            grupo.add(new Option(opcion.nombre, opcion.nombre));
+        });
+
+        const grupoAnteriorDisponible = gruposCarrera.find(
+            function (opcion) {
+                return opcion.nombre.toLocaleLowerCase() ===
+                    grupoAnterior.toLocaleLowerCase();
+            });
+
+        if (grupoAnteriorDisponible) {
+            grupo.value = grupoAnteriorDisponible.nombre;
+        }
+
+        validarGrupo();
+    }
+
+    function actualizarResumen() {
+        document.getElementById(
+            "aaNombreDocenteClase"
+        ).textContent = docenteNombre || "—";
+
+        document.getElementById(
+            "aaNombreCarreraClase"
+        ).textContent = textoSeleccionado(carrera);
+
+        document.getElementById(
+            "aaNombreGrupoClase"
+        ).textContent = grupo.value.trim() || "—";
+
+        document.getElementById(
+            "aaNombreMateriaClase"
+        ).textContent = textoSeleccionado(materia);
+    }
+
+    function actualizarTabla() {
+        const filas = formulario.querySelectorAll(
+            ".aa-clase-fila-alumno"
+        );
+
+        filas.forEach(function (fila) {
+            const datos = {
+                "[data-carrera]": textoSeleccionado(carrera),
+                "[data-grupo]": grupo.value.trim() || "—",
+                "[data-materia]": textoSeleccionado(materia),
+                "[data-fecha]": fecha.value || "—",
+                "[data-hora-entrada]": inicio.value || "—",
+                "[data-hora-fin]": fin.value || "—"
+            };
+
+            Object.entries(datos).forEach(function ([selector, valor]) {
+                const celda = fila.querySelector(selector);
+
+                if (celda) {
+                    celda.textContent = valor;
+                }
+            });
+        });
+    }
+
+    function invalidarCargaAlumnos() {
+        versionAlumnos += 1;
+        claveAlumnosCargados = "";
+        window.clearTimeout(temporizadorCarga);
+    }
+
+    function actualizarVista() {
+        actualizarResumen();
+        actualizarTabla();
+        ocultarMensaje();
+    }
+
+    carrera.addEventListener("change", function (event) {
+        const carreraId = event.currentTarget.value;
+        invalidarCargaAlumnos();
+        actualizarGrupos();
+        actualizarVista();
+        actualizarMaterias(carreraId, true);
+        programarCargaAlumnos();
+    });
+
+    materia.addEventListener("change", function () {
+        invalidarCargaAlumnos();
+        actualizarVista();
+        programarCargaAlumnos();
+    });
+
+    grupo.addEventListener("input", function () {
+        validarGrupo();
+        invalidarCargaAlumnos();
+        actualizarVista();
+        programarCargaAlumnos();
+    });
+    grupo.addEventListener("change", function () {
+        validarGrupo();
+        invalidarCargaAlumnos();
+        actualizarVista();
+        programarCargaAlumnos();
+    });
+
+    maestro.addEventListener("input", function () {
+        versionDocente += 1;
+        docenteVerificado = false;
+        docenteCuentaVerificada = "";
+        docenteNombre = "";
+        docenteCarreraId = "";
+        invalidarCargaAlumnos();
+        actualizarVista();
+    });
+
+    [fecha, inicio, fin].forEach(function (campo) {
+        campo.addEventListener("change", actualizarVista);
+        campo.addEventListener("input", actualizarVista);
+    });
+
+    function crearCelda(texto, selector) {
+        const celda = document.createElement("td");
+        celda.textContent = texto || "—";
+
+        if (selector) {
+            celda.setAttribute(selector, "");
+        }
+
+        return celda;
+    }
+
+    function mostrarEstadoTabla(texto) {
+        const fila = document.createElement("tr");
+        const celda = crearCelda(texto);
+        celda.colSpan = 11;
+        fila.appendChild(celda);
+        tablaAlumnos.replaceChildren(fila);
+    }
+
+    function crearFilaAlumno(alumno, numero, datosClase) {
+        const fila = document.createElement("tr");
+        fila.className = "aa-clase-fila-alumno";
+        fila.appendChild(crearCelda(String(numero)));
+        fila.appendChild(crearCelda(alumno.matricula));
+        fila.appendChild(crearCelda(alumno.nombre));
+        fila.appendChild(crearCelda(
+            alumno.carrera || datosClase.carrera,
+            "data-carrera"
+        ));
+        fila.appendChild(crearCelda(
+            datosClase.grupo,
+            "data-grupo"
+        ));
+        fila.appendChild(crearCelda(
+            datosClase.materia,
+            "data-materia"
+        ));
+        fila.appendChild(crearCelda(
+            fecha.value || "—",
+            "data-fecha"
+        ));
+        fila.appendChild(crearCelda(
+            inicio.value || "—",
+            "data-hora-entrada"
+        ));
+        fila.appendChild(crearCelda(
+            fin.value || "—",
+            "data-hora-fin"
+        ));
+
+        const celdaAsistencia = document.createElement("td");
+        const controlesAsistencia = document.createElement("div");
+        controlesAsistencia.className = "aa-clase-asistencia";
+        const equipo = document.createElement("select");
+        equipo.className = "aa-clase-equipo";
+        equipo.disabled = true;
+        equipo.add(new Option("Selecciona un equipo", ""));
+
+        const selectorEquipos = document.getElementById("aaNumeroEquipo");
+        Array.from(selectorEquipos.options)
+            .filter(function (opcion) {
+                return opcion.value;
+            })
+            .forEach(function (opcion) {
+                equipo.add(new Option(
+                    opcion.textContent.trim(),
+                    opcion.value
+                ));
+            });
+
+        ["Asistió", "Falta"].forEach(function (estado) {
+            const etiqueta = document.createElement("label");
+            const radio = document.createElement("input");
+            radio.type = "radio";
+            radio.name = "asistencia_visual_" + alumno.id;
+            radio.value = estado;
+            radio.addEventListener("change", function () {
+                const asistio = radio.checked && estado === "Asistió";
+                equipo.disabled = !asistio;
+
+                if (!asistio) {
+                    equipo.value = "";
+                }
+            });
+            etiqueta.appendChild(radio);
+            etiqueta.appendChild(document.createTextNode(" " + estado));
+            controlesAsistencia.appendChild(etiqueta);
+        });
+
+        celdaAsistencia.appendChild(controlesAsistencia);
+        fila.appendChild(celdaAsistencia);
+
+        const celdaEquipo = document.createElement("td");
+        celdaEquipo.appendChild(equipo);
+        fila.appendChild(celdaEquipo);
+        return fila;
+    }
+
+    function claveDatosClase() {
+        return [
+            maestro.value.trim(),
+            carrera.value,
+            grupo.value.trim(),
+            materia.value
+        ].join("|");
+    }
+
+    function programarCargaAlumnos() {
+        window.clearTimeout(temporizadorCarga);
+
+        if (
+            !docenteVerificado ||
+            docenteCuentaVerificada !== maestro.value.trim() ||
+            !carrera.value ||
+            !grupo.value.trim() ||
+            !grupoValido() ||
+            !materia.value
+        ) {
+            return;
+        }
+
+        if (
+            docenteCarreraId &&
+            String(carrera.value) !== docenteCarreraId
+        ) {
+            mostrarMensaje(
+                "La carrera seleccionada no corresponde al docente.",
+                true
+            );
+            return;
+        }
+
+        if (claveDatosClase() === claveAlumnosCargados) {
+            return;
+        }
+
+        temporizadorCarga = window.setTimeout(
+            cargarAlumnos,
+            350
+        );
+    }
+
+    async function cargarAlumnos() {
+        const clave = claveDatosClase();
+
+        if (!docenteVerificado) {
+            mostrarMensaje(
+                "Busca y verifica primero el número de cuenta del docente.",
+                true
+            );
+            return;
+        }
+
+        if (!carrera.value || !grupo.value.trim() || !materia.value) {
+            mostrarMensaje(
+                "Selecciona carrera y materia e indica el grupo.",
+                true
+            );
+            return;
+        }
+
+        if (!grupoValido()) {
+            validarGrupo();
+            mostrarMensaje(
+                "Selecciona un grupo de la carrera elegida.",
+                true
+            );
+            return;
+        }
+
+        if (
+            docenteCarreraId &&
+            String(carrera.value) !== docenteCarreraId
+        ) {
+            mostrarMensaje(
+                "La carrera seleccionada no corresponde al docente.",
+                true
+            );
+            return;
+        }
+
+        const version = ++versionAlumnos;
+        mostrarMensaje("Cargando alumnos del grupo...");
+
+        const url = new URL(
+            "{% url 'alumnos_autoacceso_grupo' %}",
+            window.location.origin
+        );
+        url.searchParams.set("carrera", carrera.value);
+        url.searchParams.set("grupo", grupo.value.trim());
+        url.searchParams.set("materia", materia.value);
+
+        try {
+            const respuesta = await fetch(url.toString(), {
+                headers: { "Accept": "application/json" }
+            });
+            const resultado = await respuesta.json();
+
+            if (version !== versionAlumnos) {
+                return;
+            }
+
+            if (!respuesta.ok) {
+                throw new Error(
+                    resultado.error || "No se pudo cargar el grupo."
+                );
+            }
+
+            if (!Array.isArray(resultado.alumnos)) {
+                throw new Error("La respuesta de alumnos no es válida.");
+            }
+
+            if (!resultado.alumnos.length) {
+                claveAlumnosCargados = clave;
+                mostrarEstadoTabla(
+                    "No hay alumnos registrados en el grupo seleccionado."
+                );
+                mostrarMensaje(
+                    "No hay alumnos registrados en el grupo seleccionado.",
+                    true
+                );
+                return;
+            }
+
+            grupo.value = resultado.grupo;
+            const datosClase = {
+                carrera: resultado.carrera,
+                grupo: resultado.grupo,
+                materia: resultado.materia
+            };
+            const filas = resultado.alumnos.map(function (alumno, indice) {
+                return crearFilaAlumno(alumno, indice + 1, datosClase);
+            });
+
+            tablaAlumnos.replaceChildren(...filas);
+            datosGenerales.hidden = true;
+            datosGenerales.style.display = "none";
+            claveAlumnosCargados = claveDatosClase();
+            actualizarVista();
+            mostrarMensaje(
+                "Se cargaron " + resultado.alumnos.length +
+                " alumnos del grupo."
+            );
+        } catch (error) {
+            if (version !== versionAlumnos) {
+                return;
+            }
+
+            mostrarMensaje(error.message, true);
+        }
+    }
+
+    async function buscarDocente() {
+        const cuenta = maestro.value.trim();
+        const version = ++versionDocente;
+
+        if (!cuenta) {
+            docenteVerificado = false;
+            docenteNombre = "";
+            actualizarVista();
+            mostrarMensaje(
+                "Ingresa el número de cuenta del docente.",
+                true
+            );
+            return;
+        }
+
+        docenteVerificado = false;
+        docenteNombre = "";
+        docenteCarreraId = "";
+        invalidarCargaAlumnos();
+        actualizarVista();
+        actualizarMaterias();
+        mostrarMensaje("Buscando docente...");
+
+        const url = new URL(
+            "{% url 'buscar_docente_sala' %}",
+            window.location.origin
+        );
+        url.searchParams.set("cuenta", cuenta);
+
+        try {
+            const respuesta = await fetch(url.toString(), {
+                headers: { "Accept": "application/json" }
+            });
+            const resultado = await respuesta.json();
+
+            if (version !== versionDocente) {
+                return;
+            }
+
+            if (!respuesta.ok || !resultado.encontrado) {
+                throw new Error(
+                    resultado.error || "No se encontró al docente."
+                );
+            }
+
+            docenteVerificado = true;
+            docenteCuentaVerificada = cuenta;
+            docenteNombre = resultado.nombre;
+            docenteCarreraId = resultado.carrera_id
+                ? String(resultado.carrera_id)
+                : "";
+
+            if (docenteCarreraId) {
+                carrera.value = docenteCarreraId;
+                actualizarGrupos();
+            }
+
+            actualizarVista();
+            if (carrera.value) {
+                actualizarMaterias();
+                mostrarMensaje("Docente encontrado: " + docenteNombre);
+            } else {
+                mostrarMensaje(
+                    "Docente encontrado. Selecciona una carrera para cargar sus materias."
+                );
+            }
+            programarCargaAlumnos();
+        } catch (error) {
+            if (version !== versionDocente) {
+                return;
+            }
+
+            mostrarMensaje(error.message, true);
+        }
+    }
+
+    actualizarMaterias();
+    actualizarGrupos();
+
+    /* SELECTORES DE HORA PERSONALIZADOS */
+
+    const relojes = formulario.querySelectorAll(
+        ".aa-clase-hora-personalizada"
+    );
+
+    function cerrarRelojes() {
+        relojes.forEach(function (contenedor) {
+            const popup = contenedor.querySelector(
+                ".aa-clase-reloj-popup"
+            );
+
+            popup.hidden = true;
+        });
+    }
+
+    relojes.forEach(function (contenedor) {
+        const campo = contenedor.querySelector(
+            ".aa-clase-hora-input"
+        );
+
+        const boton = contenedor.querySelector(
+            ".aa-clase-hora-boton"
+        );
+
+        const popup = contenedor.querySelector(
+            ".aa-clase-reloj-popup"
+        );
+
+        const horas = contenedor.querySelector(
+            ".aa-clase-reloj-horas"
+        );
+
+        const minutos = contenedor.querySelector(
+            ".aa-clase-reloj-minutos"
+        );
+
+        const periodo = contenedor.querySelector(
+            ".aa-clase-reloj-periodo"
+        );
+
+        const aceptar = contenedor.querySelector(
+            ".aa-clase-reloj-aceptar"
+        );
+
+        for (let hora = 1; hora <= 12; hora++) {
+            const opcion = document.createElement("option");
+
+            opcion.value = String(hora).padStart(2, "0");
+            opcion.textContent = opcion.value;
+
+            horas.appendChild(opcion);
+        }
+
+        for (let minuto = 0; minuto < 60; minuto++) {
+            const opcion = document.createElement("option");
+
+            opcion.value = String(minuto).padStart(2, "0");
+            opcion.textContent = opcion.value;
+
+            minutos.appendChild(opcion);
+        }
+
+        function sincronizarReloj() {
+            if (!campo.value) {
+                horas.value = "12";
+                minutos.value = "00";
+                periodo.value = "AM";
+                return;
+            }
+
+            const partes = campo.value.split(":");
+            const hora24 = Number(partes[0]);
+
+            horas.value = String(
+                hora24 % 12 || 12
+            ).padStart(2, "0");
+
+            minutos.value = partes[1];
+            periodo.value = hora24 >= 12 ? "PM" : "AM";
+        }
+
+        function abrirReloj() {
+            const estabaAbierto = !popup.hidden;
+
+            cerrarRelojes();
+
+            if (!estabaAbierto) {
+                sincronizarReloj();
+                popup.hidden = false;
+                horas.focus();
+            }
+        }
+
+        boton.addEventListener("click", abrirReloj);
+        campo.addEventListener("click", abrirReloj);
+
+        aceptar.addEventListener("click", function () {
+            const hora12 = Number(horas.value);
+            let hora24 = hora12 % 12;
+
+            if (periodo.value === "PM") {
+                hora24 += 12;
+            }
+
+            const nuevaHora =
+                String(hora24).padStart(2, "0") +
+                ":" +
+                minutos.value;
+
+            if (campo === fin && inicio.value && nuevaHora <= inicio.value) {
+                mostrarMensaje(
+                    "La hora de término debe ser posterior a la hora de inicio.",
+                    true
+                );
+                return;
+            }
+
+            campo.value = nuevaHora;
+
+            campo.dispatchEvent(
+                new Event("input", { bubbles: true })
+            );
+
+            campo.dispatchEvent(
+                new Event("change", { bubbles: true })
+            );
+
+            if (campo === inicio && fin.value && fin.value <= inicio.value) {
+                fin.value = "";
+                fin.dispatchEvent(
+                    new Event("input", { bubbles: true })
+                );
+                fin.dispatchEvent(
+                    new Event("change", { bubbles: true })
+                );
+                mostrarMensaje(
+                    "Selecciona una hora de término posterior a la hora de inicio.",
+                    true
+                );
+            }
+
+            popup.hidden = true;
+        });
+    });
+
+    document.addEventListener("click", function (evento) {
+        if (!evento.target.closest(
+            ".aa-clase-hora-personalizada"
+        )) {
+            cerrarRelojes();
+        }
+    });
+
+    document.addEventListener("keydown", function (evento) {
+        if (evento.key === "Escape") {
+            cerrarRelojes();
+        }
+    });
+
+    /* BÚSQUEDAS DE DOCENTE Y GRUPO */
+
+    formulario.querySelectorAll(
+        "[data-busqueda]"
+    ).forEach(function (boton) {
+        boton.addEventListener("click", function () {
+            const tipo = boton.dataset.busqueda;
+
+            if (tipo === "maestro") {
+                buscarDocente();
+            } else if (tipo === "grupo") {
+                cargarAlumnos();
+            }
+        });
+    });
+
+    /* VALIDACIÓN VISUAL */
+
+    formulario.addEventListener("submit", function (evento) {
+        evento.preventDefault();
+        ocultarMensaje();
+        fecha.min = fechaLocal();
+
+        if (fecha.value && fecha.value < fecha.min) {
+            mostrarMensaje(
+                "La fecha de clase no puede ser anterior a hoy.",
+                true
+            );
+            fecha.focus();
+            return;
+        }
+
+        if (!formulario.checkValidity()) {
+            mostrarMensaje(
+                "Completa los campos obligatorios.",
+                true
+            );
+
+            formulario.reportValidity();
+            return;
+        }
+
+        if (fin.value <= inicio.value) {
+            mostrarMensaje(
+                "La hora de término debe ser posterior " +
+                "a la hora de inicio.",
+                true
+            );
+
+            fin.focus();
+            return;
+        }
+
+        mostrarMensaje(
+            "Formulario validado correctamente. " +
+            "El guardado de la clase y la salida automática " +
+            "se conectarán posteriormente con Django."
+        );
+    });
+
+    actualizarVista();
+})();
+</script>
