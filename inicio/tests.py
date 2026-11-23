@@ -705,7 +705,7 @@ class SalaComputoViewTests(TestCase):
             'hora': '09:00',
         }])
 
-    def test_incident_submission_saves_equipment_and_optional_usage_record(self):
+    def test_incident_submission_saves_equipment_without_retired_fields(self):
         equipment = Equipo.objects.create(no_equipo='PC-21', lugar='Sala')
         person = Persona.objects.create(
             perfil='Alumno',
@@ -732,8 +732,10 @@ class SalaComputoViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json()['guardado'])
         incidencia = equipment.incidencias.get()
-        self.assertEqual(incidencia.registro, record)
-        self.assertEqual(incidencia.descripcion, 'El teclado no responde.')
+        self.assertEqual(incidencia.equipo, equipment)
+        for field in ('registro', 'momento_deteccion', 'estado_atencion'):
+            self.assertFalse(hasattr(incidencia, field))
+        self.assertEqual(incidencia.descripcion_falla, 'El teclado no responde.')
 
     def test_external_event_attendee_can_register_find_and_close_entry_by_folio(self):
         speaker = Externo.objects.create(

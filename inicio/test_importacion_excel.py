@@ -3,7 +3,6 @@
 from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import hashlib
 import time
 from unittest.mock import patch
 
@@ -497,10 +496,10 @@ class ExcelAdminTests(ExcelAdminFixture, TestCase):
         response = self.client.get(reverse('descargar_plantilla_excel'))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Content-Type'], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        self.assertEqual(response['Content-Disposition'], 'attachment; filename="Plantilla.xlsx"')
+        self.assertEqual(response['Content-Disposition'], 'attachment; filename="plantilla_basedatos.xlsx"')
         data = b''.join(response.streaming_content)
         response.close()
-        self.assertEqual(hashlib.sha256(data).hexdigest(), '191d5350c75565d90f241d122c7c83f71447f5027147ea67696847e5a273621b')
+        self.assertEqual(data, (Path(__file__).parent / 'plantillas' / 'plantilla_basedatos.xlsx').read_bytes())
 
     def test_template_download_requires_staff_and_import_permissions(self):
         url = reverse('descargar_plantilla_excel')

@@ -1,9 +1,13 @@
+from decimal import Decimal
+from django.conf import settings
+from django.core.validators import MinValueValidator
 from django.db import models, router, transaction
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from datetime import time as time_type, timedelta
 from simple_history.models import HistoricalRecords
+from .db_constraints import PrecisionMinuto
 
 
 PERFILES_PERSONA = (
@@ -539,38 +543,304 @@ class Asistencia(models.Model):
         return f'{self.alumno} - {self.clase} - {self.get_estado_display()}'
 
 
-class Incidencia(models.Model):
+class EstadoObjeto(models.TextChoices):
+    DISPONIBLE = 'Disponible', 'Disponible'
+    OCUPADO = 'Ocupado', 'Ocupado'
+    MANTENIMIENTO = 'Mantenimiento', 'Mantenimiento'
+    BAJA = 'Baja', 'Baja'
+
+
+class CondicionObjeto(models.TextChoices):
+    BUENO = 'Bueno', 'Bueno'
+    REGULAR = 'Regular', 'Regular'
+    MALO = 'Malo', 'Malo'
+
+
+def restriccion_minuto(campo, nombre, *, nullable=False):
+    condicion = models.Q(PrecisionMinuto(campo))
+    if nullable:
+        condicion |= models.Q(**{f'{campo}__isnull': True})
+    return models.CheckConstraint(condition=condicion, name=nombre)
+
+
+class ImplementoTecnologico(models.Model):
+    id_implemento = models.AutoField(primary_key=True)
+    codigo_interno = models.CharField(max_length=50, unique=True)
+    tipo_implemento = models.CharField(max_length=100)
+    numero_bien_patrimonial = models.CharField(max_length=100, blank=True, null=True)
+    serie = models.CharField(max_length=100, blank=True, null=True)
+    marca = models.CharField(max_length=100, blank=True, null=True)
+    modelo = models.CharField(max_length=100, blank=True, null=True)
+    estado = models.CharField(max_length=20, choices=EstadoObjeto.choices)
+    condicion = models.CharField(max_length=20, choices=CondicionObjeto.choices)
+    observaciones = models.TextField(blank=True, null=True)
+    history = HistoricalRecords()
+
+    class Meta:
+        indexes = [models.Index(fields=['estado', 'tipo_implemento'], name='impl_estado_tipo_idx')]
+        constraints = [
+            models.CheckConstraint(condition=~models.Q(codigo_interno=''), name='impl_codigo_no_vacio'),
+            models.CheckConstraint(condition=~models.Q(tipo_implemento=''), name='impl_tipo_no_vacio'),
+            models.CheckConstraint(condition=models.Q(estado__in=EstadoObjeto.values), name='impl_estado_valido'),
+            models.CheckConstraint(condition=models.Q(condicion__in=CondicionObjeto.values), name='impl_condicion_valida'),
+        ]
+
+    def __str__(self):
+        return f'{self.codigo_interno} - {self.tipo_implemento}'
+
+
+class Prestamo(models.Model):
+    id_prestamo = models.AutoField(primary_key=True)
+    persona_solicitante = models.ForeignKey(
+        Persona, on_delete=models.PROTECT, related_name='prestamos_solicitados',
+    )
+    operador_prestamo = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='prestamos_registrados',
+    )
+    fecha_hora_prestamo = models.DateTimeField()
+    fecha_hora_devolucion_prevista = models.DateTimeField()
+    lugar_destino = models.CharField(max_length=150)
+    uso_prestamo = models.TextField()
+    observaciones = models.TextField(blank=True, null=True)
+    history = HistoricalRecords()
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['persona_solicitante', 'fecha_hora_prestamo'], name='prest_solicitante_fecha_idx'),
+            models.Index(fields=['fecha_hora_devolucion_prevista'], name='prest_devol_prevista_idx'),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(fecha_hora_devolucion_prevista__gte=models.F('fecha_hora_prestamo')),
+                name='prest_fechas_coherentes',
+            ),
+            models.CheckConstraint(condition=~models.Q(lugar_destino=''), name='prest_lugar_no_vacio'),
+            models.CheckConstraint(condition=~models.Q(uso_prestamo=''), name='prest_uso_no_vacio'),
+            restriccion_minuto('fecha_hora_prestamo', 'prest_inicio_minuto'),
+            restriccion_minuto('fecha_hora_devolucion_prevista', 'prest_prevista_minuto'),
+        ]
+
+    def __str__(self):
+        return f'Préstamo {self.pk}'
+
+
+class DetallePrestamo(models.Model):
+    id_detalle_prestamo = models.AutoField(primary_key=True)
+    prestamo = models.ForeignKey(Prestamo, on_delete=models.PROTECT, related_name='detalles')
+    implemento = models.ForeignKey(ImplementoTecnologico, on_delete=models.PROTECT, related_name='detalles_prestamo')
+    condicion_salida = models.CharField(max_length=20, choices=CondicionObjeto.choices)
+    observaciones_salida = models.TextField(blank=True, null=True)
+    fecha_hora_devolucion = models.DateTimeField(blank=True, null=True)
+    persona_devuelve = models.ForeignKey(
+        Persona, on_delete=models.PROTECT, blank=True, null=True, related_name='implementos_devueltos',
+    )
+    operador_devolucion = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, blank=True, null=True,
+        related_name='devoluciones_registradas',
+    )
+    condicion_devolucion = models.CharField(max_length=20, choices=CondicionObjeto.choices, blank=True, null=True)
+    observaciones_devolucion = models.TextField(blank=True, null=True)
+    history = HistoricalRecords()
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['implemento', 'fecha_hora_devolucion'], name='detalle_impl_devolucion_idx'),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['prestamo', 'implemento'], name='detalle_prestamo_impl_unico'),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(fecha_hora_devolucion__isnull=True, persona_devuelve__isnull=True,
+                             operador_devolucion__isnull=True, condicion_devolucion__isnull=True)
+                    | models.Q(fecha_hora_devolucion__isnull=False, persona_devuelve__isnull=False,
+                               operador_devolucion__isnull=False, condicion_devolucion__isnull=False)
+                ),
+                name='detalle_devolucion_completa',
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(fecha_hora_devolucion__isnull=False)
+                    | models.Q(observaciones_devolucion__isnull=True)
+                    | models.Q(observaciones_devolucion='')
+                ),
+                name='detalle_obs_solo_devolucion',
+            ),
+            models.CheckConstraint(condition=models.Q(condicion_salida__in=CondicionObjeto.values), name='detalle_cond_salida_valida'),
+            models.CheckConstraint(
+                condition=models.Q(condicion_devolucion__isnull=True) | models.Q(condicion_devolucion__in=CondicionObjeto.values),
+                name='detalle_cond_dev_valida',
+            ),
+            restriccion_minuto('fecha_hora_devolucion', 'detalle_devolucion_minuto', nullable=True),
+        ]
+
+    def clean(self):
+        super().clean()
+        # Coherencia entre tablas: no es una restricción CHECK de la BD.
+        if self.prestamo_id and self.fecha_hora_devolucion:
+            inicio = Prestamo.objects.filter(pk=self.prestamo_id).values_list('fecha_hora_prestamo', flat=True).first()
+            if inicio and self.fecha_hora_devolucion < inicio:
+                raise ValidationError({'fecha_hora_devolucion': 'La devolución no puede ser anterior al préstamo.'})
+
+    def __str__(self):
+        return f'{self.prestamo_id} - {self.implemento_id}'
+
+
+class CategoriaInsumo(models.Model):
+    id = models.AutoField(primary_key=True)
+    nombre = models.CharField(max_length=100, unique=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=~models.Q(nombre=''), name='cat_insumo_nombre_no_vacio'),
+        ]
+
+    def __str__(self):
+        return self.nombre
+
+
+class Insumo(models.Model):
+    id_insumo = models.AutoField(primary_key=True)
+    nombre_insumo = models.CharField(max_length=150)
+    categoria = models.ForeignKey(CategoriaInsumo, on_delete=models.PROTECT)
+    unidad_medida = models.CharField(max_length=50)
+    existencia_actual = models.DecimalField(max_digits=12, decimal_places=3, default=Decimal('0'), validators=[MinValueValidator(Decimal('0'))])
+    stock_minimo = models.DecimalField(max_digits=12, decimal_places=3, default=Decimal('0'), validators=[MinValueValidator(Decimal('0'))])
+    activo = models.BooleanField(default=True)
+    history = HistoricalRecords()
+
+    class Meta:
+        indexes = [models.Index(fields=['categoria', 'activo'], name='insumo_categoria_activo_idx')]
+        constraints = [
+            models.CheckConstraint(condition=models.Q(existencia_actual__gte=0), name='insumo_existencia_no_negativa'),
+            models.CheckConstraint(condition=models.Q(stock_minimo__gte=0), name='insumo_minimo_no_negativo'),
+            models.CheckConstraint(condition=~models.Q(nombre_insumo=''), name='insumo_nombre_no_vacio'),
+            models.CheckConstraint(condition=~models.Q(unidad_medida=''), name='insumo_unidad_no_vacia'),
+            models.CheckConstraint(condition=models.Q(activo__in=[True, False]), name='insumo_activo_booleano'),
+        ]
+
+    def __str__(self):
+        return self.nombre_insumo
+
+
+class MovimientoInventario(models.Model):
+    class Tipo(models.TextChoices):
+        ENTRADA = 'Entrada', 'Entrada'
+        SALIDA = 'Salida', 'Salida'
+
+    id_movimiento = models.AutoField(primary_key=True)
+    insumo = models.ForeignKey(Insumo, on_delete=models.PROTECT, related_name='movimientos')
+    tipo_movimiento = models.CharField(max_length=10, choices=Tipo.choices)
+    cantidad = models.DecimalField(max_digits=12, decimal_places=3, validators=[MinValueValidator(Decimal('0.001'))])
+    fecha = models.DateField()
+    hora = models.TimeField()
+    proveedor = models.CharField(max_length=150, blank=True, null=True)
+    area_destino = models.CharField(max_length=150, blank=True, null=True)
+    persona = models.ForeignKey(Persona, on_delete=models.PROTECT, blank=True, null=True, related_name='movimientos_material')
+    operador = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='movimientos_inventario')
+    observaciones = models.TextField(blank=True, null=True)
+    history = HistoricalRecords()
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['insumo', 'fecha', 'hora'], name='mov_insumo_fecha_hora_idx'),
+        ]
+        constraints = [
+            models.CheckConstraint(condition=models.Q(cantidad__gt=0), name='mov_cantidad_positiva'),
+            models.CheckConstraint(condition=models.Q(tipo_movimiento__in=['Entrada', 'Salida']), name='mov_tipo_valido'),
+            restriccion_minuto('hora', 'mov_hora_minuto'),
+        ]
+
+    def __str__(self):
+        return f'{self.tipo_movimiento}: {self.cantidad} ({self.insumo_id})'
+
+
+class CamposRetiradosHistorialFalla(models.Model):
+    """Columnas de auditoría anteriores; no forman parte del modelo activo."""
+
     MOMENTOS_DETECCION = (
         ('durante_uso', 'Durante el uso'),
         ('al_finalizar', 'Al finalizar el uso'),
         ('despues_actividad', 'Después del evento o visita'),
     )
-    ESTADOS = (
+    ESTADOS_ATENCION = (
         ('Pendiente', 'Pendiente'),
         ('Resuelta', 'Resuelta'),
     )
 
-    equipo = models.ForeignKey(Equipo, on_delete=models.PROTECT, related_name='incidencias')
     registro = models.ForeignKey(
-        Registro, on_delete=models.SET_NULL, null=True, blank=True, related_name='incidencias',
+        Registro, on_delete=models.DO_NOTHING, null=True, blank=True,
+        db_constraint=False, related_name='+',
     )
-    reportada_por = models.ForeignKey(
-        UsuarioSistema, on_delete=models.SET_NULL, null=True, blank=True, related_name='incidencias',
+    momento_deteccion = models.CharField(
+        max_length=24, choices=MOMENTOS_DETECCION, blank=True, null=True,
     )
-    momento_deteccion = models.CharField(max_length=24, choices=MOMENTOS_DETECCION)
-    descripcion = models.TextField()
-    estado = models.CharField(max_length=10, choices=ESTADOS, default='Pendiente')
-    creada_en = models.DateTimeField(auto_now_add=True)
-    history = HistoricalRecords()
+    estado_atencion = models.CharField(
+        max_length=10, choices=ESTADOS_ATENCION, blank=True, null=True,
+    )
+
+    class Meta:
+        abstract = True
+
+
+class BitacoraFalla(models.Model):
+    id_falla = models.BigAutoField(primary_key=True)
+    # NULL representa información desconocida durante la transición del módulo.
+    lugar = models.CharField(max_length=150, blank=True, null=True)
+    equipo = models.ForeignKey(Equipo, on_delete=models.PROTECT, blank=True, null=True, related_name='incidencias')
+    implemento = models.ForeignKey(
+        ImplementoTecnologico, on_delete=models.PROTECT, blank=True, null=True, related_name='fallas',
+    )
+    categoria_falla = models.CharField(max_length=100, blank=True, null=True)
+    componente_afectado = models.CharField(max_length=100, blank=True, null=True)
+    prioridad_alta = models.BooleanField(blank=True, null=True)
+    condicion = models.CharField(max_length=20, choices=CondicionObjeto.choices, blank=True, null=True)
+    estado = models.CharField(max_length=20, choices=EstadoObjeto.choices, blank=True, null=True)
+    descripcion_falla = models.TextField()
+    fecha_reporte = models.DateTimeField(auto_now_add=True)
+    usuario_sistema = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, null=True, blank=True, related_name='incidencias',
+    )
+    observaciones = models.TextField(blank=True, null=True)
+    history = HistoricalRecords(bases=[CamposRetiradosHistorialFalla])
+
+    class Meta:
+        db_table = 'bitacoraFalla'
+        indexes = [
+            models.Index(fields=['equipo', 'fecha_reporte'], name='falla_equipo_fecha_idx'),
+            models.Index(fields=['implemento', 'fecha_reporte'], name='falla_impl_fecha_idx'),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(equipo__isnull=False, implemento__isnull=True)
+                    | models.Q(equipo__isnull=True, implemento__isnull=False)
+                ),
+                name='falla_exactamente_un_objeto',
+            ),
+            models.CheckConstraint(
+                condition=models.Q(condicion__isnull=True) | models.Q(condicion__in=CondicionObjeto.values),
+                name='falla_condicion_valida',
+            ),
+            models.CheckConstraint(
+                condition=models.Q(estado__isnull=True) | models.Q(estado__in=EstadoObjeto.values),
+                name='falla_estado_objeto_valido',
+            ),
+            models.CheckConstraint(
+                condition=models.Q(prioridad_alta__isnull=True) | models.Q(prioridad_alta__in=[True, False]),
+                name='falla_prioridad_booleana',
+            ),
+        ]
 
     def clean(self):
         super().clean()
-        if self.registro_id and self.registro.equipo_id != self.equipo_id:
-            raise ValidationError({'registro': 'El registro seleccionado no corresponde al equipo afectado.'})
+        if bool(self.equipo_id) == bool(self.implemento_id):
+            mensaje = 'Selecciona exactamente un equipo o un implemento.'
+            raise ValidationError({'equipo': mensaje, 'implemento': mensaje})
 
     def save(self, *args, **kwargs):
+        # Validación existente de Incidencia; no implementa flujos nuevos.
         self.full_clean()
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f'Incidencia {self.pk or "nueva"} - {self.equipo}'
+        return f'Falla {self.pk or "nueva"} - {self.equipo or self.implemento}'

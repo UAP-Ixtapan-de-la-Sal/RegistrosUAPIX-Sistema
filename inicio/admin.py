@@ -1,15 +1,18 @@
 #VERSION SERVIBLE
+from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.core.exceptions import PermissionDenied
 from simple_history.admin import SimpleHistoryAdmin
-from django.db.models import Q
+from django.db.models import DateTimeField, Q, TimeField
 from .forms_persona_admin import PersonaAdminForm
 
 # MODIFICACIÓN: Importamos todos los nuevos modelos creados para la Sala de Cómputo
 from .models import (
     UsuarioSistema, Persona, Carrera, Materia, 
     Grupo, Clase, EventoTallerConferencia, Equipo, Registro, Externo, PersonaPerfil,
-    Asistencia, Incidencia,
+    Asistencia, BitacoraFalla,
+    ImplementoTecnologico, Prestamo, DetallePrestamo, CategoriaInsumo, Insumo, MovimientoInventario,
     PERFILES_PERSONA,
 )
 
@@ -159,9 +162,196 @@ class AsistenciaAdmin(SimpleHistoryAdmin):
     list_filter = ('estado', 'clase__fecha')
     search_fields = ('alumno__matricula', 'alumno__nombre', 'alumno__apellidos')
 
-@admin.register(Incidencia)
-class IncidenciaAdmin(SimpleHistoryAdmin):
-    list_display = ('equipo', 'momento_deteccion', 'estado', 'reportada_por', 'creada_en')
-    list_filter = ('estado', 'momento_deteccion', 'creada_en')
-    search_fields = ('equipo__no_equipo', 'equipo__no_bien_patrimonial', 'descripcion')
-    date_hierarchy = 'creada_en'
+class BitacoraFallaAdminForm(forms.ModelForm):
+    prioridad_alta = forms.TypedChoiceField(
+        label='Prioridad alta',
+        choices=(('', 'Selecciona'), ('True', 'Sí'), ('False', 'No')),
+        coerce=lambda value: value == 'True',
+        empty_value=None,
+        required=False,
+    )
+    CAMPOS_REPORTE = (
+        'lugar', 'categoria_falla', 'componente_afectado', 'prioridad_alta',
+        'condicion', 'estado', 'usuario_sistema',
+    )
+
+    class Meta:
+        model = BitacoraFalla
+        fields = (
+            'lugar', 'equipo', 'implemento', 'categoria_falla', 'componente_afectado',
+            'prioridad_alta', 'condicion', 'estado', 'descripcion_falla',
+            'usuario_sistema', 'observaciones',
+        )
+        labels = {
+            'condicion': 'Condición',
+            'estado': 'Estado',
+        }
+        help_texts = {
+            'equipo': 'Selecciona un equipo o un implemento, únicamente uno.',
+            'implemento': 'Déjalo vacío si seleccionaste un equipo.',
+            'condicion': 'Describe la situación física del objeto al momento del reporte.',
+            'estado': 'Describe su disponibilidad al momento del reporte.',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for nombre in self.CAMPOS_REPORTE:
+            if nombre not in self.fields:
+                continue
+            campo = self.instance._meta.get_field(nombre)
+            valor_anterior = getattr(self.instance, campo.attname)
+            # Las altas capturan el reporte completo. El legado puede conservar
+            # valores desconocidos; un valor ya capturado no se vuelve vacío.
+            self.fields[nombre].required = (
+                self.instance._state.adding or valor_anterior not in (None, '')
+            )
+            if not self.fields[nombre].required:
+                self.fields[nombre].help_text += (
+                    ' Dato no capturado originalmente; puede permanecer sin dato.'
+                )
+        for nombre in ('equipo', 'implemento'):
+            if nombre in self.fields:
+                self.fields[nombre].required = False
+
+
+@admin.register(BitacoraFalla)
+class BitacoraFallaAdmin(SimpleHistoryAdmin):
+    form = BitacoraFallaAdminForm
+    list_display = (
+        'id_falla', 'equipo', 'implemento', 'categoria_falla', 'condicion',
+        'estado', 'prioridad_alta', 'usuario_sistema', 'fecha_reporte',
+    )
+    list_filter = (
+        'estado', 'condicion', 'prioridad_alta', 'fecha_reporte',
+    )
+    search_fields = (
+        'equipo__no_equipo', 'equipo__no_bien_patrimonial', 'implemento__codigo_interno',
+        'lugar', 'categoria_falla', 'componente_afectado', 'descripcion_falla',
+    )
+    list_select_related = ('equipo', 'implemento', 'usuario_sistema')
+    date_hierarchy = 'fecha_reporte'
+    readonly_fields = ('fecha_reporte',)
+
+    def get_fields(self, request, obj=None):
+        campos = self.form.Meta.fields
+        if obj is not None:
+            campos += ('fecha_reporte',)
+        return campos
+
+
+class CapturaManualAdmin(SimpleHistoryAdmin):
+    """Captura estándar con historial; sin borrados ni acciones operativas."""
+
+    actions = None
+    formfield_overrides = {
+        DateTimeField: {
+            'form_class': forms.DateTimeField,
+            'widget': forms.DateTimeInput(
+                format='%Y-%m-%dT%H:%M',
+                attrs={'type': 'datetime-local', 'step': 60},
+            ),
+            'input_formats': ('%Y-%m-%dT%H:%M',),
+        },
+        TimeField: {
+            'widget': forms.TimeInput(
+                format='%H:%M', attrs={'type': 'time', 'step': 60},
+            ),
+            'input_formats': ('%H:%M',),
+        },
+    }
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_change_history_permission(self, request, obj=None):
+        return False
+
+    def revert_disabled(self, request, obj=None):
+        return True
+
+    def history_form_view(self, request, object_id, version_id, extra_context=None):
+        if request.method not in ('GET', 'HEAD'):
+            raise PermissionDenied('El historial está disponible solo para consulta.')
+        return super().history_form_view(request, object_id, version_id, extra_context)
+
+
+@admin.register(ImplementoTecnologico)
+class ImplementoTecnologicoAdmin(CapturaManualAdmin):
+    list_display = (
+        'codigo_interno', 'tipo_implemento', 'numero_bien_patrimonial',
+        'marca', 'modelo', 'estado', 'condicion',
+    )
+    list_filter = ('estado', 'condicion', 'tipo_implemento')
+    search_fields = (
+        'codigo_interno', 'tipo_implemento', 'numero_bien_patrimonial',
+        'serie', 'marca', 'modelo',
+    )
+    ordering = ('codigo_interno',)
+
+
+@admin.register(Prestamo)
+class PrestamoAdmin(CapturaManualAdmin):
+    list_display = (
+        'id_prestamo', 'persona_solicitante', 'operador_prestamo',
+        'fecha_hora_prestamo', 'fecha_hora_devolucion_prevista', 'lugar_destino',
+    )
+    list_filter = ('fecha_hora_prestamo', 'operador_prestamo')
+    search_fields = (
+        'persona_solicitante__matricula', 'persona_solicitante__nombre',
+        'persona_solicitante__apellidos', 'operador_prestamo__username',
+        'lugar_destino', 'uso_prestamo',
+    )
+    list_select_related = ('persona_solicitante', 'operador_prestamo')
+    autocomplete_fields = ('persona_solicitante', 'operador_prestamo')
+    date_hierarchy = 'fecha_hora_prestamo'
+    ordering = ('-fecha_hora_prestamo', '-id_prestamo')
+
+
+@admin.register(DetallePrestamo)
+class DetallePrestamoAdmin(CapturaManualAdmin):
+    list_display = (
+        'id_detalle_prestamo', 'prestamo', 'implemento', 'condicion_salida',
+        'fecha_hora_devolucion', 'persona_devuelve', 'condicion_devolucion',
+    )
+    list_filter = ('condicion_salida', 'condicion_devolucion', 'fecha_hora_devolucion')
+    search_fields = (
+        'prestamo__persona_solicitante__matricula',
+        'prestamo__persona_solicitante__nombre',
+        'prestamo__persona_solicitante__apellidos', 'implemento__codigo_interno',
+        'persona_devuelve__matricula', 'persona_devuelve__nombre',
+    )
+    list_select_related = ('prestamo', 'implemento', 'persona_devuelve')
+    autocomplete_fields = ('prestamo', 'implemento', 'persona_devuelve', 'operador_devolucion')
+    ordering = ('-id_detalle_prestamo',)
+
+
+admin.site.register(CategoriaInsumo)
+
+
+@admin.register(Insumo)
+class InsumoAdmin(CapturaManualAdmin):
+    list_display = (
+        'nombre_insumo', 'categoria', 'unidad_medida',
+        'existencia_actual', 'stock_minimo', 'activo',
+    )
+    list_filter = ('categoria', 'activo')
+    search_fields = ('nombre_insumo', 'unidad_medida')
+    ordering = ('nombre_insumo',)
+
+
+@admin.register(MovimientoInventario)
+class MovimientoInventarioAdmin(CapturaManualAdmin):
+    list_display = (
+        'id_movimiento', 'insumo', 'tipo_movimiento', 'cantidad', 'fecha',
+        'hora', 'persona', 'operador', 'area_destino',
+    )
+    list_filter = ('tipo_movimiento', 'fecha', 'insumo__categoria')
+    search_fields = (
+        'insumo__nombre_insumo', 'proveedor', 'area_destino',
+        'persona__matricula', 'persona__nombre', 'persona__apellidos',
+        'operador__username', 'observaciones',
+    )
+    list_select_related = ('insumo', 'persona', 'operador')
+    autocomplete_fields = ('insumo', 'persona', 'operador')
+    date_hierarchy = 'fecha'
+    ordering = ('-fecha', '-hora', '-id_movimiento')
