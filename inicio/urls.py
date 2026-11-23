@@ -51,6 +51,16 @@ urlpatterns = [
         views.autoacceso_view,
         name='autoacceso'
     ),
+    path(
+        'autoacceso/materias-carrera/',
+        views.materias_autoacceso_carrera_view,
+        name='materias_autoacceso_carrera',
+    ),
+    path(
+        'autoacceso/alumnos-grupo/',
+        views.alumnos_autoacceso_grupo_view,
+        name='alumnos_autoacceso_grupo',
+    ),
 
     #Ruta para la vista de agregar usuario y logout
     path('agregar-usuario/', views.agregar_usuario_view, name='agregar_usuario'),

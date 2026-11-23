@@ -27,8 +27,11 @@
     </div>
 
     <!-- FORMULARIO -->
-    <form class="aa-form-card aa-form-demo"
-          id="aaFormularioEntrada">
+    <form class="aa-form-card"
+          id="aaFormularioEntrada"
+          method="post"
+          action="{% url 'autoacceso' %}">
+        {% csrf_token %}
 
         <!-- FILA: MOTIVO, HORA Y FECHA -->
         <div class="aa-grid-3">
@@ -124,8 +127,7 @@
 
                     <button
                         type="button"
-                        aria-label="Buscar número de cuenta"
-                        onclick="aaAviso('Búsqueda de usuario')">
+                        aria-label="Buscar número de cuenta">
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </button>
 
