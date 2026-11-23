@@ -16,7 +16,7 @@ from .services.importacion_excel import (
 
 
 logger = logging.getLogger(__name__)
-EXCEL_TEMPLATE_PATH = settings.BASE_DIR / 'inicio' / 'plantillas' / 'Plantilla.xlsx'
+EXCEL_TEMPLATE_PATH = settings.BASE_DIR / 'inicio' / 'plantillas' / 'plantilla_basedatos.xlsx'
 
 
 def _require_import_permissions(request):
@@ -32,7 +32,7 @@ def descargar_plantilla_excel(request):
     except FileNotFoundError as exc:
         raise Http404('La plantilla Excel no está disponible.') from exc
     return FileResponse(
-        archivo, as_attachment=True, filename='Plantilla.xlsx',
+        archivo, as_attachment=True, filename='plantilla_basedatos.xlsx',
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     )
 

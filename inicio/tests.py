@@ -126,7 +126,7 @@ class AutoAccesoViewTests(TestCase):
         )
         self.client.force_login(self.user)
 
-    def test_auto_access_page_is_available_from_home_and_has_readonly_student_fields(self):
+    def test_home_opens_autoacceso_dashboard_and_legacy_student_page_is_available(self):
         response = self.client.get(reverse('auto_acceso'))
 
         self.assertEqual(response.status_code, 200)
@@ -138,8 +138,15 @@ class AutoAccesoViewTests(TestCase):
         self.assertContains(response, 'data-student-group readonly')
         self.assertContains(response, reverse('buscar_alumno_auto_acceso'))
 
+        dashboard_url = reverse('autoacceso')
         home_response = self.client.get(reverse('homePage'))
-        self.assertContains(home_response, f'href="{reverse("auto_acceso")}"')
+        self.assertContains(home_response, f'href="{dashboard_url}"')
+
+        dashboard_response = self.client.get(dashboard_url)
+        self.assertEqual(dashboard_response.status_code, 200)
+        self.assertTemplateUsed(
+            dashboard_response, 'inicio/AutoAcceso/autoacceso.html',
+        )
 
     def test_autoacceso_dashboard_uses_only_available_equipment_from_its_module(self):
         disponible = Equipo.objects.create(
@@ -268,7 +275,7 @@ class AutoAccesoViewTests(TestCase):
         self.assertIn('ya no está disponible', response.json()['error'])
         self.assertFalse(Registro.objects.filter(modulo='Auto_Acceso').exists())
 
-    def test_autoacceso_class_page_receives_career_and_subject_catalogs(self):
+    def test_autoacceso_class_page_and_career_catalog_provide_subjects(self):
         career = Carrera.objects.create(nombre_carrera='Sistemas')
         subject = Materia.objects.create(
             nombre_materia='Programación',
@@ -282,9 +289,18 @@ class AutoAccesoViewTests(TestCase):
         self.assertEqual(list(response.context['materias']), [subject])
         self.assertContains(
             response,
-            f'data-carrera-id="{career.pk}"',
+            f'<option value="{career.pk}">{career.nombre_carrera}</option>',
+            html=True,
         )
-        self.assertContains(response, 'Programación')
+        catalog_url = reverse('materias_autoacceso_carrera')
+        self.assertContains(response, catalog_url)
+
+        catalog_response = self.client.get(catalog_url, {'carrera': career.pk})
+        self.assertEqual(catalog_response.status_code, 200)
+        self.assertEqual(
+            catalog_response.json(),
+            {'materias': [{'id': subject.pk, 'nombre': subject.nombre_materia}]},
+        )
 
     def test_autoacceso_class_group_lookup_returns_only_students_in_that_group(self):
         career = Carrera.objects.create(nombre_carrera='Sistemas')
@@ -935,7 +951,7 @@ class SalaComputoViewTests(TestCase):
             'hora': '09:00',
         }])
 
-    def test_incident_submission_saves_equipment_and_optional_usage_record(self):
+    def test_incident_submission_saves_equipment_without_retired_fields(self):
         equipment = Equipo.objects.create(no_equipo='PC-21', lugar='Sala')
         person = Persona.objects.create(
             perfil='Alumno',
@@ -962,8 +978,10 @@ class SalaComputoViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json()['guardado'])
         incidencia = equipment.incidencias.get()
-        self.assertEqual(incidencia.registro, record)
-        self.assertEqual(incidencia.descripcion, 'El teclado no responde.')
+        self.assertEqual(incidencia.equipo, equipment)
+        for field in ('registro', 'momento_deteccion', 'estado_atencion'):
+            self.assertFalse(hasattr(incidencia, field))
+        self.assertEqual(incidencia.descripcion_falla, 'El teclado no responde.')
 
     def test_external_event_attendee_can_register_find_and_close_entry_by_folio(self):
         speaker = Externo.objects.create(
