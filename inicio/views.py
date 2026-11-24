@@ -12,7 +12,7 @@ from django.conf import settings #Owen
 from django.http import HttpResponse, JsonResponse #Owen
 from openpyxl import load_workbook #Owen
 from .models import (
-    Asistencia, Carrera, Clase, Equipo, EventoTallerConferencia, Externo, Grupo, Incidencia,
+    Asistencia, Carrera, Clase, Equipo, EventoTallerConferencia, Externo, Grupo, BitacoraFalla,
     Materia, Persona, Registro, UsuarioSistema,
 )
 from openpyxl.drawing.image import Image  # Para insertar imágenes en Excel
@@ -802,28 +802,20 @@ def registrar_incidencia_view(request):
         return JsonResponse({'error': 'Método no permitido.'}, status=405)
     try:
         equipo_id = _id_formulario(request.POST, 'equipo_id')
-        registro_id = _id_formulario(request.POST, 'registro_id', requerido=False)
         equipo = Equipo.objects.filter(pk=equipo_id, lugar='Sala').first()
         if equipo is None:
             return JsonResponse({'error': 'No se encontró el equipo afectado en la Sala de Cómputo.'}, status=404)
-        registro = None
-        if registro_id is not None:
-            registro = Registro.objects.filter(
-                pk=registro_id, equipo=equipo, modulo='Sala_Computo',
-            ).first()
-            if registro is None:
-                return JsonResponse({'error': 'El registro de uso no corresponde al equipo seleccionado.'}, status=400)
-        incidencia = Incidencia(
+        # La pantalla actual solo captura equipo y descripción. Los datos del
+        # objeto no capturados permanecen NULL; no se deducen del uso anterior.
+        falla = BitacoraFalla(
             equipo=equipo,
-            registro=registro,
-            reportada_por=request.user if request.user.is_authenticated else None,
-            momento_deteccion=request.POST.get('momento_deteccion', ''),
-            descripcion=request.POST.get('descripcion', '').strip(),
+            usuario_sistema=request.user if request.user.is_authenticated else None,
+            descripcion_falla=request.POST.get('descripcion', '').strip(),
         )
-        incidencia.save()
+        falla.save()
     except ValidationError as error:
         return JsonResponse({'error': '; '.join(error.messages)}, status=400)
-    return JsonResponse({'guardado': True, 'incidencia_id': incidencia.pk})
+    return JsonResponse({'guardado': True, 'incidencia_id': falla.pk})
 
 
 def buscar_ponente_sala_view(request):
