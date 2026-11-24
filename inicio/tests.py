@@ -948,8 +948,29 @@ class SalaComputoViewTests(TestCase):
             'tipo': 'Clase',
             'persona': 'Luis López',
             'cuenta': 'ALU-111',
+            'fecha': timezone.localdate().isoformat(),
             'hora': '09:00',
         }])
+
+        today = timezone.localdate()
+        yesterday = today - timedelta(days=1)
+        previous_record = Registro.objects.create(
+            equipo=equipment, persona=person, modulo='Sala_Computo',
+            tipo_registro='Clase', fecha=yesterday, hora_entrada=time(11, 0),
+        )
+        Registro.objects.create(
+            equipo=equipment, persona=person, modulo='Sala_Computo',
+            tipo_registro='Clase', fecha=today - timedelta(days=2), hora_entrada=time(8, 0),
+        )
+        url = reverse('historial_equipo_sala')
+        filters = {'equipo_id': equipment.pk, 'fecha_desde': yesterday, 'fecha_hasta': today, 'tipo': 'CLASE'}
+        response = self.client.get(url, filters)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [row['id'] for row in response.json()['registros']],
+            [previous_record.pk, Registro.objects.get(equipo=equipment, fecha=today).pk],
+        )
+        self.assertEqual(self.client.get(url, {**filters, 'fecha_desde': today, 'fecha_hasta': yesterday}).status_code, 400)
 
     def test_incident_submission_saves_equipment_without_retired_fields(self):
         equipment = Equipo.objects.create(no_equipo='PC-21', lugar='Sala')

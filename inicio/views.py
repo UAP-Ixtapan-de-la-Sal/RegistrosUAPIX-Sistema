@@ -3,7 +3,9 @@ import json
 from datetime import datetime, timedelta
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
+from django.views.decorators.http import require_POST
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -17,7 +19,10 @@ from .models import (
 )
 from openpyxl.drawing.image import Image  # Para insertar imágenes en Excel
 from .forms import AutoAccesoForm, RegistroUsuarioForm  # Importamos tu nuevo escudo de seguridad
-from .forms import RegistroClaseForm, RegistroEventoForm  # YES -Importamos los formularios de clase y evento 
+from .forms import (
+    EditarClaseAgendadaForm, EditarEventoAgendadoForm, EditarSerieClaseForm,
+    RegistroClaseForm, RegistroEventoForm,
+)
 
 
 def _ordenar_equipos_por_numero(equipos):
@@ -239,6 +244,17 @@ def respaldos_bd_view(request):
 
 
 #8. VISTAS DE SALA DE COMPUTO    --YES
+@require_POST
+def confirmar_salida_registros_view(request):
+    username = (request.user.get_username() if es_admin_general(request.user)
+                else request.POST.get('username', '').strip())
+    password = request.POST.get('password', '')
+    admin = authenticate(request, username=username, password=password) if username and password else None
+    if admin is None or not es_admin_general(admin):
+        return JsonResponse({'error': 'Verifica las credenciales del administrador.'}, status=403)
+    return JsonResponse({'autorizado': True})
+
+
 def sala_computo_view(request):
     es_envio_clase = request.method == 'POST' and request.POST.get('categoria') == 'clase'
     es_envio_evento = request.method == 'POST' and request.POST.get('categoria') == 'evento'
@@ -328,6 +344,289 @@ def sala_computo_view(request):
     }
     return render(request, 'inicio/sala_computo/sala_computo.html', contexto)
 
+
+def agenda_programada_sala_view(request):
+    hoy = timezone.localdate()
+    clases = Clase.objects.filter(fecha__gte=hoy).select_related(
+        'materia', 'grupo', 'docente', 'docente__carrera',
+    ).order_by('fecha', 'hora_inicio')
+    eventos = EventoTallerConferencia.objects.filter(fecha__gte=hoy).select_related(
+        'ponente_interno', 'ponente_externo',
+    ).order_by('fecha', 'hora_inicio')
+    return render(request, 'inicio/Sala_Computo/agenda_programada.html', {
+        'clases_agendadas': clases,
+        'eventos_agendados': eventos,
+        'fecha_hoy': hoy,
+    })
+
+
+def _serie_futura_de_clase(clase):
+    """Devuelve las sesiones futuras contiguas que la agenda agrupa como serie."""
+    sesiones = list(Clase.objects.filter(
+        materia_id=clase.materia_id,
+        grupo_id=clase.grupo_id,
+        docente_id=clase.docente_id,
+        hora_inicio=clase.hora_inicio,
+        hora_fin=clase.hora_fin,
+        fecha__gte=timezone.localdate(),
+    ).order_by('fecha', 'pk'))
+    bloques = []
+    bloque = []
+    anterior = None
+    for sesion in sesiones:
+        if anterior and (sesion.fecha - anterior.fecha).days > 7:
+            bloques.append(bloque)
+            bloque = []
+        bloque.append(sesion)
+        anterior = sesion
+    if bloque:
+        bloques.append(bloque)
+    return next((grupo for grupo in bloques if any(item.pk == clase.pk for item in grupo)), [clase])
+
+
+def _clases_serie_desde_ids(ids_texto):
+    try:
+        ids = list(dict.fromkeys(int(item) for item in ids_texto.split(',') if item.strip()))
+    except (AttributeError, TypeError, ValueError):
+        return []
+    if len(ids) < 2:
+        return []
+    clases = list(Clase.objects.filter(pk__in=ids).select_related('materia', 'grupo', 'docente').order_by('fecha', 'hora_inicio'))
+    if len(clases) != len(ids):
+        return []
+    firma = (clases[0].materia_id, clases[0].grupo_id, clases[0].docente_id, clases[0].hora_inicio, clases[0].hora_fin)
+    if any((clase.materia_id, clase.grupo_id, clase.docente_id, clase.hora_inicio, clase.hora_fin) != firma for clase in clases):
+        return []
+    if any((clases[index].fecha - clases[index - 1].fecha).days > 7 for index in range(1, len(clases))):
+        return []
+    return clases
+
+
+def editar_serie_clase_agendada_view(request):
+    ids_texto = request.POST.get('clases_ids', '') if request.method == 'POST' else request.GET.get('clases', '')
+    clases = _clases_serie_desde_ids(ids_texto)
+    if not clases:
+        messages.error(request, 'No se pudo identificar una serie recurrente válida para editar.')
+        return redirect('agenda_programada_sala')
+
+    dias_guardados = sorted({str(clase.fecha.weekday()) for clase in clases})
+    clase_base = clases[0]
+    sesion_id = request.POST.get('sesion_clase_id', '') if request.method == 'POST' else request.GET.get('sesion', '')
+    sesion_seleccionada = next((clase for clase in clases if str(clase.pk) == str(sesion_id)), clase_base)
+    catalogos = _catalogos_clase_por_carrera(clase_base.materia.carrera)
+    inicial = {
+        'numero_cuenta_docente': clase_base.docente.matricula,
+        'nombre_docente': str(clase_base.docente),
+        'docente_id': clase_base.docente_id,
+        'carrera': str(clase_base.materia.carrera_id),
+        'materia': str(clase_base.materia_id),
+        'grupo': str(clase_base.grupo_id),
+        'fecha': clase_base.fecha,
+        'fecha_fin_repeticion': clases[-1].fecha,
+        'hora_inicio': clase_base.hora_inicio,
+        'hora_fin': clase_base.hora_fin,
+        'dias_repeticion': dias_guardados,
+    }
+    if request.method == 'POST':
+        cuenta = request.POST.get('numero_cuenta_docente', '').strip()
+        docente_post = Persona.objects.con_perfiles('Docente').select_related('carrera').filter(matricula=cuenta).first()
+        carrera_id = request.POST.get('carrera', '')
+        carrera_post = Carrera.objects.filter(pk=carrera_id).first() if carrera_id.isdecimal() else None
+        catalogos = _catalogos_clase_por_carrera(docente_post.carrera if docente_post and docente_post.carrera_id else carrera_post)
+    form = EditarSerieClaseForm(request.POST or None, initial=inicial, catalogos=catalogos)
+    if request.method == 'POST' and form.is_valid():
+        datos = form.cleaned_data
+        dias = {int(dia) for dia in datos['dias_repeticion']}
+        fechas = [
+            datos['fecha'] + timedelta(days=offset)
+            for offset in range((datos['fecha_fin_repeticion'] - datos['fecha']).days + 1)
+            if (datos['fecha'] + timedelta(days=offset)).weekday() in dias
+        ]
+        existentes_por_fecha = {clase.fecha: clase for clase in clases}
+        fechas_conservadas = set(fechas)
+        obsoletas = [clase for clase in clases if clase.fecha not in fechas_conservadas]
+        try:
+            with transaction.atomic():
+                if any(clase.asistencias.exists() for clase in obsoletas):
+                    raise ValidationError(
+                        'No se puede quitar una fecha de la recurrencia porque tiene asistencias registradas.'
+                    )
+                planeadas = []
+                for fecha in fechas:
+                    clase = existentes_por_fecha.get(fecha) or Clase()
+                    clase.materia_id = datos['materia']
+                    clase.grupo_id = datos['grupo']
+                    clase.docente = datos['numero_cuenta_docente']
+                    clase.fecha = fecha
+                    clase.hora_inicio = datos['hora_inicio']
+                    clase.hora_fin = datos['hora_fin']
+                    clase.full_clean()
+                    planeadas.append(clase)
+                for clase in planeadas:
+                    clase.save()
+                if obsoletas:
+                    Clase.objects.filter(pk__in=[clase.pk for clase in obsoletas]).delete()
+        except ValidationError as error:
+            form.add_error(None, error.messages)
+        else:
+            messages.success(request, f'La serie quedó actualizada con {len(fechas)} fechas.')
+            return redirect('agenda_programada_sala')
+
+    return render(request, 'inicio/Sala_Computo/editar_agenda.html', {
+        'form': form,
+        'titulo': 'Editar serie de clase',
+        'tipo_edicion': 'serie_clase',
+        'clases_serie_ids': ','.join(str(clase.pk) for clase in clases),
+        'clases_serie_total': len(clases),
+        'sesion_clase_id': sesion_seleccionada.pk,
+        'fecha_sesion_seleccionada': sesion_seleccionada.fecha,
+        'editar_sesion_url': reverse('editar_clase_agendada', args=[sesion_seleccionada.pk]),
+        'fecha_fin_serie': clases[-1].fecha,
+        'dias_serie': dias_guardados,
+        'dias_serie_opciones': form.fields['dias_repeticion'].choices,
+    })
+
+
+@require_POST
+def eliminar_serie_clase_agendada_view(request):
+    clases = _clases_serie_desde_ids(request.POST.get('clases_ids', ''))
+    if not clases:
+        messages.error(request, 'No se pudo identificar una serie recurrente válida para eliminar.')
+    elif any(clase.asistencias.exists() for clase in clases):
+        messages.error(request, 'No se puede eliminar la serie completa porque una o más fechas tienen asistencias registradas.')
+    else:
+        ids = [clase.pk for clase in clases]
+        with transaction.atomic():
+            Clase.objects.filter(pk__in=ids).delete()
+        messages.success(request, f'Se eliminaron {len(ids)} fechas de la serie.')
+    return redirect('agenda_programada_sala')
+
+
+def editar_clase_agendada_view(request, clase_id):
+    clase = get_object_or_404(Clase.objects.select_related('materia__carrera', 'grupo', 'docente__carrera'), pk=clase_id)
+    clases_serie = _serie_futura_de_clase(clase)
+    catalogos = _catalogos_clase_por_carrera(clase.materia.carrera)
+    if request.method == 'POST':
+        cuenta = request.POST.get('numero_cuenta_docente', '').strip()
+        docente_post = Persona.objects.con_perfiles('Docente').select_related('carrera').filter(matricula=cuenta).first()
+        carrera_id = request.POST.get('carrera', '')
+        carrera_post = Carrera.objects.filter(pk=carrera_id).first() if carrera_id.isdecimal() else None
+        catalogos = _catalogos_clase_por_carrera(docente_post.carrera if docente_post and docente_post.carrera_id else carrera_post)
+    inicial = {
+        'numero_cuenta_docente': clase.docente.matricula,
+        'nombre_docente': str(clase.docente),
+        'docente_id': clase.docente_id,
+        'carrera': str(clase.materia.carrera_id),
+        'materia': str(clase.materia_id),
+        'grupo': str(clase.grupo_id),
+        'fecha': clase.fecha,
+        'hora_inicio': clase.hora_inicio,
+        'hora_fin': clase.hora_fin,
+    }
+    form = EditarClaseAgendadaForm(request.POST or None, initial=inicial, catalogos=catalogos)
+    if request.method == 'POST' and form.is_valid():
+        datos = form.cleaned_data
+        clase.materia_id = datos['materia']
+        clase.grupo_id = datos['grupo']
+        clase.docente = datos['numero_cuenta_docente']
+        clase.fecha = datos['fecha']
+        clase.hora_inicio = datos['hora_inicio']
+        clase.hora_fin = datos['hora_fin']
+        try:
+            clase.save()
+        except ValidationError as error:
+            form.add_error(None, error.messages)
+        else:
+            messages.success(request, 'La fecha de clase se actualizó correctamente.')
+            return redirect('agenda_programada_sala')
+    return render(request, 'inicio/Sala_Computo/editar_agenda.html', {
+        'form': form,
+        'titulo': 'Editar fecha de clase',
+        'tipo_edicion': 'clase',
+        'clases_serie_ids': ','.join(str(item.pk) for item in clases_serie),
+        'clases_serie_total': len(clases_serie),
+        'sesion_clase_id': clase.pk,
+        'fecha_sesion_seleccionada': clase.fecha,
+        'editar_sesion_url': request.path,
+        'editar_serie_url': reverse('editar_serie_clase_agendada'),
+        'fecha_fin_serie': clases_serie[-1].fecha,
+        'dias_serie': sorted({str(item.fecha.weekday()) for item in clases_serie}),
+        'dias_serie_opciones': EditarSerieClaseForm.base_fields['dias_repeticion'].choices,
+    })
+
+
+def editar_evento_agendado_view(request, evento_id):
+    evento = get_object_or_404(EventoTallerConferencia.objects.select_related('ponente_interno', 'ponente_externo'), pk=evento_id)
+    inicial = {
+        'tipo_evento': evento.tipo_evento,
+        'nombre_evento': evento.nombre_evento,
+        'pertenece_al_plantel': 'si' if evento.tipo_ponente == 'Interno' else 'no',
+        'numero_cuenta_ponente': evento.ponente_interno.matricula if evento.ponente_interno_id else '',
+        'nombre_ponente_interno': str(evento.ponente_interno) if evento.ponente_interno_id else '',
+        'persona_id': evento.ponente_interno_id,
+        'nombre_ponente_externo': evento.ponente_externo.nombre if evento.ponente_externo_id else '',
+        'apellidos_ponente_externo': evento.ponente_externo.apellidos if evento.ponente_externo_id else '',
+        'institucion_ponente_externo': evento.ponente_externo.institucion if evento.ponente_externo_id else '',
+        'fecha': evento.fecha,
+        'hora_inicio': evento.hora_inicio,
+        'hora_fin': evento.hora_fin,
+        'estado_bloque': evento.estado_bloque,
+    }
+    form = EditarEventoAgendadoForm(request.POST or None, initial=inicial)
+    if request.method == 'POST' and form.is_valid():
+        datos = form.cleaned_data
+        try:
+            with transaction.atomic():
+                evento.tipo_evento = datos['tipo_evento']
+                evento.nombre_evento = datos['nombre_evento'].strip()
+                evento.fecha = datos['fecha']
+                evento.hora_inicio = datos['hora_inicio']
+                evento.hora_fin = datos['hora_fin']
+                evento.estado_bloque = datos.get('estado_bloque', False)
+                if datos['pertenece_al_plantel'] == 'si':
+                    evento.tipo_ponente = 'Interno'
+                    evento.ponente_interno = datos['persona']
+                    evento.ponente_externo = None
+                else:
+                    externo = evento.ponente_externo or Externo()
+                    externo.nombre = datos['nombre_ponente_externo'].strip()
+                    externo.apellidos = datos['apellidos_ponente_externo'].strip()
+                    externo.institucion = datos.get('institucion_ponente_externo', '').strip() or None
+                    externo.save()
+                    evento.tipo_ponente = 'Externo'
+                    evento.ponente_interno = None
+                    evento.ponente_externo = externo
+                evento.save()
+        except ValidationError as error:
+            form.add_error(None, error.messages)
+        else:
+            messages.success(request, 'El evento se actualizó correctamente.')
+            return redirect('agenda_programada_sala')
+    return render(request, 'inicio/Sala_Computo/editar_agenda.html', {
+        'form': form,
+        'titulo': 'Editar evento',
+        'tipo_edicion': 'evento',
+    })
+
+
+@require_POST
+def eliminar_clase_agendada_view(request, clase_id):
+    clase = get_object_or_404(Clase, pk=clase_id)
+    if clase.asistencias.exists():
+        messages.error(request, 'No se puede borrar esta fecha porque ya tiene asistencias registradas.')
+    else:
+        clase.delete()
+        messages.success(request, 'La fecha de clase se eliminó correctamente.')
+    return redirect('agenda_programada_sala')
+
+
+@require_POST
+def eliminar_evento_agendado_view(request, evento_id):
+    evento = get_object_or_404(EventoTallerConferencia, pk=evento_id)
+    evento.delete()
+    messages.success(request, 'El evento se eliminó correctamente.')
+    return redirect('agenda_programada_sala')
+
 def buscar_docente_sala_view(request):
     if request.method != 'GET':
         return JsonResponse({'encontrado': False, 'error': 'Método no permitido.'}, status=405)
@@ -391,7 +690,8 @@ def catalogos_clase_docente_view(request):
     ).first()
     if docente is None:
         return JsonResponse({'error': 'No se encontró un docente con ese número de cuenta.'}, status=404)
-    if docente.carrera_id and str(docente.carrera_id) != carrera_id:
+    permitir_otra_carrera = request.GET.get('allow_other_career') == '1'
+    if docente.carrera_id and str(docente.carrera_id) != carrera_id and not permitir_otra_carrera:
         return JsonResponse({'error': 'La carrera seleccionada no corresponde al docente.'}, status=400)
     if not carrera_id.isdecimal():
         return JsonResponse({'error': 'Selecciona una carrera válida.'}, status=400)
@@ -736,6 +1036,7 @@ def buscar_salida_view(request):
         ),
         'cuenta': registro.persona.matricula or '' if registro.persona_id else '',
         'entrada': registro.hora_entrada.strftime('%H:%M'),
+        'tipo': registro.tipo_registro or 'Sin tipo',
         'equipo': registro.equipo.no_equipo if registro.equipo else 'Sin equipo',
     })
 
@@ -755,7 +1056,7 @@ def registrar_salida_view(request):
             registro.save()
     except ValidationError as error:
         return JsonResponse({'error': '; '.join(error.messages)}, status=400)
-    return JsonResponse({'guardado': True})
+    return JsonResponse({'guardado': True, 'hora_salida': registro.hora_salida.strftime('%H:%M')})
 
 
 def historial_equipo_view(request):
@@ -766,17 +1067,22 @@ def historial_equipo_view(request):
     except ValidationError as error:
         return JsonResponse({'error': '; '.join(error.messages)}, status=400)
     fecha = request.GET.get('fecha', '')
+    fecha_desde = request.GET.get('fecha_desde', fecha)
+    fecha_hasta = request.GET.get('fecha_hasta', fecha)
     tipo = request.GET.get('tipo', '').strip()
     try:
-        fecha = datetime.fromisoformat(fecha).date()
+        inicio = datetime.fromisoformat(fecha_desde).date()
+        fin = datetime.fromisoformat(fecha_hasta).date()
     except (TypeError, ValueError):
-        return JsonResponse({'error': 'Selecciona una fecha válida.'}, status=400)
+        return JsonResponse({'error': 'Selecciona un rango de fechas válido.'}, status=400)
+    if inicio > fin:
+        return JsonResponse({'error': 'La fecha inicial debe ser anterior o igual a la fecha final.'}, status=400)
 
     registros = Registro.objects.filter(
         modulo='Sala_Computo',
         equipo_id=equipo_id,
-        fecha=fecha,
-    ).select_related('persona', 'externo').order_by('hora_entrada')
+        fecha__range=(inicio, fin),
+    ).select_related('persona', 'externo').order_by('fecha', 'hora_entrada', 'pk')
     if tipo:
         registros = registros.filter(tipo_registro=tipo.title())
     return JsonResponse({
@@ -790,6 +1096,7 @@ def historial_equipo_view(request):
                     f'{registro.externo.nombre} {registro.externo.apellidos}'.strip()
                 ),
                 'cuenta': registro.persona.matricula if registro.persona_id else '',
+                'fecha': registro.fecha.isoformat(),
                 'hora': registro.hora_entrada.strftime('%H:%M'),
             }
             for registro in registros

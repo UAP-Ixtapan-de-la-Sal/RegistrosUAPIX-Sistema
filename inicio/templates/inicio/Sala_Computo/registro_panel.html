@@ -1,29 +1,36 @@
 <section class="registros-sala-page" aria-label="Registros de entrada y salida">
     <div class="registros-kiosk-shell">
         <header class="registros-kiosk-header">
-            <span class="registros-kiosk-badge">ACCESO REGISTROS </span>
-            <span class="registros-kiosk-label">Pantalla de Registros</span>
-            <button type="button" class="registros-operator-button" onclick="regresarDeRegistros()">
-                <i class="fa-solid fa-lock" aria-hidden="true"></i> Panel Operador / Salir
+            <span class="registros-kiosk-badge"><i class="fa-solid fa-computer" aria-hidden="true"></i></span>
+            <span class="registros-kiosk-label">SALA DE CÓMPUTO</span>
+            <button type="button" class="registros-operator-button" data-open-kiosk-exit aria-haspopup="dialog">
+                <i class="fa-solid fa-lock" aria-hidden="true"></i> Salir
             </button>
         </header>
 
         <main class="registros-kiosk-content">
             <form hidden aria-hidden="true">{% csrf_token %}</form>
             <section class="registros-operation-menu" data-operation-menu aria-label="Selecciona el tipo de registro" tabindex="-1">
+                <h2>Bienvenido a Sala de Cómputo</h2>
                 <p>Selecciona la operación que deseas realizar</p>
                 <div class="registros-operation-grid">
                     <button class="registros-operation-card registros-operation-entry" type="button" data-open-operation="entrada">
                         <span class="registros-operation-icon"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i></span>
-                        <strong>REGISTRO DE ENTRADA</strong>
+                        <strong>Registro de entrada</strong>
                         <small>Selecciona Clase, Evento o Visita para registrar tu acceso.</small>
+                        <span class="registros-operation-action">Comenzar registro</span>
                     </button>
                     <button class="registros-operation-card registros-operation-exit" type="button" data-open-operation="salida">
                         <span class="registros-operation-icon"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i></span>
-                        <strong>REGISTRO DE SALIDA</strong>
+                        <strong>Registro de salida</strong>
                         <small>Ingresa tu número de cuenta para liberar el equipo.</small>
+                        <span class="registros-operation-action">Finalizar sesión</span>
                     </button>
                 </div>
+                <footer class="registros-kiosk-note">
+                    <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                    Ten a la mano tu número de cuenta.
+                </footer>
             </section>
 
             <section class="registros-operation-view" data-operation-view="entrada" hidden aria-labelledby="entrada-title">
@@ -185,44 +192,130 @@
                 <section class="registros-panel registros-exit-panel" aria-labelledby="salida-title">
         <div class="registros-panel-heading">
             <div>
-                <p class="sala-computo-eyebrow">LIBERAR EQUIPO</p>
-                <h2 id="salida-title">Registro de salida</h2>
-                <p>Ingresa tu número de cuenta para encontrar tu sesión activa.</p>
+                <h2 id="salida-title">Sesiones activas</h2>
+                <p>Busca tu sesión para registrar la salida y liberar el equipo.</p>
             </div>
         </div>
         <form class="registros-exit-lookup" data-exit-search-form novalidate>
             <label class="sala-form-field">
-                <span>Número de cuenta</span>
+                <span>Buscar</span>
                 <input class="sala-form-control" type="search" data-exit-identifier placeholder="Cuenta o folio de entrada (R-123)" autocomplete="off">
             </label>
-            <button type="button" class="sala-form-submit" data-search-exit>
+            <button type="submit" class="sala-form-submit">
                 <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Buscar registro
             </button>
+            <label class="sala-form-field registros-exit-type">
+                <span>Motivo de uso</span>
+                <select class="sala-form-control" data-exit-type>
+                    <option value="">Todos</option>
+                    <option value="Clase">Clase</option>
+                    <option value="Evento">Evento</option>
+                    <option value="Visita">Visita</option>
+                </select>
+            </label>
         </form>
-        <p class="registros-exit-hint">Cuenta de ejemplo con sesión activa: <strong>221001</strong>.</p>
-        <div class="registros-exit-result" data-exit-result hidden aria-live="polite">
-            <div class="registros-exit-person">
-                <span class="registros-exit-avatar"><i class="fa-solid fa-user" aria-hidden="true"></i></span>
-                <div><strong data-exit-person></strong><small data-exit-details></small></div>
-            </div>
-            <div class="registros-exit-equipment">
-                <span>Equipo asignado</span><strong data-exit-equipment></strong>
-            </div>
-            <button class="registros-exit-button" type="button" data-register-exit>
-                <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> Registrar salida
-            </button>
+        <div class="registros-exit-summary">
+            <h3><i class="fa-solid fa-users" aria-hidden="true"></i> Usuarios en sesión</h3>
+            <span class="registros-exit-badge" data-exit-count aria-live="polite">0 sesiones activas</span>
+        </div>
+        <div class="registros-exit-table-wrap">
+            <table class="registros-exit-table" aria-label="Resultados de sesiones activas">
+                <thead><tr><th scope="col">Equipo</th><th scope="col">Nombre</th><th scope="col">Tipo</th><th scope="col">Acciones</th></tr></thead>
+                <tbody>
+                    <tr data-exit-result hidden>
+                        <td><span class="registros-exit-badge" data-exit-equipment></span></td>
+                        <td data-exit-person></td>
+                        <td><span class="registros-exit-badge" data-exit-result-type></span></td>
+                        <td><button class="registros-exit-button" type="button" data-register-exit>
+                            <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> Marcar salida
+                        </button></td>
+                    </tr>
+                    <tr data-exit-empty><td colspan="4">Busca por número de cuenta o folio para ver tu sesión activa.</td></tr>
+                </tbody>
+            </table>
         </div>
         <p class="registros-demo-feedback" data-exit-feedback role="status" hidden></p>
     </section>
             </section>
         </main>
-        <footer class="registros-kiosk-footer">Terminal Autónoma de Alumnos <span aria-hidden="true">•</span> UAPIX</footer>
     </div>
     <p class="registros-demo-feedback registros-global-feedback" data-global-feedback role="status" hidden></p>
+    <dialog class="app-confirm-dialog" data-kiosk-exit aria-labelledby="kioskExitTitle" aria-describedby="kioskExitMessage">
+        <button type="button" class="app-confirm-cancel registros-exit-close" data-close-kiosk-exit aria-label="Cerrar confirmación">
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
+        <div class="app-confirm-icon" aria-hidden="true"><i class="fa-solid fa-lock"></i></div>
+        <h2 id="kioskExitTitle">¿Salir de los registros?</h2>
+        <p id="kioskExitMessage">Confirma con la contraseña de administrador para volver al panel.</p>
+        <form method="post" action="{% url 'confirmar_salida_registros' %}">
+            {% csrf_token %}
+            {% if not request.user.is_superuser %}
+                <label for="kioskExitUsername">Usuario administrador</label>
+                <input id="kioskExitUsername" class="sala-form-control" name="username" autocomplete="username" required autofocus>
+            {% endif %}
+            <label for="kioskExitPassword">Contraseña</label>
+            <input id="kioskExitPassword" class="sala-form-control" type="password" name="password" autocomplete="current-password" required {% if request.user.is_superuser %}autofocus{% endif %}>
+            <p data-kiosk-exit-error role="alert" hidden></p>
+            <div class="app-confirm-actions">
+                <button type="submit" class="app-confirm-accept">Confirmar salida</button>
+            </div>
+        </form>
+    </dialog>
 </section>
 
 <script>
     (function () {
+        const exitDialog = document.querySelector('[data-kiosk-exit]');
+        const exitForm = exitDialog.querySelector('form');
+        const exitPassword = exitForm.elements.password;
+        const exitError = exitDialog.querySelector('[data-kiosk-exit-error]');
+        const exitSubmit = exitForm.querySelector('[type="submit"]');
+        let exitRequest;
+
+        document.querySelector('[data-open-kiosk-exit]').addEventListener('click', () => exitDialog.showModal());
+        exitDialog.querySelector('[data-close-kiosk-exit]').addEventListener('click', () => exitDialog.close());
+        exitDialog.addEventListener('close', () => {
+            exitRequest?.abort();
+            exitForm.reset();
+            exitError.hidden = true;
+        });
+        exitForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (exitSubmit.disabled) return;
+            exitSubmit.disabled = true;
+            exitError.hidden = true;
+            const credentials = new FormData(exitForm);
+            exitRequest = new AbortController();
+            const { signal } = exitRequest;
+            exitPassword.value = '';
+            try {
+                const response = await fetch(exitForm.action, { method: 'POST', body: credentials, signal });
+                const result = await response.json();
+                if (signal.aborted || !exitDialog.open) return;
+                if (response.ok && result.autorizado) {
+                    exitDialog.close();
+                    regresarDeRegistros();
+                    return;
+                }
+                if (result.error) {
+                    exitError.textContent = result.error;
+                    exitError.hidden = false;
+                    exitPassword.focus();
+                    return;
+                }
+                throw new Error();
+            } catch {
+                if (!signal.aborted && exitDialog.open) {
+                    exitError.textContent = 'No se pudo confirmar la salida. Intenta de nuevo.';
+                    exitError.hidden = false;
+                    exitPassword.focus();
+                }
+            } finally {
+                exitRequest = undefined;
+                exitSubmit.disabled = false;
+            }
+        });
+
         const typeButtons = Array.from(document.querySelectorAll('[data-registro-type]'));
         const typeSections = Array.from(document.querySelectorAll('[data-registro-fields]'));
         const typeSelectionStatus = document.querySelector('[data-type-selection-status]');
@@ -335,15 +428,15 @@
             document.querySelector('[data-search-subject]').value = '';
             fillSelect(classSelects[1], [], 'Busca y selecciona una clase', 'id', 'nombre');
             selectedStudentId = '';
-            selectedExitRecordId = '';
             document.querySelector('[data-visit-account]').value = '';
             document.querySelector('[data-visit-name]').value = '';
             document.querySelector('[data-register-visit]').disabled = true;
             document.querySelector('[data-event-first-name]').value = '';
             document.querySelector('[data-event-last-name]').value = '';
             document.querySelector('[data-event-institution]').value = '';
-            document.querySelector('[data-exit-identifier]').value = '';
-            document.querySelector('[data-exit-result]').hidden = true;
+            exitSearchForm.reset();
+            resetExitResults();
+            exitFeedback.hidden = true;
             operationMenu.hidden = false;
             operationViews.forEach(function (view) {
                 view.hidden = true;
@@ -625,41 +718,70 @@
 
         const exitResult = document.querySelector('[data-exit-result]');
         const exitFeedback = document.querySelector('[data-exit-feedback]');
-        document.querySelector('[data-search-exit]').addEventListener('click', async function () {
-            const identifier = document.querySelector('[data-exit-identifier]').value.trim();
-            const params = identifier.match(/^R-(\d+)$/i)
-                ? { folio: identifier.match(/^R-(\d+)$/i)[1] }
-                : { cuenta: identifier };
+        const exitSearchForm = document.querySelector('[data-exit-search-form]');
+        const exitIdentifier = document.querySelector('[data-exit-identifier]');
+        const exitType = document.querySelector('[data-exit-type]');
+        const exitResultType = document.querySelector('[data-exit-result-type]');
+        const exitEmpty = document.querySelector('[data-exit-empty]');
+        const exitCount = document.querySelector('[data-exit-count]');
+        let exitLookupVersion = 0;
+
+        function renderExitResults() {
+            const matches = selectedExitRecordId && (!exitType.value || exitType.value === exitResultType.textContent);
+            exitResult.hidden = !matches;
+            exitEmpty.hidden = Boolean(matches);
+            exitEmpty.firstElementChild.textContent = selectedExitRecordId
+                ? 'La sesión encontrada no coincide con el motivo de uso.'
+                : 'Busca por número de cuenta o folio para ver tu sesión activa.';
+            exitCount.textContent = matches ? '1 sesión activa' : '0 sesiones activas';
+        }
+
+        function resetExitResults() {
+            exitLookupVersion += 1;
             selectedExitRecordId = '';
-            exitResult.hidden = true;
-            exitFeedback.textContent = '';
+            renderExitResults();
+        }
+
+        exitIdentifier.addEventListener('input', () => {
+            resetExitResults();
+            exitFeedback.hidden = true;
+        });
+        exitType.addEventListener('change', renderExitResults);
+        exitSearchForm.addEventListener('submit', async function (event) {
+            event.preventDefault();
+            resetExitResults();
+            exitFeedback.hidden = true;
+            const version = exitLookupVersion;
+            const identifier = exitIdentifier.value.trim();
+            const folio = identifier.match(/^R-(\d+)$/i);
+            const params = folio ? { folio: folio[1] } : { cuenta: identifier };
             try {
                 const result = await requestJson(apiUrl('{% url "buscar_salida_sala" %}', params));
+                if (version !== exitLookupVersion) return;
                 selectedExitRecordId = result.registro_id;
                 document.querySelector('[data-exit-person]').textContent = result.nombre;
-                document.querySelector('[data-exit-details]').textContent =
-                    'Cuenta: ' + (result.cuenta || 'No aplica') + ' · Entrada: ' + result.entrada;
+                exitResultType.textContent = result.tipo;
                 document.querySelector('[data-exit-equipment]').textContent = result.equipo;
-                exitResult.hidden = false;
+                renderExitResults();
             } catch (error) {
-                setMessage(exitFeedback, error.message, true);
-                exitResult.hidden = true;
+                if (version === exitLookupVersion) setMessage(exitFeedback, error.message, true);
             }
         });
 
         document.querySelector('[data-register-exit]').addEventListener('click', async function () {
             if (!selectedExitRecordId) return;
+            const version = exitLookupVersion;
             this.disabled = true;
             try {
-                await requestJson('{% url "registrar_salida_sala" %}', postData({
+                const result = await requestJson('{% url "registrar_salida_sala" %}', postData({
                     registro_id: selectedExitRecordId,
                 }));
-                setMessage(exitFeedback, 'Salida registrada. El equipo quedó disponible.', false);
-                exitResult.hidden = true;
-                selectedExitRecordId = '';
-                document.querySelector('[data-exit-identifier]').value = '';
+                if (version !== exitLookupVersion) return;
+                exitIdentifier.value = '';
+                resetExitResults();
+                setMessage(exitFeedback, 'Salida registrada a las ' + result.hora_salida + '. El equipo quedó disponible.', false);
             } catch (error) {
-                setMessage(exitFeedback, error.message, true);
+                if (version === exitLookupVersion) setMessage(exitFeedback, error.message, true);
             } finally {
                 this.disabled = false;
             }

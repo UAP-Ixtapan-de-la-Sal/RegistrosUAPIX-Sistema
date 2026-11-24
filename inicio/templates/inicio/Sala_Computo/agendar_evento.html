@@ -1,21 +1,15 @@
-<section class="sala-form-panel sala-form-evento sala-form-panel--schedule" aria-labelledby="eventoFormTitle">
+<header class="sala-computo-heading sala-view-heading">
+    <div>
+        <p class="sala-computo-eyebrow">Registro de evento</p>
+        <h1 id="eventoFormTitle" tabindex="-1">Agendar evento</h1>
+        <p class="sala-computo-subtitle">Completa los datos del evento y de su ponente.</p>
+    </div>
     <button class="sala-back-btn" type="button" onclick="volverASeleccionAgendar()">
         <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Elegir otra opción
     </button>
+</header>
 
-    <div class="sala-form-heading">
-        <div>
-            <p class="sala-computo-eyebrow">REGISTRO DE EVENTO</p>
-            <div class="sala-form-title-line">
-                <span class="sala-form-heading-icon sala-option-evento" aria-hidden="true">
-                    <i class="fa-solid fa-chalkboard-user"></i>
-                </span>
-                <h2 id="eventoFormTitle" tabindex="-1">Agendar evento</h2>
-            </div>
-            <p>Completa los datos del evento y de su ponente.</p>
-        </div>
-    </div>
-
+<section class="sala-form-panel sala-form-evento sala-form-panel--schedule" aria-labelledby="eventoFormTitle">
     <form class="sala-registration-form" method="post" data-confirm-submit data-confirm-action="registrar el evento" data-confirm-message="¿Confirmas que deseas registrar el evento?">
         {% csrf_token %}
         <input type="hidden" name="categoria" value="evento">
@@ -59,7 +53,7 @@
                         </button>
                         <div class="sala-time-popover" role="dialog" aria-label="Seleccionar hora" hidden>
                             <div class="sala-time-picker-heading">
-                                <strong>Selecciona la hora</strong>
+                                <strong>{{ field.label }}</strong>
                                 <span data-time-preview>Elige hora, minutos y periodo</span>
                             </div>
                             <div class="sala-time-columns">
@@ -69,7 +63,7 @@
                             </div>
                             <div class="sala-time-actions">
                                 <button class="sala-time-cancel" type="button" data-time-cancel>Cancelar</button>
-                                <button class="sala-time-apply" type="button" data-time-apply>Aplicar</button>
+                                <button class="sala-time-apply" type="button" data-time-apply>Aceptar</button>
                             </div>
                         </div>
                     </div>
