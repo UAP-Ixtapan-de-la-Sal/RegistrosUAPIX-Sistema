@@ -1,0 +1,24 @@
+<div class="{{ field_class }}" data-date-range-picker>
+    <label for="{{ picker_id }}">Rango de fechas</label>
+    <div class="input-calendar-wrapper">
+        <input type="text" id="{{ picker_id }}" class="audit-input"
+               placeholder="Selecciona un rango" readonly aria-haspopup="dialog"
+               aria-expanded="false" aria-controls="{{ picker_id }}-panel" data-range-display>
+        <i class="fa-solid fa-magnifying-glass-chart calendar-icon-trigger" aria-hidden="true"></i>
+    </div>
+    <input type="hidden" id="{{ start_id }}" value="{{ initial_date|default:'' }}" data-range-start>
+    <input type="hidden" id="{{ end_id }}" value="{{ initial_date|default:'' }}" data-range-end>
+
+    <div class="date-dropdown-panel date-range-panel is-hidden" id="{{ picker_id }}-panel"
+         role="dialog" aria-label="Seleccionar rango de fechas">
+        <div class="date-quick-options">
+            <button type="button" class="quick-option-btn" data-range-preset="today">Hoy</button>
+            <button type="button" class="quick-option-btn" data-range-preset="yesterday">Ayer</button>
+            <button type="button" class="quick-option-btn" data-range-preset="last7">Últimos 7 días</button>
+            <button type="button" class="quick-option-btn" data-range-preset="week">Esta semana</button>
+            <button type="button" class="quick-option-btn active" data-range-preset="custom">Personalizar rango</button>
+            {% if allow_clear %}<button type="button" class="quick-option-btn" data-range-preset="clear">Limpiar rango</button>{% endif %}
+        </div>
+        <div class="date-calendar-view"></div>
+    </div>
+</div>

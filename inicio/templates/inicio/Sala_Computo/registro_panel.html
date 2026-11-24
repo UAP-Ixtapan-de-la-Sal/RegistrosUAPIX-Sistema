@@ -190,7 +190,7 @@
                 <p>Ingresa tu número de cuenta para encontrar tu sesión activa.</p>
             </div>
         </div>
-        <div class="registros-exit-lookup">
+        <form class="registros-exit-lookup" data-exit-search-form novalidate>
             <label class="sala-form-field">
                 <span>Número de cuenta</span>
                 <input class="sala-form-control" type="search" data-exit-identifier placeholder="Cuenta o folio de entrada (R-123)" autocomplete="off">
@@ -198,8 +198,9 @@
             <button type="button" class="sala-form-submit" data-search-exit>
                 <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Buscar registro
             </button>
-        </div>
-        <div class="registros-exit-result" data-exit-result hidden>
+        </form>
+        <p class="registros-exit-hint">Cuenta de ejemplo con sesión activa: <strong>221001</strong>.</p>
+        <div class="registros-exit-result" data-exit-result hidden aria-live="polite">
             <div class="registros-exit-person">
                 <span class="registros-exit-avatar"><i class="fa-solid fa-user" aria-hidden="true"></i></span>
                 <div><strong data-exit-person></strong><small data-exit-details></small></div>

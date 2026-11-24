@@ -240,6 +240,17 @@
     gap: 12px;
 }
 
+.registros-exit-hint {
+    max-width: 540px;
+    margin: -14px auto 18px;
+    color: var(--muted);
+    font-size: 0.84rem;
+}
+
+.registros-exit-hint strong {
+    color: var(--color-green-hover);
+}
+
 .registros-exit-result {
     max-width: 540px;
     margin: 20px auto 0;

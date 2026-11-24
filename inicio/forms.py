@@ -88,7 +88,7 @@ class RegistroClaseForm(forms.Form):
     )
     docente_id = forms.IntegerField(widget=forms.HiddenInput(attrs={'data-docente-id': 'true'}))
     carrera = forms.ChoiceField(
-        label='Carrera del docente',
+        label='Carrera',
         choices=(),
         widget=forms.Select(attrs={'class': 'sala-form-control', 'data-carrera-select': 'true'}),
     )
