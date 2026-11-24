@@ -52,6 +52,55 @@ class LoginViewTests(TestCase):
         self.assertContains(response, 'Usuario o contraseña incorrectos.')
 
 
+class ConfirmacionSalidaSalaTests(TestCase):
+    def test_sala_operator_can_confirm_with_authenticated_session(self):
+        operator = UsuarioSistema.objects.create_user(
+            username='operador_sala',
+            password='clave-sala',
+            rol='operador',
+            mod_sala_computo=True,
+        )
+        self.client.force_login(operator)
+
+        response = self.client.post(reverse('confirmar_salida_registros'), {
+            'password': 'clave-sala',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['autorizado'])
+
+    def test_sala_operator_can_confirm_by_entering_credentials(self):
+        UsuarioSistema.objects.create_user(
+            username='operador_sala',
+            password='clave-sala',
+            rol='operador',
+            mod_sala_computo=True,
+        )
+
+        response = self.client.post(reverse('confirmar_salida_registros'), {
+            'username': 'operador_sala',
+            'password': 'clave-sala',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['autorizado'])
+
+    def test_user_without_sala_permission_cannot_confirm(self):
+        UsuarioSistema.objects.create_user(
+            username='operador_auto',
+            password='clave-auto',
+            rol='operador',
+            mod_auto_acceso=True,
+        )
+
+        response = self.client.post(reverse('confirmar_salida_registros'), {
+            'username': 'operador_auto',
+            'password': 'clave-auto',
+        })
+
+        self.assertEqual(response.status_code, 403)
+
+
 class HomePageViewTests(TestCase):
     def test_home_page_requires_authentication(self):
         response = self.client.get(reverse('homePage'))
@@ -1024,14 +1073,18 @@ class SalaComputoViewTests(TestCase):
                 hora_fin=time(10, 0),
             )
         equipment = Equipo.objects.create(no_equipo='PC-31', lugar='Sala')
-        entry = self.client.post(reverse('registrar_entrada_sala'), {
-            'tipo': 'evento',
-            'evento_id': event.pk,
-            'nombre': 'María',
-            'apellidos': 'Gómez',
-            'institucion': 'Institución visitante',
-            'equipo_id': equipment.pk,
-        })
+        with patch(
+            'inicio.views.timezone.localtime',
+            return_value=datetime.combine(timezone.localdate(), time(9, 30)),
+        ):
+            entry = self.client.post(reverse('registrar_entrada_sala'), {
+                'tipo': 'evento',
+                'evento_id': event.pk,
+                'nombre': 'María',
+                'apellidos': 'Gómez',
+                'institucion': 'Institución visitante',
+                'equipo_id': equipment.pk,
+            })
         self.assertEqual(entry.status_code, 200, entry.json())
         record = Registro.objects.get(pk=entry.json()['registro_id'])
 
@@ -1092,13 +1145,17 @@ class SalaComputoViewTests(TestCase):
             )
         equipment = Equipo.objects.create(no_equipo='PC-41', lugar='Sala')
 
-        response = self.client.post(reverse('registrar_asistencia_sala'), {
-            'clase_id': clase.pk,
-            'asistencias': (
-                f'[{{"alumno_id": {students[0].pk}, "estado": "Asistió", "equipo_id": "{equipment.pk}"}},'
-                f'{{"alumno_id": {students[1].pk}, "estado": "Falta", "equipo_id": ""}}]'
-            ),
-        })
+        with patch(
+            'inicio.views.timezone.localtime',
+            return_value=datetime.combine(timezone.localdate(), time(9, 30)),
+        ):
+            response = self.client.post(reverse('registrar_asistencia_sala'), {
+                'clase_id': clase.pk,
+                'asistencias': (
+                    f'[{{"alumno_id": {students[0].pk}, "estado": "Asistió", "equipo_id": "{equipment.pk}"}},'
+                    f'{{"alumno_id": {students[1].pk}, "estado": "Falta", "equipo_id": ""}}]'
+                ),
+            })
 
         self.assertEqual(response.status_code, 200, response.json())
         self.assertEqual(response.json()['total'], 2)

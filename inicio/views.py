@@ -244,14 +244,26 @@ def respaldos_bd_view(request):
 
 
 #8. VISTAS DE SALA DE COMPUTO    --YES
+def puede_operar_sala(user):
+    return user.is_authenticated and (
+        user.is_superuser or (
+            getattr(user, 'rol', None) == 'operador'
+            and getattr(user, 'mod_sala_computo', False)
+        )
+    )
+
+
 @require_POST
 def confirmar_salida_registros_view(request):
-    username = (request.user.get_username() if es_admin_general(request.user)
-                else request.POST.get('username', '').strip())
+    username = (
+        request.user.get_username()
+        if puede_operar_sala(request.user)
+        else request.POST.get('username', '').strip()
+    )
     password = request.POST.get('password', '')
     admin = authenticate(request, username=username, password=password) if username and password else None
-    if admin is None or not es_admin_general(admin):
-        return JsonResponse({'error': 'Verifica las credenciales del administrador.'}, status=403)
+    if admin is None or not puede_operar_sala(admin):
+        return JsonResponse({'error': 'Verifica las credenciales de un usuario autorizado.'}, status=403)
     return JsonResponse({'autorizado': True})
 
 
@@ -710,6 +722,7 @@ def clases_registro_view(request):
     clases = Clase.objects.filter(fecha=fecha).select_related(
         'docente', 'materia', 'grupo',
     ).order_by('hora_inicio')
+    clases = [clase for clase in clases if _esta_en_horario(clase.hora_inicio, clase.hora_fin)]
     return JsonResponse({
         'clases': [
             {
@@ -747,6 +760,8 @@ def buscar_clases_registro_view(request):
         clases = clases.filter(grupo__nombre_grupo__icontains=grupo)
     if materia:
         clases = clases.filter(materia__nombre_materia__icontains=materia)
+    clases = [clase for clase in clases.order_by('hora_inicio')
+              if _esta_en_horario(clase.hora_inicio, clase.hora_fin)]
     return JsonResponse({
         'clases': [
             {
@@ -756,7 +771,7 @@ def buscar_clases_registro_view(request):
                     f'{clase.hora_inicio:%H:%M}–{clase.hora_fin:%H:%M}'
                 ),
             }
-            for clase in clases.order_by('hora_inicio')
+            for clase in clases
         ],
     })
 
@@ -774,6 +789,10 @@ def alumnos_clase_registro_view(request):
     ).select_related('grupo', 'materia', 'docente').first()
     if clase is None:
         return JsonResponse({'error': 'No se encontró una clase registrada para hoy.'}, status=404)
+    if not _esta_en_horario(clase.hora_inicio, clase.hora_fin):
+        return JsonResponse({
+            'error': 'La clase no puede registrarse fuera de su horario.',
+        }, status=409)
 
     alumnos = Persona.objects.con_perfiles('Alumno').filter(
         grupo_id=clase.grupo_id,
@@ -798,9 +817,13 @@ def eventos_registro_view(request):
     if request.method != 'GET':
         return JsonResponse({'error': 'Método no permitido.'}, status=405)
 
-    eventos = EventoTallerConferencia.objects.filter(
-        fecha=timezone.localdate(),
-    ).order_by('hora_inicio')
+    eventos = [
+        evento
+        for evento in EventoTallerConferencia.objects.filter(
+            fecha=timezone.localdate(),
+        ).order_by('hora_inicio')
+        if _esta_en_horario(evento.hora_inicio, evento.hora_fin)
+    ]
     return JsonResponse({
         'eventos': [
             {
@@ -861,6 +884,15 @@ def _id_formulario(data, campo, requerido=True):
         raise ValidationError(f'El campo {campo} debe contener un identificador válido.')
 
 
+def _esta_en_horario(hora_inicio, hora_fin, margen_inicio_minutos=5):
+    ahora = timezone.localtime().time()
+    hoy = timezone.localdate()
+    inicio_permitido = (
+        datetime.combine(hoy, hora_inicio) - timedelta(minutes=margen_inicio_minutos)
+    ).time()
+    return inicio_permitido <= ahora <= hora_fin
+
+
 def _crear_registro(request, persona=None, externo=None, equipo=None, clase=None, evento=None,
                     tipo_registro=None, motivo_uso=None):
     momento = timezone.localtime()
@@ -913,6 +945,10 @@ def registrar_entrada_view(request):
                 ).first()
                 if evento is None:
                     return JsonResponse({'error': 'No se encontró un evento vigente para hoy.'}, status=404)
+                if not _esta_en_horario(evento.hora_inicio, evento.hora_fin):
+                    return JsonResponse({
+                        'error': 'El evento no puede registrarse fuera de su horario.',
+                    }, status=409)
                 nombre = request.POST.get('nombre', '').strip()
                 apellidos = request.POST.get('apellidos', '').strip()
                 institucion = request.POST.get('institucion', '').strip()
@@ -950,6 +986,10 @@ def registrar_asistencia_view(request):
             ).select_related('grupo').first()
             if clase is None:
                 return JsonResponse({'error': 'La clase seleccionada ya no está disponible.'}, status=404)
+            if not _esta_en_horario(clase.hora_inicio, clase.hora_fin):
+                return JsonResponse({
+                    'error': 'La clase no puede registrarse fuera de su horario.',
+                }, status=409)
 
             alumnos = {
                 alumno.pk: alumno

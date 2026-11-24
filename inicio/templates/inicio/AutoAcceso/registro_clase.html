@@ -352,6 +352,7 @@
     const materia = document.getElementById("aaMateria");
     const maestro = document.getElementById("aaMaestroClase");
     const mensaje = document.getElementById("aaClaseMensaje");
+    const horario = formulario.querySelector(".aa-clase-horario");
     const datosGenerales = formulario.querySelector(
         ".aa-clase-grid-datos"
     );
@@ -627,7 +628,29 @@
     function actualizarVista() {
         actualizarResumen();
         actualizarTabla();
+        actualizarVisibilidadHorario();
         ocultarMensaje();
+    }
+
+    function actualizarVisibilidadHorario() {
+        const filasAlumnos = tablaAlumnos.querySelector(
+            ".aa-clase-fila-alumno"
+        );
+        const alumnosCargados =
+            claveAlumnosCargados === claveDatosClase() &&
+            Boolean(filasAlumnos);
+        const horarioValido =
+            fecha.value &&
+            fecha.value >= fechaLocal() &&
+            inicio.value &&
+            fin.value &&
+            fin.value > inicio.value;
+        const ocultarHorario = Boolean(
+            alumnosCargados && horarioValido
+        );
+
+        horario.hidden = ocultarHorario;
+        horario.style.display = ocultarHorario ? "none" : "";
     }
 
     carrera.addEventListener("change", function (event) {
