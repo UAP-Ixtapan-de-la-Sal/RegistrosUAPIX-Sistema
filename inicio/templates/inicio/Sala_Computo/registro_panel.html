@@ -247,7 +247,7 @@
         <div class="app-confirm-icon" aria-hidden="true"><i class="fa-solid fa-lock"></i></div>
         <h2 id="kioskExitTitle">¿Salir de los registros?</h2>
         <p id="kioskExitMessage">Confirma con la contraseña de administrador para volver al panel.</p>
-        <form method="post" action="{% url 'confirmar_salida_registros' %}">
+        <form method="post" action="{% url 'confirmar_salida_registros' %}" data-confirm-exempt>
             {% csrf_token %}
             {% if not request.user.is_superuser %}
                 <label for="kioskExitUsername">Usuario administrador</label>
@@ -633,6 +633,9 @@
             }
             this.disabled = true;
             try {
+                if (!await window.confirmarAccion('¿Confirmas que deseas registrar la asistencia de esta clase?', {
+                    title: 'Confirmar asistencia', acceptText: 'Registrar asistencia',
+                })) return;
                 const result = await requestJson('{% url "registrar_asistencia_sala" %}', postData({
                     clase_id: selectedClassId,
                     asistencias: JSON.stringify(attendance),
@@ -671,6 +674,9 @@
             }
             this.disabled = true;
             try {
+                if (!await window.confirmarAccion('¿Confirmas que deseas registrar la entrada de esta visita?', {
+                    title: 'Confirmar entrada', acceptText: 'Registrar entrada',
+                })) return;
                 const result = await requestJson('{% url "registrar_entrada_sala" %}', postData({
                     tipo: 'visita',
                     persona_id: selectedStudentId,
@@ -697,6 +703,9 @@
             }
             this.disabled = true;
             try {
+                if (!await window.confirmarAccion('¿Confirmas que deseas registrar la entrada a este evento?', {
+                    title: 'Confirmar entrada', acceptText: 'Registrar entrada',
+                })) return;
                 const result = await requestJson('{% url "registrar_entrada_sala" %}', postData({
                     tipo: 'evento',
                     evento_id: evento,
@@ -773,6 +782,10 @@
             const version = exitLookupVersion;
             this.disabled = true;
             try {
+                const confirmed = await window.confirmarAccion('¿Confirmas que deseas cerrar la sesión y liberar el equipo?', {
+                    title: 'Confirmar salida', acceptText: 'Marcar salida',
+                });
+                if (!confirmed || version !== exitLookupVersion) return;
                 const result = await requestJson('{% url "registrar_salida_sala" %}', postData({
                     registro_id: selectedExitRecordId,
                 }));
