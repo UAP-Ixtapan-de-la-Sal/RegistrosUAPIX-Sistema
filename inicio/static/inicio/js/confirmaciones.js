@@ -1,5 +1,5 @@
 (function () {
-    const dialog = document.querySelector('.app-confirm-dialog');
+    const dialog = document.getElementById('appConfirmTitle')?.closest('dialog');
     const title = dialog?.querySelector('#appConfirmTitle');
     const message = dialog?.querySelector('#appConfirmMessage');
     const acceptButton = dialog?.querySelector('[data-confirm-accept]');
