@@ -246,15 +246,15 @@
         </button>
         <div class="app-confirm-icon" aria-hidden="true"><i class="fa-solid fa-lock"></i></div>
         <h2 id="kioskExitTitle">¿Salir de los registros?</h2>
-        <p id="kioskExitMessage">Confirma con la contraseña de administrador para volver al panel.</p>
+        <p id="kioskExitMessage">Confirma con las credenciales de un usuario autorizado para volver al panel.</p>
         <form method="post" action="{% url 'confirmar_salida_registros' %}" data-confirm-exempt>
             {% csrf_token %}
-            {% if not request.user.is_superuser %}
-                <label for="kioskExitUsername">Usuario administrador</label>
+            {% if not request.user.is_superuser and not request.user.mod_sala_computo %}
+                <label for="kioskExitUsername">Usuario autorizado</label>
                 <input id="kioskExitUsername" class="sala-form-control" name="username" autocomplete="username" required autofocus>
             {% endif %}
             <label for="kioskExitPassword">Contraseña</label>
-            <input id="kioskExitPassword" class="sala-form-control" type="password" name="password" autocomplete="current-password" required {% if request.user.is_superuser %}autofocus{% endif %}>
+            <input id="kioskExitPassword" class="sala-form-control" type="password" name="password" autocomplete="current-password" required {% if request.user.is_superuser or request.user.mod_sala_computo %}autofocus{% endif %}>
             <p data-kiosk-exit-error role="alert" hidden></p>
             <div class="app-confirm-actions">
                 <button type="submit" class="app-confirm-accept">Confirmar salida</button>
