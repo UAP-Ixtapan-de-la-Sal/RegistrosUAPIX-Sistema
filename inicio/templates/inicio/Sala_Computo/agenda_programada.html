@@ -1,0 +1,764 @@
+{% extends 'inicio/base.html' %}
+{% load static %}
+
+{% block title %}Agenda programada | Sala de Cómputo{% endblock %}
+{% block body_class %}sala-computo-body{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'inicio/css/salacomputo/salacomputo.css' %}?v=20261124-boton-agenda">
+{% endblock %}
+
+{% block content %}
+<section class="sala-computo-page sala-agenda-page is-list-view" data-series-edit-url="{% url 'editar_serie_clase_agendada' %}" data-series-delete-url="{% url 'eliminar_serie_clase_agendada' %}">
+    <header class="sala-computo-heading sala-view-heading">
+        <div class="sala-agenda-title">
+            <p class="sala-computo-eyebrow">Agenda programada</p>
+            <h1>Clases y eventos agendados</h1>
+            <p class="sala-computo-subtitle">Consulta y administra las próximas clases y eventos reservados en la sala.</p>
+        </div>
+        <a class="sala-back-btn sala-agenda-back" href="{% url 'sala_computo' %}">
+            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver al panel
+        </a>
+    </header>
+
+    <div class="sala-agenda-layout">
+    <aside class="sala-agenda-sidebar" aria-label="Filtros de agenda">
+        <span class="sala-agenda-sidebar-label">FILTRAR POR TIPO</span>
+        <nav class="sala-agenda-filters" aria-label="Filtrar agenda">
+            <button type="button" class="is-active" data-agenda-filter="all" aria-pressed="true"><i class="fa-solid fa-layer-group" aria-hidden="true"></i> Todo</button>
+            <button type="button" data-agenda-filter="clases" aria-pressed="false" aria-expanded="false" aria-controls="agendaClassSubfilters"><i class="fa-solid fa-book-open" aria-hidden="true"></i> Clases</button>
+            <div id="agendaClassSubfilters" class="sala-agenda-class-filters" data-agenda-class-filters role="group" aria-label="Filtrar clases por tipo" hidden>
+                <span class="sala-agenda-sidebar-label">TIPO DE CLASE</span>
+                <button type="button" class="is-active" data-agenda-class-filter="all" aria-pressed="true">Todas las clases</button>
+                <button type="button" data-agenda-class-filter="single" aria-pressed="false">Una sesión</button>
+                <button type="button" data-agenda-class-filter="recurring" aria-pressed="false">Recurrentes</button>
+            </div>
+            <button type="button" data-agenda-filter="eventos" aria-pressed="false"><i class="fa-solid fa-chalkboard-user" aria-hidden="true"></i> Eventos</button>
+        </nav>
+        <span class="sala-agenda-sidebar-label sala-agenda-view-label">VISTA</span>
+        <div class="sala-agenda-view-switch" role="group" aria-label="Formato de agenda">
+            <button type="button" class="is-active" data-agenda-view="list" aria-pressed="true"><i class="fa-solid fa-list" aria-hidden="true"></i> Lista</button>
+            <button type="button" data-agenda-view="calendar" aria-pressed="false"><i class="fa-regular fa-calendar" aria-hidden="true"></i> Calendario</button>
+        </div>
+        <div class="sala-agenda-help" aria-label="Información de la agenda">
+            <p class="sala-computo-subtitle">Consulta tus clases y eventos próximos.</p>
+            <p class="sala-agenda-note">Una clase recurrente es una misma clase que se repite cada semana en los días elegidos. Editar o eliminar la serie afecta todas sus fechas; en «Ver fechas» puedes cambiar o quitar una sola sesión.</p>
+        </div>
+    </aside>
+    <main class="sala-agenda-main">
+    <div class="sala-agenda-toolbar">
+        <div class="sala-agenda-date-filters">
+            <span class="sala-agenda-filter-label">Mostrar por</span>
+            <div class="sala-agenda-range-options" role="group" aria-label="Filtrar por periodo">
+                <button type="button" data-agenda-range-option="day" aria-pressed="true">Día</button>
+                <button type="button" data-agenda-range-option="week" aria-pressed="false">Semana</button>
+                <button type="button" data-agenda-range-option="all" aria-pressed="false">Todas las fechas</button>
+            </div>
+            <select id="agendaRangeFilter" class="sala-form-control" data-agenda-range hidden aria-hidden="true" tabindex="-1">
+                <option value="day" selected>Día</option>
+                <option value="week">Semana</option>
+                <option value="all">Todas las fechas</option>
+            </select>
+            <label for="agendaAnchorDateTrigger" data-agenda-date-filter>Fecha</label>
+            <div class="sala-custom-date-picker sala-agenda-date-picker" data-agenda-date-filter data-sala-date-picker>
+                <input id="agendaAnchorDate" type="hidden" data-agenda-anchor-date value="{{ fecha_hoy|date:'Y-m-d' }}">
+                <button id="agendaAnchorDateTrigger" class="sala-date-trigger" type="button" aria-label="Elegir fecha para filtrar la agenda" aria-expanded="false" data-sala-date-trigger>
+                    <span data-sala-date-label></span>
+                    <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+                </button>
+                <div class="sala-calendar-popover sala-agenda-calendar-popover" role="dialog" aria-label="Fecha para filtrar la agenda" hidden>
+                    <div class="sala-calendar-heading">
+                        <button class="sala-calendar-nav" type="button" aria-label="Mes anterior" data-sala-date-prev><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
+                        <strong data-sala-date-month></strong>
+                        <button class="sala-calendar-nav" type="button" aria-label="Mes siguiente" data-sala-date-next><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+                    </div>
+                    <div class="sala-calendar-weekdays" aria-hidden="true"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+                    <div class="sala-calendar-days" data-sala-date-days></div>
+                    <div class="sala-calendar-footer"><button type="button" data-sala-date-today>Hoy</button></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if messages %}
+    <div class="sala-page-messages" aria-live="polite">
+        {% for message in messages %}
+        <p class="sala-form-success{% if 'error' in message.tags %} sala-form-error-notice{% endif %}" role="status">{{ message }}</p>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="sala-agenda-calendar-view" data-agenda-calendar-view hidden>
+        <div class="sala-agenda-calendar-toolbar">
+            <button type="button" data-agenda-month-prev aria-label="Mes anterior"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
+            <h2 data-agenda-month-label></h2>
+            <button type="button" data-agenda-month-next aria-label="Mes siguiente"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+            <button type="button" class="sala-agenda-return-list" data-agenda-return-list><i class="fa-solid fa-list" aria-hidden="true"></i> Volver a lista</button>
+        </div>
+        <div class="sala-agenda-calendar-content">
+            <div class="sala-agenda-month-grid" data-agenda-month-grid role="grid" aria-label="Calendario de clases y eventos"></div>
+            <section class="sala-agenda-day-details" data-agenda-day-details aria-live="polite" aria-label="Reservaciones del día" hidden>
+                <h3 data-agenda-day-title></h3>
+                <div data-agenda-day-records></div>
+            </section>
+        </div>
+    </div>
+    <div class="sala-agenda-list-view" data-agenda-list-view>
+    <div class="sala-agenda-columns">
+    <section class="sala-agenda-section" data-agenda-section="clases" data-agenda-kind="clases" aria-labelledby="clasesAgendadasTitle">
+        <button type="button" class="sala-agenda-section-heading" data-agenda-section-toggle aria-expanded="true">
+            <span>
+                <span class="sala-computo-eyebrow">AGENDA PRINCIPAL</span>
+                <span class="sala-agenda-section-title" id="clasesAgendadasTitle" role="heading" aria-level="2">Clases de una sesión</span>
+            </span>
+            <span class="sala-agenda-heading-meta"><span class="sala-agenda-count">{{ clases_agendadas|length }}</span><i class="fa-solid fa-chevron-down" data-section-chevron aria-hidden="true"></i></span>
+        </button>
+        {% if clases_agendadas %}
+        <div class="sala-agenda-list">
+            {% for clase in clases_agendadas %}
+            <article class="sala-agenda-item" data-class-schedule-item data-class-id="{{ clase.id_clase }}" data-series-key="{{ clase.materia_id }}-{{ clase.grupo_id }}-{{ clase.docente_id }}-{{ clase.hora_inicio|time:'H:i' }}-{{ clase.hora_fin|time:'H:i' }}" data-session-date="{{ clase.fecha|date:'Y-m-d' }}">
+                <div class="sala-agenda-item-main">
+                    <span class="sala-agenda-type sala-agenda-type-single"><i class="fa-solid fa-book-open" aria-hidden="true"></i><span>Clase regular<small>Una sesión</small></span></span>
+                    <h3>{{ clase.materia }}</h3>
+                    <p>{{ clase.grupo }} · {{ clase.docente }}</p>
+                    <p class="sala-agenda-datetime"><i class="fa-regular fa-calendar" aria-hidden="true"></i> {{ clase.fecha|date:'l d \d\e F \d\e Y' }} · {{ clase.hora_inicio|time:'g:i a' }}–{{ clase.hora_fin|time:'g:i a' }}</p>
+                </div>
+                <div class="sala-agenda-actions">
+                    <a class="sala-agenda-edit" href="{% url 'editar_clase_agendada' clase.id_clase %}"><i class="fa-solid fa-pen" aria-hidden="true"></i> Editar</a>
+                    <form method="post" action="{% url 'eliminar_clase_agendada' clase.id_clase %}" data-confirm-submit data-confirm-action="eliminar esta fecha de clase" data-confirm-message="¿Confirmas que deseas eliminar esta fecha de clase?">
+                        {% csrf_token %}
+                        <button class="sala-agenda-delete" type="submit"><i class="fa-solid fa-trash" aria-hidden="true"></i> Eliminar</button>
+                    </form>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+        <div class="sala-agenda-pagination" data-agenda-pagination="clases" aria-label="Paginación de clases">
+            <button type="button" data-page-previous disabled><i class="fa-solid fa-chevron-left" aria-hidden="true"></i><span class="sala-sr-only">Anterior</span></button>
+            <span data-page-status aria-live="polite"></span>
+            <button type="button" data-page-next aria-label="Avanzar" title="Avanzar" disabled><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+        </div>
+        {% else %}
+        <p class="sala-agenda-empty">No hay fechas de clase próximas.</p>
+        {% endif %}
+    </section>
+
+    <section class="sala-agenda-section sala-agenda-recurring-section" data-agenda-section="recurrentes" data-agenda-kind="clases" aria-labelledby="clasesRecurrentesTitle">
+        <button type="button" class="sala-agenda-section-heading" data-agenda-section-toggle aria-expanded="true">
+            <span>
+                <span class="sala-computo-eyebrow">SERIES SEMANALES</span>
+                <span class="sala-agenda-section-title" id="clasesRecurrentesTitle" role="heading" aria-level="2">Clases recurrentes</span>
+            </span>
+            <span class="sala-agenda-heading-meta"><span class="sala-agenda-count" data-series-count>0</span><i class="fa-solid fa-chevron-down" data-section-chevron aria-hidden="true"></i></span>
+        </button>
+        <div class="sala-agenda-list" data-agenda-list="recurrentes"></div>
+        <div class="sala-agenda-pagination" data-agenda-pagination="recurrentes" aria-label="Paginación de clases recurrentes">
+            <button type="button" data-page-previous disabled><i class="fa-solid fa-chevron-left" aria-hidden="true"></i><span class="sala-sr-only">Anterior</span></button>
+            <span data-page-status aria-live="polite"></span>
+            <button type="button" data-page-next aria-label="Avanzar" title="Avanzar" disabled><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+        </div>
+    </section>
+
+    <section class="sala-agenda-section" data-agenda-section="eventos" data-agenda-kind="eventos" aria-labelledby="eventosAgendadosTitle">
+        <button type="button" class="sala-agenda-section-heading" data-agenda-section-toggle aria-expanded="true">
+            <span>
+                <span class="sala-computo-eyebrow">ACTIVIDADES ESPECIALES</span>
+                <span class="sala-agenda-section-title" id="eventosAgendadosTitle" role="heading" aria-level="2">Próximos eventos</span>
+            </span>
+            <span class="sala-agenda-heading-meta"><span class="sala-agenda-count">{{ eventos_agendados|length }}</span><i class="fa-solid fa-chevron-down" data-section-chevron aria-hidden="true"></i></span>
+        </button>
+        {% if eventos_agendados %}
+        <div class="sala-agenda-list">
+            {% for evento in eventos_agendados %}
+            <article class="sala-agenda-item" data-agenda-event-item data-session-date="{{ evento.fecha|date:'Y-m-d' }}">
+                <div class="sala-agenda-item-main">
+                    <span class="sala-agenda-type"><i class="fa-solid fa-chalkboard-user" aria-hidden="true"></i> {{ evento.tipo_evento }}</span>
+                    <h3>{{ evento.nombre_evento }}</h3>
+                    <p>Ponente: {% if evento.ponente_interno %}{{ evento.ponente_interno }}{% elif evento.ponente_externo %}{{ evento.ponente_externo }}{% else %}Sin ponente asignado{% endif %}</p>
+                    <p class="sala-agenda-datetime"><i class="fa-regular fa-calendar" aria-hidden="true"></i> {{ evento.fecha|date:'l d \d\e F \d\e Y' }} · {{ evento.hora_inicio|time:'g:i a' }}–{{ evento.hora_fin|time:'g:i a' }}</p>
+                </div>
+                <div class="sala-agenda-actions">
+                    <a class="sala-agenda-edit" href="{% url 'editar_evento_agendado' evento.id_evento %}"><i class="fa-solid fa-pen" aria-hidden="true"></i> Editar</a>
+                    <form method="post" action="{% url 'eliminar_evento_agendado' evento.id_evento %}" data-confirm-submit data-confirm-action="eliminar este evento" data-confirm-message="¿Confirmas que deseas eliminar este evento?">
+                        {% csrf_token %}
+                        <button class="sala-agenda-delete" type="submit"><i class="fa-solid fa-trash" aria-hidden="true"></i> Eliminar</button>
+                    </form>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+        <div class="sala-agenda-pagination" data-agenda-pagination="eventos" aria-label="Paginación de eventos">
+            <button type="button" data-page-previous disabled><i class="fa-solid fa-chevron-left" aria-hidden="true"></i><span class="sala-sr-only">Anterior</span></button>
+            <span data-page-status aria-live="polite"></span>
+            <button type="button" data-page-next aria-label="Avanzar" title="Avanzar" disabled><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+        </div>
+        {% else %}
+        <p class="sala-agenda-empty">No hay eventos próximos.</p>
+        {% endif %}
+    </section>
+    </div>
+    </div>
+    </main>
+    </div>
+</section>
+<script>
+    (function() {
+        const PAGE_SIZE = 2;
+        const SESSION_PAGE_SIZE = 2;
+        const sections = Array.from(document.querySelectorAll('[data-agenda-section]'));
+        const rangeFilter = document.querySelector('[data-agenda-range]');
+        const anchorInput = document.querySelector('[data-agenda-anchor-date]');
+        const anchorTrigger = document.getElementById('agendaAnchorDateTrigger');
+        const dateFilterElements = document.querySelectorAll('[data-agenda-date-filter]');
+        const calendarGrid = document.querySelector('[data-agenda-month-grid]');
+        const calendarView = document.querySelector('[data-agenda-calendar-view]');
+        const listView = document.querySelector('[data-agenda-list-view]');
+        let calendarMonth = dateFromIso(anchorInput.value);
+        let selectedCalendarDate = anchorInput.value;
+        let activeFilter = 'all';
+        const pageIndexes = { clases: 0, recurrentes: 0, eventos: 0 };
+        const recurringList = document.querySelector('[data-agenda-list="recurrentes"]');
+        const agendaPage = document.querySelector('.sala-agenda-page');
+        const classSubfilters = document.querySelector('[data-agenda-class-filters]');
+        let activeClassFilter = 'all';
+        let compactOverviewState = null;
+
+        function isCompactOverview() {
+            const allTypesSelected = activeFilter === 'all' || (activeFilter === 'class' && activeClassFilter === 'all');
+            return allTypesSelected && rangeFilter.value === 'all' && !listView.hidden;
+        }
+
+        function setSectionExpanded(section, expanded) {
+            section.classList.toggle('is-collapsed', !expanded);
+            const toggle = section.querySelector('[data-agenda-section-toggle]');
+            if (toggle) {
+                toggle.setAttribute('aria-expanded', String(expanded));
+                const icon = toggle.querySelector('[data-section-chevron]');
+                if (icon) icon.className = expanded ? 'fa-solid fa-chevron-down' : 'fa-solid fa-chevron-right';
+            }
+        }
+
+        function updateSectionFilters() {
+            const selectedCategory = activeFilter === 'class' ? 'clases' : (activeFilter === 'event' ? 'eventos' : 'all');
+            sections.forEach(function(section) {
+                let visible = selectedCategory === 'all' || section.dataset.agendaKind === selectedCategory;
+                if (visible && selectedCategory === 'clases' && activeClassFilter !== 'all') {
+                    const selectedSection = activeClassFilter === 'single' ? 'clases' : 'recurrentes';
+                    visible = section.dataset.agendaSection === selectedSection;
+                }
+                section.hidden = !visible;
+            });
+        }
+
+        function syncCompactOverview() {
+            const compact = isCompactOverview();
+            agendaPage.classList.toggle('is-compact-overview', compact);
+            if (compact !== compactOverviewState) {
+                sections.forEach(function(section) { setSectionExpanded(section, !compact); });
+                compactOverviewState = compact;
+            }
+        }
+
+        document.querySelectorAll('[data-agenda-section-toggle]').forEach(function(toggle) {
+            toggle.addEventListener('click', function() {
+                if (!isCompactOverview()) return;
+                const section = toggle.closest('[data-agenda-section]');
+                const opening = section.classList.contains('is-collapsed');
+                sections.forEach(function(otherSection) {
+                    setSectionExpanded(otherSection, opening && otherSection === section);
+                });
+            });
+        });
+
+        function activateCategory(selected) {
+            activeFilter = selected === 'clases' ? 'class' : (selected === 'eventos' ? 'event' : 'all');
+            activeClassFilter = 'all';
+            classSubfilters.hidden = selected !== 'clases';
+            document.querySelectorAll('[data-agenda-filter]').forEach(function(option) {
+                const active = option.dataset.agendaFilter === selected;
+                option.classList.toggle('is-active', active);
+                option.setAttribute('aria-pressed', String(active));
+                if (option.dataset.agendaFilter === 'clases') option.setAttribute('aria-expanded', String(selected === 'clases'));
+            });
+            document.querySelectorAll('[data-agenda-class-filter]').forEach(function(option) {
+                const active = option.dataset.agendaClassFilter === 'all';
+                option.classList.toggle('is-active', active);
+                option.setAttribute('aria-pressed', String(active));
+            });
+            updateSectionFilters();
+            actualizarAgenda(true);
+            if (!calendarView.hidden) renderMonthCalendar();
+        }
+
+        document.querySelectorAll('[data-agenda-filter]').forEach(function(button) {
+            button.addEventListener('click', function() {
+                activateCategory(button.dataset.agendaFilter);
+            });
+        });
+
+        document.querySelectorAll('[data-agenda-class-filter]').forEach(function(button) {
+            button.addEventListener('click', function() {
+                activeFilter = 'class';
+                activeClassFilter = button.dataset.agendaClassFilter;
+                classSubfilters.hidden = true;
+                document.querySelectorAll('[data-agenda-filter]').forEach(function(option) {
+                    const active = option.dataset.agendaFilter === 'clases';
+                    option.classList.toggle('is-active', active);
+                    option.setAttribute('aria-pressed', String(active));
+                    if (option.dataset.agendaFilter === 'clases') option.setAttribute('aria-expanded', 'false');
+                });
+                document.querySelectorAll('[data-agenda-class-filter]').forEach(function(option) {
+                    const active = option === button;
+                    option.classList.toggle('is-active', active);
+                    option.setAttribute('aria-pressed', String(active));
+                });
+                updateSectionFilters();
+                actualizarAgenda(true);
+                if (!calendarView.hidden) renderMonthCalendar();
+            });
+        });
+
+        document.querySelectorAll('[data-agenda-range-option]').forEach(function(button) {
+            button.addEventListener('click', function() {
+                rangeFilter.value = button.dataset.agendaRangeOption;
+                rangeFilter.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+        });
+
+        const classItems = Array.from(document.querySelectorAll('[data-class-schedule-item]'));
+        const bySchedule = new Map();
+        classItems.forEach(function(item) {
+            const key = item.dataset.seriesKey;
+            if (!bySchedule.has(key)) bySchedule.set(key, []);
+            bySchedule.get(key).push(item);
+        });
+
+        function dateFromIso(value) {
+            const parts = value.split('-').map(Number);
+            return new Date(parts[0], parts[1] - 1, parts[2]);
+        }
+
+        document.querySelectorAll('[data-agenda-view]').forEach(function(button) {
+            button.addEventListener('click', function() {
+                const calendarSelected = button.dataset.agendaView === 'calendar';
+                document.querySelectorAll('[data-agenda-view]').forEach(function(option) {
+                    const active = option === button;
+                    option.classList.toggle('is-active', active);
+                    option.setAttribute('aria-pressed', String(active));
+                });
+                listView.hidden = calendarSelected;
+                calendarView.hidden = !calendarSelected;
+                document.querySelector('.sala-agenda-page').classList.toggle('is-calendar-view', calendarSelected);
+                document.querySelector('.sala-agenda-page').classList.toggle('is-list-view', !calendarSelected);
+                actualizarAgenda(true);
+                if (calendarSelected) renderMonthCalendar();
+            });
+        });
+
+        document.querySelector('[data-agenda-return-list]').addEventListener('click', function() {
+            document.querySelector('[data-agenda-view="list"]').click();
+        });
+
+        function renderMonthCalendar() {
+            const year = calendarMonth.getFullYear();
+            const month = calendarMonth.getMonth();
+            const firstOfMonth = new Date(year, month, 1);
+            const monthOffset = (firstOfMonth.getDay() + 6) % 7;
+            const firstGridDay = new Date(year, month, 1 - monthOffset);
+            const monthWeeks = Math.ceil((monthOffset + new Date(year, month + 1, 0).getDate()) / 7);
+            const start = new Date(firstGridDay);
+            const end = new Date(start);
+            end.setDate(start.getDate() + monthWeeks * 7 - 1);
+            const monthLabel = document.querySelector('[data-agenda-month-label]');
+            monthLabel.textContent = new Intl.DateTimeFormat('es-MX', { month: 'long', year: 'numeric' }).format(calendarMonth);
+            calendarGrid.replaceChildren();
+            ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].forEach(function(day) {
+                calendarGrid.appendChild(makeText('div', 'sala-agenda-calendar-weekday', day));
+            });
+            const classRecords = classItems.map(function(item) {
+                return { date: item.dataset.sessionDate, kind: 'class', isRecurring: item.dataset.classRecurrence === 'recurring', label: 'Clase', title: item.querySelector('h3')?.textContent || 'Clase', details: item.querySelector('.sala-agenda-item-main > p')?.textContent || '', time: item.querySelector('.sala-agenda-datetime')?.textContent.replace(/^.*? · /, '') || '' };
+            });
+            const eventRecords = Array.from(document.querySelectorAll('[data-agenda-event-item]')).map(function(item) {
+                return { date: item.dataset.sessionDate, kind: 'event', label: item.querySelector('.sala-agenda-type')?.textContent.trim() || 'Evento', title: item.querySelector('h3')?.textContent || 'Evento', details: item.querySelector('.sala-agenda-item-main > p')?.textContent || '', time: item.querySelector('.sala-agenda-datetime')?.textContent.replace(/^.*? · /, '') || '' };
+            });
+            classRecords.forEach(function(record, index) {
+                record.editUrl = classItems[index]?.querySelector('.sala-agenda-edit')?.href || '';
+            });
+            eventRecords.forEach(function(record, index) {
+                const item = document.querySelectorAll('[data-agenda-event-item]')[index];
+                record.editUrl = item?.querySelector('.sala-agenda-edit')?.href || '';
+            });
+            const records = classRecords.concat(eventRecords).filter(function(record) {
+                const recordDate = dateFromIso(record.date);
+                return recordDate >= start && recordDate <= end
+                    && recordDate.getMonth() === month && recordDate.getFullYear() === year
+                    && (activeFilter === 'all' || record.kind === activeFilter)
+                    && (record.kind !== 'class' || activeClassFilter === 'all' || (activeClassFilter === 'recurring') === record.isRecurring);
+            });
+            for (let index = 0; index < monthWeeks * 7; index += 1) {
+                const date = new Date(start);
+                date.setDate(start.getDate() + index);
+                const iso = [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
+                const cell = document.createElement('div');
+                cell.className = 'sala-agenda-calendar-cell' + (date.getMonth() !== month ? ' is-outside-month' : '') + (iso === selectedCalendarDate ? ' is-selected-day' : '');
+                cell.setAttribute('role', 'gridcell');
+                const dayNumber = makeText('button', 'sala-agenda-calendar-date', String(date.getDate()));
+                dayNumber.type = 'button';
+                dayNumber.disabled = date.getMonth() !== month;
+                dayNumber.setAttribute('aria-label', new Intl.DateTimeFormat('es-MX', { dateStyle: 'full' }).format(date));
+                dayNumber.addEventListener('click', function() { selectCalendarDate(iso); });
+                cell.appendChild(dayNumber);
+                const dayRecords = records.filter(function(record) { return record.date === iso; });
+                dayRecords.slice(0, 2).forEach(function(record) {
+                    const block = document.createElement('button');
+                    block.type = 'button';
+                    block.className = 'sala-agenda-calendar-event is-' + record.kind;
+                    block.title = record.title + (record.time ? ' · ' + record.time : '');
+                    block.appendChild(makeText('strong', '', record.title));
+                    if (record.time) block.appendChild(makeText('span', '', record.time));
+                    block.addEventListener('click', function() { selectCalendarDate(iso); });
+                    cell.appendChild(block);
+                });
+                const extraCount = dayRecords.length - 2;
+                if (extraCount > 0) cell.appendChild(makeText('span', 'sala-agenda-calendar-more', '+' + extraCount + ' más'));
+                calendarGrid.appendChild(cell);
+            }
+            renderCalendarDayDetails(records);
+        }
+
+        function selectCalendarDate(isoDate) {
+            selectedCalendarDate = isoDate;
+            renderMonthCalendar();
+        }
+
+        function renderCalendarDayDetails(records) {
+            const panel = document.querySelector('[data-agenda-day-details]');
+            const dayRecords = records.filter(function(record) { return record.date === selectedCalendarDate; });
+            const format = new Intl.DateTimeFormat('es-MX', { dateStyle: 'full' });
+            document.querySelector('[data-agenda-day-title]').textContent = 'Reservaciones del ' + format.format(dateFromIso(selectedCalendarDate));
+            const list = document.querySelector('[data-agenda-day-records]');
+            list.replaceChildren();
+            if (!dayRecords.length) {
+                list.appendChild(makeText('p', 'sala-agenda-day-empty', 'No hay clases ni eventos para este día.'));
+            } else {
+                dayRecords.forEach(function(record) {
+                    const entry = document.createElement('article');
+                    entry.className = 'sala-agenda-day-entry is-' + record.kind;
+                    entry.appendChild(makeText('span', 'sala-agenda-type', record.label));
+                    entry.appendChild(makeText('strong', '', record.title));
+                    if (record.details) entry.appendChild(makeText('span', 'sala-agenda-day-description', record.details));
+                    if (record.time) entry.appendChild(makeText('span', 'sala-agenda-day-time', record.time));
+                    if (record.editUrl) {
+                        const editLink = document.createElement('a');
+                        editLink.className = 'sala-agenda-day-edit';
+                        editLink.href = record.editUrl;
+                        editLink.setAttribute('aria-label', 'Editar ' + (record.kind === 'class' ? 'clase' : 'evento') + ': ' + record.title);
+                        editLink.innerHTML = '<i class="fa-solid fa-pen" aria-hidden="true"></i> Editar';
+                        entry.appendChild(editLink);
+                    }
+                    list.appendChild(entry);
+                });
+            }
+            panel.hidden = false;
+        }
+
+        document.querySelector('[data-agenda-month-prev]').addEventListener('click', function() {
+            calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1);
+            selectedCalendarDate = [calendarMonth.getFullYear(), String(calendarMonth.getMonth() + 1).padStart(2, '0'), '01'].join('-');
+            renderMonthCalendar();
+        });
+        document.querySelector('[data-agenda-month-next]').addEventListener('click', function() {
+            calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1);
+            selectedCalendarDate = [calendarMonth.getFullYear(), String(calendarMonth.getMonth() + 1).padStart(2, '0'), '01'].join('-');
+            renderMonthCalendar();
+        });
+
+        function makeText(tag, className, text) {
+            const element = document.createElement(tag);
+            if (className) element.className = className;
+            element.textContent = text;
+            return element;
+        }
+
+        bySchedule.forEach(function(items) {
+            items.sort(function(a, b) { return a.dataset.sessionDate.localeCompare(b.dataset.sessionDate); });
+            const clusters = [];
+            items.forEach(function(item) {
+                const previousCluster = clusters[clusters.length - 1];
+                const lastItem = previousCluster && previousCluster[previousCluster.length - 1];
+                const gap = lastItem
+                    ? Math.round((dateFromIso(item.dataset.sessionDate) - dateFromIso(lastItem.dataset.sessionDate)) / 86400000)
+                    : Infinity;
+                if (!previousCluster || gap > 7) clusters.push([item]);
+                else previousCluster.push(item);
+            });
+
+            clusters.forEach(function(cluster) {
+                if (cluster.length < 2) return;
+                cluster.forEach(function(item) { item.dataset.classRecurrence = 'recurring'; });
+                const first = cluster[0];
+                const dates = cluster.map(function(item) { return dateFromIso(item.dataset.sessionDate); });
+                const weekdayOrder = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+                const weekdays = Array.from(new Set(dates.map(function(date) { return weekdayOrder[date.getDay()]; })))
+                    .sort(function(a, b) { return weekdayOrder.indexOf(a) - weekdayOrder.indexOf(b); });
+                const dateFormat = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+                const summaryText = weekdays.map(function(day) { return day[0].toLocaleUpperCase('es-MX') + day.slice(1); }).join(' y ')
+                    + ' · ' + cluster.length + ' fechas · ' + dateFormat.format(dates[0]) + ' – ' + dateFormat.format(dates[dates.length - 1]);
+
+                const details = document.createElement('article');
+                details.className = 'sala-agenda-series';
+                details.dataset.seriesIds = cluster.map(function(item) { return item.dataset.classId; }).join(',');
+                const header = document.createElement('div');
+                header.className = 'sala-agenda-series-header';
+                const summary = document.createElement('button');
+                summary.type = 'button';
+                summary.className = 'sala-agenda-series-summary';
+                summary.setAttribute('aria-expanded', 'false');
+                const overview = document.createElement('div');
+                overview.className = 'sala-agenda-series-overview';
+                overview.appendChild(makeText('span', 'sala-agenda-type sala-agenda-type-recurring', 'Clase recurrente · ' + cluster.length + ' sesiones'));
+                overview.appendChild(makeText('h3', '', first.querySelector('h3').textContent));
+                const groupTeacher = first.querySelector('.sala-agenda-item-main > p');
+                if (groupTeacher) overview.appendChild(makeText('p', '', groupTeacher.textContent));
+                overview.appendChild(makeText('p', 'sala-agenda-series-dates', summaryText));
+                summary.appendChild(overview);
+                summary.appendChild(makeText('span', 'sala-agenda-series-toggle', 'Ver fechas'));
+                header.appendChild(summary);
+
+                const seriesActions = document.createElement('div');
+                seriesActions.className = 'sala-agenda-series-actions';
+                const seriesIds = cluster.map(function(item) { return item.dataset.classId; });
+                const agendaPage = document.querySelector('.sala-agenda-page');
+                const editSeries = document.createElement('a');
+                editSeries.className = 'sala-agenda-edit';
+                editSeries.href = agendaPage.dataset.seriesEditUrl + '?clases=' + encodeURIComponent(seriesIds.join(','));
+                editSeries.innerHTML = '<i class="fa-solid fa-pen" aria-hidden="true"></i> Editar todas las fechas';
+                seriesActions.appendChild(editSeries);
+
+                const deleteForm = document.createElement('form');
+                deleteForm.method = 'post';
+                deleteForm.action = agendaPage.dataset.seriesDeleteUrl;
+                deleteForm.dataset.confirmSubmit = '';
+                deleteForm.dataset.confirmAction = 'eliminar toda la serie';
+                deleteForm.dataset.confirmMessage = '¿Confirmas que deseas eliminar las ' + cluster.length + ' fechas de esta serie?';
+                const csrf = first.querySelector('input[name="csrfmiddlewaretoken"]');
+                if (csrf) {
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = 'csrfmiddlewaretoken';
+                    csrfInput.value = csrf.value;
+                    deleteForm.appendChild(csrfInput);
+                }
+                const idsInput = document.createElement('input');
+                idsInput.type = 'hidden';
+                idsInput.name = 'clases_ids';
+                idsInput.value = seriesIds.join(',');
+                deleteForm.appendChild(idsInput);
+                const deleteButton = document.createElement('button');
+                deleteButton.className = 'sala-agenda-delete';
+                deleteButton.type = 'submit';
+                deleteButton.innerHTML = '<i class="fa-solid fa-trash" aria-hidden="true"></i> Eliminar todas las fechas';
+                deleteForm.appendChild(deleteButton);
+                seriesActions.appendChild(deleteForm);
+                header.appendChild(seriesActions);
+                details.appendChild(header);
+
+                const sessions = document.createElement('div');
+                sessions.className = 'sala-agenda-series-sessions';
+                const dialog = document.createElement('dialog');
+                dialog.className = 'sala-agenda-series-dialog';
+                dialog.setAttribute('aria-label', 'Fechas de la clase recurrente');
+                const dialogHeader = document.createElement('div');
+                dialogHeader.className = 'sala-agenda-series-dialog-header';
+                dialogHeader.appendChild(makeText('h3', '', 'Fechas de ' + first.querySelector('h3').textContent));
+                const closeDialog = document.createElement('button');
+                closeDialog.type = 'button';
+                closeDialog.className = 'sala-agenda-series-dialog-close';
+                closeDialog.setAttribute('aria-label', 'Cerrar fechas');
+                closeDialog.innerHTML = '<i class="fa-solid fa-xmark" aria-hidden="true"></i>';
+                dialogHeader.appendChild(closeDialog);
+                dialog.appendChild(dialogHeader);
+                dialog.appendChild(sessions);
+                details.appendChild(dialog);
+                const sessionPager = document.createElement('div');
+                sessionPager.className = 'sala-agenda-pagination sala-agenda-session-pagination';
+                sessionPager.dataset.sessionPagination = 'true';
+                sessionPager.innerHTML = '<button type="button" data-session-previous aria-label="Regresar" title="Regresar"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button><span data-session-status></span><button type="button" data-session-next aria-label="Avanzar" title="Avanzar"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>';
+                recurringList.appendChild(details);
+                summary.addEventListener('click', function() {
+                    if (!dialog.open) {
+                        dialog.showModal();
+                        summary.setAttribute('aria-expanded', 'true');
+                        const toggleLabel = summary.querySelector('.sala-agenda-series-toggle');
+                        if (toggleLabel) toggleLabel.textContent = 'Fechas abiertas';
+                    }
+                });
+                closeDialog.addEventListener('click', function() { dialog.close(); });
+                dialog.addEventListener('close', function() {
+                    summary.setAttribute('aria-expanded', 'false');
+                    const toggleLabel = summary.querySelector('.sala-agenda-series-toggle');
+                    if (toggleLabel) toggleLabel.textContent = 'Ver fechas';
+                });
+                dialog.addEventListener('click', function(event) { if (event.target === dialog) dialog.close(); });
+                cluster.forEach(function(item) {
+                    item.classList.add('sala-agenda-series-session');
+                    sessions.appendChild(item);
+                });
+                sessions.appendChild(sessionPager);
+                sessionPager.querySelector('[data-session-previous]').addEventListener('click', function() {
+                    const current = Number(details.dataset.sessionPage || 0);
+                    details.dataset.sessionPage = String(Math.max(0, current - 1));
+                    actualizarAgenda(false);
+                });
+                sessionPager.querySelector('[data-session-next]').addEventListener('click', function() {
+                    const current = Number(details.dataset.sessionPage || 0);
+                    details.dataset.sessionPage = String(current + 1);
+                    actualizarAgenda(false);
+                });
+            });
+        });
+
+        function fechaEnRango(isoDate) {
+            if (!isoDate || rangeFilter.value === 'all') return true;
+            const targetDate = dateFromIso(isoDate);
+            const anchorDate = dateFromIso(anchorInput.value);
+            if (rangeFilter.value === 'day') return isoDate === anchorInput.value;
+            const weekStart = new Date(anchorDate);
+            weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekEnd.getDate() + 6);
+            return targetDate >= weekStart && targetDate <= weekEnd;
+        }
+
+        function actualizarPaginador(pager, items, pageIndex, pageSize, onPage) {
+            const pageCount = Math.max(1, Math.ceil(items.length / pageSize));
+            const safePage = Math.max(0, Math.min(pageIndex, pageCount - 1));
+            items.forEach(function(item, index) {
+                item.hidden = index < safePage * pageSize || index >= (safePage + 1) * pageSize;
+            });
+            if (!pager) return safePage;
+            pager.hidden = items.length <= pageSize;
+            const status = pager.querySelector('[data-page-status], [data-session-status]');
+            const previous = pager.querySelector('[data-page-previous], [data-session-previous]');
+            const next = pager.querySelector('[data-page-next], [data-session-next]');
+            if (status) status.textContent = items.length ? 'Página ' + (safePage + 1) + ' de ' + pageCount : 'Sin resultados';
+            if (previous) previous.disabled = safePage === 0;
+            if (next) next.disabled = safePage >= pageCount - 1;
+            if (next) next.setAttribute('aria-label', 'Avanzar');
+            if (next) next.title = 'Avanzar';
+            if (onPage) onPage(safePage);
+            return safePage;
+        }
+
+        function actualizarAgenda(resetPages) {
+            syncCompactOverview();
+            if (resetPages) {
+                pageIndexes.clases = 0;
+                pageIndexes.recurrentes = 0;
+                pageIndexes.eventos = 0;
+                document.querySelectorAll('.sala-agenda-series').forEach(function(series) { series.dataset.sessionPage = '0'; });
+            }
+            classItems.forEach(function(item) {
+                item.dataset.dateMatches = String(fechaEnRango(item.dataset.sessionDate));
+                item.hidden = item.dataset.dateMatches !== 'true';
+            });
+            document.querySelectorAll('[data-agenda-event-item]').forEach(function(item) {
+                item.dataset.dateMatches = String(fechaEnRango(item.dataset.sessionDate));
+            });
+
+            document.querySelectorAll('.sala-agenda-series').forEach(function(series) {
+                const allSessions = Array.from(series.querySelectorAll('[data-class-schedule-item]'));
+                const visibleSessions = allSessions.filter(function(item) { return item.dataset.dateMatches !== 'false'; });
+                series.hidden = visibleSessions.length === 0;
+                series.dataset.dateMatches = String(visibleSessions.length > 0);
+                const summary = series.querySelector('.sala-agenda-series-dates');
+                if (summary && visibleSessions.length) {
+                    const dates = visibleSessions.map(function(item) { return dateFromIso(item.dataset.sessionDate); });
+                    const weekdays = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+                    const dayNames = Array.from(new Set(dates.map(function(date) { return weekdays[date.getDay()]; })))
+                        .sort(function(a, b) { return weekdays.indexOf(a) - weekdays.indexOf(b); });
+                    const format = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+                    const countText = visibleSessions.length + (visibleSessions.length === 1 ? ' fecha' : ' fechas');
+                    const dateText = visibleSessions.length === 1
+                        ? format.format(dates[0])
+                        : format.format(dates[0]) + ' – ' + format.format(dates[dates.length - 1]);
+                    summary.textContent = dayNames.map(function(day) { return day[0].toLocaleUpperCase('es-MX') + day.slice(1); }).join(' y ')
+                        + ' · ' + countText + ' · ' + dateText;
+                }
+                const pager = series.querySelector('[data-session-pagination]');
+                const page = Number(series.dataset.sessionPage || 0);
+                series.dataset.sessionPage = String(actualizarPaginador(pager, visibleSessions, page, SESSION_PAGE_SIZE));
+            });
+
+            sections.forEach(function(section) {
+                const category = section.dataset.agendaSection;
+                const list = section.querySelector('.sala-agenda-list');
+                const pager = section.querySelector('[data-agenda-pagination]');
+                const noResults = section.querySelector('[data-agenda-no-results]');
+                const entries = list ? Array.from(list.children) : [];
+                const matching = entries.filter(function(item) {
+                    if (item.matches('.sala-agenda-series')) return item.dataset.dateMatches !== 'false';
+                    if (item.matches('[data-class-schedule-item]')) return item.dataset.dateMatches !== 'false';
+                    if (item.matches('[data-agenda-event-item]')) return item.dataset.dateMatches !== 'false';
+                    return true;
+                });
+                entries.forEach(function(item) { item.hidden = !matching.includes(item); });
+                const showThreeSingleSessions = category === 'clases'
+                    && activeFilter === 'class'
+                    && activeClassFilter === 'single'
+                    && (rangeFilter.value === 'day' || rangeFilter.value === 'all');
+                const pageSize = showThreeSingleSessions ? 3 : PAGE_SIZE;
+                pageIndexes[category] = actualizarPaginador(pager, matching, pageIndexes[category], pageSize);
+                const count = section.querySelector('.sala-agenda-count');
+                if (count) count.textContent = String(matching.length);
+                if (noResults) noResults.hidden = matching.length > 0;
+            });
+        }
+
+        document.querySelectorAll('[data-agenda-pagination]').forEach(function(pager) {
+            const category = pager.dataset.agendaPagination;
+            pager.querySelector('[data-page-previous]').addEventListener('click', function() {
+                pageIndexes[category] = Math.max(0, pageIndexes[category] - 1);
+                actualizarAgenda(false);
+            });
+            pager.querySelector('[data-page-next]').addEventListener('click', function() {
+                pageIndexes[category] += 1;
+                actualizarAgenda(false);
+            });
+        });
+
+        rangeFilter.addEventListener('change', function() {
+            const hideDate = rangeFilter.value === 'all';
+            if (hideDate && anchorTrigger.getAttribute('aria-expanded') === 'true') {
+                anchorTrigger.click();
+            }
+            dateFilterElements.forEach(function(element) {
+                element.hidden = hideDate;
+            });
+            document.querySelectorAll('[data-agenda-range-option]').forEach(function(button) {
+                const active = button.dataset.agendaRangeOption === rangeFilter.value;
+                button.classList.toggle('is-active', active);
+                button.setAttribute('aria-pressed', String(active));
+            });
+            actualizarAgenda(true);
+            if (!calendarView.hidden) renderMonthCalendar();
+        });
+        anchorInput.addEventListener('change', function() {
+            actualizarAgenda(true);
+            calendarMonth = dateFromIso(anchorInput.value);
+            selectedCalendarDate = anchorInput.value;
+            if (!calendarView.hidden) renderMonthCalendar();
+        });
+        sections.forEach(function(section) {
+            if (section.querySelector('.sala-agenda-list')) {
+                const empty = document.createElement('p');
+                empty.className = 'sala-agenda-empty';
+                empty.dataset.agendaNoResults = 'true';
+                empty.textContent = 'No hay reservaciones para este periodo.';
+                empty.hidden = true;
+                section.insertBefore(empty, section.querySelector('[data-agenda-pagination]'));
+            }
+        });
+        rangeFilter.dispatchEvent(new Event('change'));
+    })();
+</script>
+{% endblock %}
