@@ -443,6 +443,16 @@ body {
     display: none;
 }
 
+.date-range-panel {
+    position: fixed;
+    right: auto;
+    max-width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px);
+    box-sizing: border-box;
+    overflow: auto;
+    overscroll-behavior: contain;
+}
+
 .date-quick-options {
     display: flex;
     flex: 0 0 160px;

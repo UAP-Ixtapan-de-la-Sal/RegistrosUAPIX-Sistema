@@ -152,7 +152,7 @@ class RegistroClaseForm(forms.Form):
         docente = cleaned_data.get('numero_cuenta_docente')
         carrera_id = cleaned_data.get('carrera')
         if docente:
-            if docente.carrera_id and str(docente.carrera_id) != str(carrera_id or ''):
+            if docente.carrera_id and str(docente.carrera_id) != str(carrera_id or '') and not getattr(self, 'allow_other_career', False):
                 self.add_error('carrera', 'La carrera seleccionada no corresponde al docente.')
             if str(cleaned_data.get('docente_id') or '') != str(docente.pk):
                 self.add_error('docente_id', 'Vuelve a buscar el número de cuenta del docente.')
@@ -322,3 +322,65 @@ class RegistroEventoForm(forms.Form):
         if hora_inicio and hora_fin and hora_fin <= hora_inicio:
             self.add_error('hora_fin', 'La hora de término debe ser posterior a la hora de inicio.')
         return cleaned_data
+
+
+# Los formularios de edición conservan los mismos controles y validaciones
+# de captura que los formularios de agendado.
+class EditarClaseAgendadaForm(forms.Form):
+    tipo_actividad = forms.ChoiceField(choices=(('regular', 'Clase regular'),), initial='regular', widget=forms.HiddenInput())
+    numero_cuenta_docente = forms.CharField(
+        label='Número de cuenta del docente', max_length=20,
+        widget=forms.TextInput(attrs={'class': 'sala-form-control', 'autocomplete': 'off', 'inputmode': 'numeric', 'placeholder': 'Ingresa el número de cuenta', 'data-docente-lookup': 'true'}),
+    )
+    docente_id = forms.IntegerField(widget=forms.HiddenInput(attrs={'data-docente-id': 'true'}))
+    carrera = forms.ChoiceField(label='Carrera', choices=(), widget=forms.Select(attrs={'class': 'sala-form-control', 'data-carrera-select': 'true'}))
+    materia = forms.ChoiceField(label='Materia', choices=(), widget=forms.Select(attrs={'class': 'sala-form-control', 'data-materia-select': 'true'}))
+    grupo = forms.ChoiceField(label='Grupo', choices=(), widget=forms.Select(attrs={'class': 'sala-form-control', 'data-grupo-select': 'true'}))
+    fecha = forms.DateField(widget=forms.HiddenInput(attrs={'data-calendar-value': 'true'}))
+    hora_inicio = forms.TimeField(widget=forms.TimeInput(attrs={'class': 'sala-form-control', 'type': 'time'}))
+    hora_fin = forms.TimeField(widget=forms.TimeInput(attrs={'class': 'sala-form-control', 'type': 'time'}))
+
+    def __init__(self, *args, catalogos=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        catalogos = catalogos or {}
+        self.fields['carrera'].choices = [('', 'Selecciona la carrera'), *[(str(x['id']), x['nombre']) for x in catalogos.get('carreras', [])]]
+        self.fields['materia'].choices = [('', 'Selecciona la materia'), *[(str(x['id']), x['nombre']) for x in catalogos.get('materias', [])]]
+        self.fields['grupo'].choices = [('', 'Selecciona el grupo'), *[(str(x['id']), x['nombre']) for x in catalogos.get('grupos', [])]]
+
+    def clean(self):
+        cleaned = super().clean()
+        cuenta = (cleaned.get('numero_cuenta_docente') or '').strip()
+        docente = Persona.objects.con_perfiles('Docente').filter(matricula=cuenta).first() if cuenta else None
+        if cuenta and docente is None:
+            self.add_error('numero_cuenta_docente', 'No se encontró un docente con ese número de cuenta.')
+        elif docente:
+            cleaned['numero_cuenta_docente'] = docente
+            if str(cleaned.get('docente_id') or '') != str(docente.pk):
+                self.add_error('docente_id', 'Vuelve a buscar el número de cuenta del docente.')
+        fecha = cleaned.get('fecha')
+        hora_inicio = cleaned.get('hora_inicio')
+        if fecha and fecha < timezone.localdate():
+            self.add_error('fecha', 'La fecha de clase no puede estar en el pasado.')
+        if fecha == timezone.localdate() and hora_inicio:
+            limite = (timezone.localtime() - timedelta(minutes=5)).time()
+            if normalizar_hora(hora_inicio) < limite:
+                self.add_error('hora_inicio', 'La hora de inicio ya pasó para la clase de hoy.')
+        hora_inicio = cleaned.get('hora_inicio')
+        hora_fin = cleaned.get('hora_fin')
+        if hora_inicio:
+            cleaned['hora_inicio'] = normalizar_hora(hora_inicio)
+        if hora_fin:
+            cleaned['hora_fin'] = normalizar_hora(hora_fin)
+        if cleaned.get('hora_inicio') and cleaned.get('hora_fin') and cleaned['hora_fin'] <= cleaned['hora_inicio']:
+            self.add_error('hora_fin', 'La hora de fin debe ser posterior a la de inicio.')
+        return cleaned
+
+
+class EditarSerieClaseForm(RegistroClaseForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.allow_other_career = True
+
+
+class EditarEventoAgendadoForm(RegistroEventoForm):
+    estado_bloque = forms.BooleanField(label='Bloquear horario', required=False, widget=forms.CheckboxInput(attrs={'class': 'sala-form-control'}))

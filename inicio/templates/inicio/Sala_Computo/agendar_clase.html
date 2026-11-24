@@ -1,21 +1,15 @@
-<section class="sala-form-panel sala-form-panel--class sala-form-panel--schedule" aria-labelledby="claseFormTitle">
+<header class="sala-computo-heading sala-view-heading">
+    <div>
+        <p class="sala-computo-eyebrow">Registro de clase</p>
+        <h1 id="claseFormTitle" tabindex="-1">Agendar clase</h1>
+        <p class="sala-computo-subtitle">Selecciona la carrera, materia, grupo y horario que se reservará.</p>
+    </div>
     <button class="sala-back-btn" type="button" onclick="volverASeleccionAgendar()">
         <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Elegir otra opción
     </button>
+</header>
 
-    <div class="sala-form-heading">
-        <div>
-            <p class="sala-computo-eyebrow">REGISTRO DE CLASE</p>
-            <div class="sala-form-title-line">
-                <span class="sala-form-heading-icon sala-option-clase" aria-hidden="true">
-                    <i class="fa-solid fa-book-open"></i>
-                </span>
-                <h2 id="claseFormTitle" tabindex="-1">Agendar clase</h2>
-            </div>
-            <p>Selecciona la carrera, materia, grupo y horario que se reservará.</p>
-        </div>
-    </div>
-
+<section class="sala-form-panel sala-form-panel--class sala-form-panel--schedule" aria-labelledby="claseFormTitle">
     <form class="sala-registration-form" method="post" data-confirm-submit data-confirm-action="registrar la clase" data-confirm-message="¿Confirmas que deseas registrar la clase?">
         {% csrf_token %}
         <input type="hidden" name="categoria" value="clase">
@@ -83,7 +77,7 @@
                         </button>
                         <div class="sala-time-popover" role="dialog" aria-label="Seleccionar hora" hidden>
                             <div class="sala-time-picker-heading">
-                                <strong>Selecciona la hora</strong>
+                                <strong>{{ field.label }}</strong>
                                 <span data-time-preview>Elige hora, minutos y periodo</span>
                             </div>
                             <div class="sala-time-columns">
@@ -93,7 +87,7 @@
                             </div>
                             <div class="sala-time-actions">
                                 <button class="sala-time-cancel" type="button" data-time-cancel>Cancelar</button>
-                                <button class="sala-time-apply" type="button" data-time-apply>Aplicar</button>
+                                <button class="sala-time-apply" type="button" data-time-apply>Aceptar</button>
                             </div>
                         </div>
                     </div>
@@ -673,28 +667,37 @@
             ].join('-');
         }
 
-        function closePicker(picker) {
-            const popover = picker.matches('.sala-calendar-popover')
-                ? picker
-                : document.getElementById(picker.dataset.calendarPopoverId) ||
-                    picker.querySelector('.sala-calendar-popover');
+        function cerrarPopoverFecha(popover) {
             if (!popover) return;
-            const pickerField = picker.matches('.sala-calendar-popover')
-                ? document.querySelector('[data-date-picker][data-calendar-popover-id="' + popover.id + '"]')
-                : picker;
             const trigger = document.querySelector('[aria-controls="' + popover.id + '"]');
+            const pickerField = trigger && trigger.closest('[data-date-picker]');
+            if (!pickerField) return;
             popover.hidden = true;
             popover.setAttribute('hidden', '');
             popover.style.setProperty('display', 'none', 'important');
             popover.classList.remove('is-viewport-positioned');
             popover.style.removeProperty('left');
             popover.style.removeProperty('top');
-            if (pickerField && popover.parentElement !== pickerField) pickerField.appendChild(popover);
-            if (trigger) trigger.setAttribute('aria-expanded', 'false');
+            if (popover.parentElement !== pickerField) pickerField.appendChild(popover);
+            trigger.setAttribute('aria-expanded', 'false');
+        }
+
+        function closePicker(picker) {
+            const popover = picker.matches('.sala-calendar-popover')
+                ? picker
+                : document.getElementById(picker.dataset.calendarPopoverId) ||
+                    picker.querySelector('.sala-calendar-popover');
+            cerrarPopoverFecha(popover);
+        }
+
+        function cerrarCalendariosExcepto(popoverActivo) {
+            document.querySelectorAll('.sala-calendar-popover').forEach(function(popover) {
+                if (popover !== popoverActivo) cerrarPopoverFecha(popover);
+            });
         }
 
         window.cerrarCalendariosSala = function() {
-            document.querySelectorAll('[data-date-picker]').forEach(closePicker);
+            cerrarCalendariosExcepto(null);
         };
 
         window.inicializarCalendariosSala = function() {
@@ -814,9 +817,7 @@
             trigger.addEventListener('click', function() {
                 const isOpening = popover.hidden;
                 if (isOpening && window.cerrarRelojesSala) window.cerrarRelojesSala();
-                document.querySelectorAll('[data-date-picker]').forEach(function(otherPicker) {
-                    closePicker(otherPicker);
-                });
+                cerrarCalendariosExcepto(isOpening ? popover : null);
                 if (isOpening) {
                     const chosenDate = parseDate(input.value);
                     if (chosenDate) visibleMonth = new Date(chosenDate.getFullYear(), chosenDate.getMonth(), 1);
@@ -847,25 +848,28 @@
             });
         });
 
-        document.addEventListener('click', function(event) {
-            const dateTrigger = event.target.closest('[data-date-trigger]');
-            const timeTrigger = event.target.closest('[data-time-trigger]');
-            if (!dateTrigger && !timeTrigger) return;
-
-            document.querySelectorAll('.sala-calendar-popover').forEach(function(popover) {
-                const trigger = document.querySelector('[aria-controls="' + popover.id + '"]');
-                if ((dateTrigger && trigger === dateTrigger) || popover.hidden) return;
-                const picker = document.querySelector('[data-date-picker][data-calendar-popover-id="' + popover.id + '"]');
-                if (picker) closePicker(picker);
-            });
+        function cerrarPopoversAlCambiarCampo(event) {
+            const target = event.target;
+            if (!target || typeof target.closest !== 'function') return;
+            const dateTrigger = target.closest('[data-date-trigger]');
+            const timeTrigger = target.closest('[data-time-trigger]');
+            const datePopover = target.closest('.sala-calendar-popover');
+            const timePopover = target.closest('.sala-time-popover');
+            const dateTriggerId = dateTrigger && dateTrigger.getAttribute('aria-controls');
+            const timeTriggerId = timeTrigger && timeTrigger.getAttribute('aria-controls');
+            const activeDatePopover = datePopover || (dateTriggerId && document.getElementById(dateTriggerId));
+            cerrarCalendariosExcepto(activeDatePopover || null);
 
             document.querySelectorAll('.sala-time-popover').forEach(function(popover) {
-                const trigger = document.querySelector('[aria-controls="' + popover.id + '"]');
-                if ((timeTrigger && trigger === timeTrigger) || popover.hidden) return;
+                if (timePopover === popover || (timeTriggerId && timeTriggerId === popover.id) || popover.hidden) return;
                 popover.hidden = true;
+                const trigger = document.querySelector('[aria-controls="' + popover.id + '"]');
                 if (trigger) trigger.setAttribute('aria-expanded', 'false');
             });
-        }, true);
+        }
+
+        document.addEventListener('pointerdown', cerrarPopoversAlCambiarCampo, true);
+        document.addEventListener('focusin', cerrarPopoversAlCambiarCampo, true);
 
     })();
 </script>

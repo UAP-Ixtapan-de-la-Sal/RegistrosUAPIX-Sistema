@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" href="{% static 'inicio/images/icono-pag.png' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'inicio/css/estilos.css' %}?v=20261109-confirmation-effects">
+    <link rel="stylesheet" href="{% static 'inicio/css/estilos.css' %}?v=20261123-date-ranges">
     {% block extra_css %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
@@ -137,8 +137,8 @@
                 /\b(eliminar|borrar|dar de baja)\b/.test(submitLabel);
             form.dataset.confirmPending = 'true';
             window.confirmarAccion(confirmationFor(form, submitter), {
-                title: isDelete ? 'Confirmar eliminación' : 'Confirmar registro',
-                acceptText: isDelete ? 'Eliminar' : 'Confirmar',
+                title: form.dataset.confirmTitle || (isDelete ? 'Confirmar eliminación' : 'Confirmar registro'),
+                acceptText: form.dataset.confirmAcceptText || (isDelete ? 'Eliminar' : 'Confirmar'),
                 danger: isDelete,
             }).then((accepted) => {
                 delete form.dataset.confirmPending;
@@ -180,6 +180,7 @@
             });
         }, true);
     </script>
+    <script src="{% static 'inicio/js/sala_calendar_picker.js' %}?v=20261123-date-ranges"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

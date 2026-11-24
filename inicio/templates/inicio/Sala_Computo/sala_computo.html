@@ -6,8 +6,12 @@
 {% block body_class %}sala-computo-body{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'inicio/css/salacomputo/salacomputo.css' %}?v=20261112-event-speaker-toggle">
-<link rel="stylesheet" href="{% static 'inicio/css/salacomputo/registros.css' %}?v=20261109-event-heading">
+<link rel="stylesheet" href="{% static 'inicio/css/salacomputo/salacomputo.css' %}?v=20261124-encabezado-bitacora">
+<link rel="stylesheet" href="{% static 'inicio/css/salacomputo/registros.css' %}?v=20261124-boton-salir">
+<link rel="stylesheet" href="{% static 'inicio/vendor/flatpickr/flatpickr.min.css' %}">
+<script src="{% static 'inicio/vendor/flatpickr/flatpickr.min.js' %}" defer></script>
+<script src="{% static 'inicio/vendor/flatpickr/es.js' %}" defer></script>
+<script src="{% static 'inicio/js/date_range_picker.js' %}" defer></script>
 {% endblock %}
 
 {% block content %}
@@ -113,6 +117,16 @@
                         <p>Consulta las sesiones y actividades del día.</p>
                     </div>
                 </button>
+
+                <a id="agendaProgramadaToolCard" class="sala-tool-card sala-tool-card-link" href="{% url 'agenda_programada_sala' %}">
+                    <span class="sala-tool-icon sala-tool-icon-calendar" aria-hidden="true">
+                        <i class="fa-solid fa-list-check"></i>
+                    </span>
+                    <div>
+                        <h3>Clases y eventos agendados</h3>
+                        <p>Consulta, edita o elimina próximas reservaciones.</p>
+                    </div>
+                </a>
             </div>
         </section>
     </div>
@@ -123,18 +137,23 @@
 
     <!-- ================= VISTA DE HISTORIAL Y BITÁCORA ================= -->
     <div id="bitacoraView" class="sala-view-hidden">
-        <section class="sala-sessions-panel" aria-labelledby="activeSessionsTitle">
-            <div class="sala-sessions-heading">
-                <div>
-                    <p class="sala-computo-eyebrow">CONSULTA DE REGISTROS</p>
-                    <h2 id="activeSessionsTitle" tabindex="-1">Historial de uso</h2>
-                    <p>Filtra y consulta las actividades registradas en la Sala de Cómputo.</p>
+        <header class="sala-computo-heading sala-view-heading">
+            <div>
+                <p class="sala-computo-eyebrow">Consulta de registros</p>
+                <h1 id="activeSessionsTitle" tabindex="-1">Historial de uso</h1>
+                <p class="sala-computo-subtitle">Consulta entradas, sesiones activas y salidas registradas.</p>
+            </div>
+            <div class="sala-view-heading-actions">
+                <div class="sala-history-summary" aria-label="Resumen del historial">
+                    <span class="sala-history-total"><strong data-history-total>0</strong> registros</span>
+                    <span class="sala-history-active"><i aria-hidden="true"></i><strong data-history-active>0</strong> activas</span>
                 </div>
                 <button class="sala-back-btn" type="button" onclick="regresarDeBitacora()" aria-label="Volver a Sala de Cómputo">
                     <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver al panel
                 </button>
             </div>
-
+        </header>
+        <section class="sala-sessions-panel" aria-labelledby="activeSessionsTitle">
             <section class="sala-history-filter-panel" aria-label="Filtros del historial">
                 <div class="sala-history-filter-heading">
                     <span class="sala-history-filter-icon" aria-hidden="true"><i class="fa-solid fa-sliders"></i></span>
@@ -144,69 +163,28 @@
                     </div>
                 </div>
                 <div class="sala-history-toolbar">
-                    <label class="sala-history-field">
-                        <span>Módulo</span>
-                        <select id="historyModuleFilter" class="sala-form-control">
-                            <option value="" selected>Todos los módulos</option>
+                    <label class="sala-history-field sala-history-search">
+                        <span class="sala-sr-only">Buscar en el historial</span>
+                        <input id="historySearch" class="sala-form-control" type="search" placeholder="Buscar cuenta, nombre o PC..." autocomplete="off">
+                    </label>
+                    <div class="sala-history-field">
+                        <span id="historyModuleLabel">Tipo de registro</span>
+                        <select id="historyModuleFilter" class="sala-form-control" aria-labelledby="historyModuleLabel" data-sala-select>
+                            <option value="" selected>Todos los tipos</option>
                             <option value="VISITA">Visita</option>
                             <option value="CLASE">Clases</option>
                             <option value="EVENTO">Evento</option>
                             <option value="OBSERVACIONES">Observaciones</option>
                         </select>
-                    </label>
-                    <label class="sala-history-field">
-                        <span>Desde</span>
-                        <div class="sala-history-date-picker" data-history-date-picker>
-                            <input id="historyDateFrom" type="hidden">
-                            <button class="sala-date-trigger" type="button" aria-haspopup="dialog" aria-expanded="false" data-history-date-trigger>
-                                <span data-history-date-label>dd/mm/aaaa</span>
-                                <i class="fa-regular fa-calendar" aria-hidden="true"></i>
-                            </button>
-                            <div class="sala-calendar-popover" role="dialog" aria-label="Seleccionar fecha desde" hidden>
-                                <div class="sala-calendar-heading">
-                                    <button class="sala-calendar-nav" type="button" aria-label="Mes anterior" data-history-calendar-prev><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
-                                    <strong data-history-calendar-title></strong>
-                                    <button class="sala-calendar-nav" type="button" aria-label="Mes siguiente" data-history-calendar-next><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
-                                </div>
-                                <div class="sala-calendar-weekdays" aria-hidden="true">
-                                    <span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span>
-                                </div>
-                                <div class="sala-calendar-days" data-history-calendar-days></div>
-                                <div class="sala-calendar-footer">
-                                    <button type="button" data-history-date-clear>Limpiar</button>
-                                    <button type="button" data-history-date-today>Hoy</button>
-                                </div>
-                            </div>
-                        </div>
-                    </label>
-                    <label class="sala-history-field">
-                        <span>Hasta</span>
-                        <div class="sala-history-date-picker" data-history-date-picker>
-                            <input id="historyDateTo" type="hidden">
-                            <button class="sala-date-trigger" type="button" aria-haspopup="dialog" aria-expanded="false" data-history-date-trigger>
-                                <span data-history-date-label>dd/mm/aaaa</span>
-                                <i class="fa-regular fa-calendar" aria-hidden="true"></i>
-                            </button>
-                            <div class="sala-calendar-popover" role="dialog" aria-label="Seleccionar fecha hasta" hidden>
-                                <div class="sala-calendar-heading">
-                                    <button class="sala-calendar-nav" type="button" aria-label="Mes anterior" data-history-calendar-prev><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
-                                    <strong data-history-calendar-title></strong>
-                                    <button class="sala-calendar-nav" type="button" aria-label="Mes siguiente" data-history-calendar-next><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
-                                </div>
-                                <div class="sala-calendar-weekdays" aria-hidden="true">
-                                    <span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span>
-                                </div>
-                                <div class="sala-calendar-days" data-history-calendar-days></div>
-                                <div class="sala-calendar-footer">
-                                    <button type="button" data-history-date-clear>Limpiar</button>
-                                    <button type="button" data-history-date-today>Hoy</button>
-                                </div>
-                            </div>
-                        </div>
-                    </label>
+                    </div>
+                    {% include 'inicio/date_range_picker.html' with field_class='sala-history-field sala-range-field' picker_id='historyDateRange' start_id='historyDateFrom' end_id='historyDateTo' allow_clear=True only %}
                     <button id="exportHistoryButton" class="sala-form-submit sala-history-export" type="button">
                         <i class="fa-solid fa-file-export" aria-hidden="true"></i> Exportar
                     </button>
+                    <div class="sala-history-status-filter" role="group" aria-label="Filtrar por estado">
+                        <button type="button" class="is-active" data-history-status="all" aria-pressed="true">Todas</button>
+                        <button type="button" data-history-status="active" aria-pressed="false">Activas</button>
+                    </div>
                 </div>
             </section>
             <p id="historyResultsCount" class="sala-history-results" role="status" aria-live="polite"></p>
@@ -225,7 +203,7 @@
                     </thead>
                     <tbody>
                         {% for registro in historial_registros %}
-                        <tr data-module="{% if registro.observaciones %}OBSERVACIONES{% else %}{{ registro.tipo_registro|upper }}{% endif %}" data-date="{{ registro.fecha|date:'Y-m-d' }}">
+                        <tr data-module="{% if registro.observaciones %}OBSERVACIONES{% else %}{{ registro.tipo_registro|upper }}{% endif %}" data-date="{{ registro.fecha|date:'Y-m-d' }}" data-status="{% if registro.hora_salida %}closed{% else %}active{% endif %}">
                             <td>{{ registro.fecha|date:'l j-n-Y' }}</td>
                             <td>{{ registro.hora_entrada|time:'H:i' }}–{% if registro.hora_salida %}{{ registro.hora_salida|time:'H:i' }}{% else %}Activa{% endif %}</td>
                             <td>{% if registro.observaciones %}OBSERVACIONES{% else %}{{ registro.get_tipo_registro_display|default:'—' }}{% endif %}</td>
@@ -238,29 +216,39 @@
                 </table>
                 <p id="historyEmptyState" class="sala-history-empty sala-view-hidden">No hay registros que coincidan con los filtros seleccionados.</p>
             </div>
+            <div id="historyPagination" class="sala-history-pagination" aria-label="Paginación del historial" hidden>
+                <span data-history-page-summary></span>
+                <div>
+                    <button type="button" data-history-page="previous" disabled>Anterior</button>
+                    <span data-history-page-number aria-live="polite">1</span>
+                    <button type="button" data-history-page="next" disabled>Siguiente</button>
+                </div>
+            </div>
         </section>
     </div>
 
     <!-- ================= VISTA DE BITÁCORA DE FALLAS ================= -->
     <div id="incidenciasView" class="sala-view-hidden">
-        <section class="sala-sessions-panel sala-incident-panel" aria-labelledby="incidentTitle">
-            <div class="sala-sessions-heading">
-                <div>
-                    <p class="sala-computo-eyebrow">REGISTRO DE OBSERVACIONES</p>
-                    <h2 id="incidentTitle" tabindex="-1">Bitácora de fallas</h2>
-                    <p>Identifica el equipo afectado aunque la persona que lo utilizó ya se haya retirado.</p>
-                </div>
-                <button class="sala-back-btn" type="button" onclick="regresarDeIncidencias()" aria-label="Volver a Sala de Cómputo">
-                    <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver al panel
-                </button>
+        <header class="sala-computo-heading sala-view-heading">
+            <div>
+                <p class="sala-computo-eyebrow">Registro de observaciones</p>
+                <h1 id="incidentTitle" tabindex="-1">Bitácora de fallas</h1>
+                <p class="sala-computo-subtitle">Identifica el equipo afectado y registra la falla. Si encuentras el registro de uso, puedes vincularlo al reporte.</p>
             </div>
+            <button class="sala-back-btn" type="button" onclick="regresarDeIncidencias()" aria-label="Volver a Sala de Cómputo">
+                <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver al panel
+            </button>
+        </header>
+        <section class="sala-sessions-panel sala-incident-panel" aria-labelledby="incidentTitle">
 
             <p class="sala-demo-note sala-session-demo-note">
                 <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
                 Los reportes se guardan y quedan relacionados con el equipo y, si se identifica, con su registro de uso.
             </p>
 
-            <form id="incidentDemoForm" class="sala-incident-form">
+            <form id="incidentDemoForm" class="sala-incident-form" method="post"
+                  action="{% url 'registrar_incidencia_sala' %}" data-confirm-submit
+                  data-confirm-title="Confirmar registro" data-confirm-message="¿Confirmas que deseas registrar esta incidencia?">
                 {% csrf_token %}
                 <input id="incidentRelatedRecord" type="hidden" name="registro_id">
                 <section class="sala-incident-section is-active" data-incident-step="1">
@@ -273,17 +261,17 @@
                     </h3>
                     <div id="incidentStepBody1" class="sala-incident-step-body">
                         <div class="sala-incident-search">
-                            <label class="sala-history-field sala-incident-equipment-field" for="incidentEquipment">
-                                <span>Número de PC</span>
-                                <select id="incidentEquipment" name="equipo_id" class="sala-form-control" required>
-                                    <option value="">Selecciona el equipo afectado</option>
+                            <div class="sala-history-field sala-incident-equipment-field">
+                                <span id="incidentEquipmentLabel">Número de PC</span>
+                                <select id="incidentEquipment" name="equipo_id" class="sala-form-control" aria-labelledby="incidentEquipmentLabel" data-sala-select data-sala-viewport-select required>
+                                    <option value="">Selecciona una PC</option>
                                 </select>
-                            </label>
+                            </div>
                         </div>
                     </div>
                 </section>
 
-                <section class="sala-incident-section" data-incident-step="2">
+                <section class="sala-incident-section" data-incident-step="2" hidden>
                     <h3 class="sala-incident-section-title">
                         <button class="sala-incident-step-trigger" type="button" aria-expanded="false" aria-controls="incidentStepBody2" disabled>
                             <span class="sala-incident-step-number">2</span>
@@ -294,19 +282,16 @@
                     <div id="incidentStepBody2" class="sala-incident-step-body" hidden>
                         <p class="sala-incident-history-help">Filtra los registros de esa PC. El historial orienta, pero no confirma quién causó la falla.</p>
                         <div class="sala-incident-search sala-incident-history-search">
-                            <label class="sala-history-field" for="incidentUsageDate">
-                                <span>Fecha del uso</span>
-                                <input id="incidentUsageDate" class="sala-form-control" type="date" value="{{ fecha_hoy }}">
-                            </label>
-                            <label class="sala-history-field" for="incidentModule">
-                                <span>Tipo de registro</span>
-                                <select id="incidentModule" class="sala-form-control">
+                            {% include 'inicio/date_range_picker.html' with field_class='sala-history-field sala-range-field' picker_id='incidentDateRange' start_id='incidentDateFrom' end_id='incidentDateTo' initial_date=fecha_hoy only %}
+                            <div class="sala-history-field">
+                                <span id="incidentModuleLabel">Tipo de registro</span>
+                                <select id="incidentModule" class="sala-form-control" aria-labelledby="incidentModuleLabel" data-sala-select>
                                     <option value="">Todos los tipos</option>
                                     <option value="CLASE">Clase</option>
                                     <option value="VISITA">Visita</option>
                                     <option value="EVENTO">Evento</option>
                                 </select>
-                            </label>
+                            </div>
                             <button id="incidentLookupButton" class="sala-form-submit sala-incident-lookup" type="button">
                                 <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Consultar
                             </button>
@@ -316,7 +301,7 @@
                             <div class="sala-incident-history-table-wrap">
                                 <table class="sala-incident-history-table">
                                     <thead>
-                                        <tr><th>Hora</th><th>Tipo</th><th>Persona registrada</th><th>No. de cuenta</th><th scope="col" aria-label="Acción"></th></tr>
+                                        <tr><th>Fecha</th><th>Hora</th><th>Tipo</th><th>Persona registrada</th><th>No. de cuenta</th><th scope="col" aria-label="Acción"></th></tr>
                                     </thead>
                                     <tbody id="incidentHistoryResults">
                                     </tbody>
@@ -332,7 +317,7 @@
                     </div>
                 </section>
 
-                <section class="sala-incident-section" data-incident-step="3">
+                <section class="sala-incident-section" data-incident-step="3" hidden>
                     <h3 class="sala-incident-section-title">
                         <button class="sala-incident-step-trigger" type="button" aria-expanded="false" aria-controls="incidentStepBody3" disabled>
                             <span class="sala-incident-step-number">3</span>
@@ -348,42 +333,48 @@
                             <div><span>Persona usuaria</span><strong id="incidentReadonlyIdentity">No identificada</strong></div>
                             <div><span>Responsable</span><strong>{% if request.user.is_authenticated %}{{ request.user.username }}{% else %}Encargado no identificado{% endif %}</strong></div>
                             <div><span>No. de cuenta</span><strong id="incidentReadonlyAccount">—</strong></div>
-                            <div><span>Hora de uso</span><strong id="incidentReadonlyTime">—</strong></div>
+                            <div><span>Fecha y hora de uso</span><strong id="incidentReadonlyTime">—</strong></div>
                         </fieldset>
-                        <div class="sala-incident-search">
-                            <label class="sala-history-field" for="incidentDetectionMoment">
-                                <span>¿Cuándo se detectó?</span>
-                                <select id="incidentDetectionMoment" name="momento_deteccion" class="sala-form-control" required>
+                        <div class="sala-incident-report-fields">
+                            <div class="sala-history-field">
+                                <span id="incidentDetectionMomentLabel">¿Cuándo se detectó?</span>
+                                <select id="incidentDetectionMoment" name="momento_deteccion" class="sala-form-control" aria-labelledby="incidentDetectionMomentLabel" data-sala-select data-sala-viewport-select required>
                                     <option value="">Selecciona</option>
                                     <option value="durante_uso">Durante el uso</option>
                                     <option value="al_finalizar">Al finalizar el uso</option>
                                     <option value="despues_actividad">Después del evento o visita</option>
                                 </select>
+                            </div>
+                            <label class="sala-history-field" for="incidentDescription">
+                                <span>Descripción</span>
+                                <textarea id="incidentDescription" name="descripcion" class="sala-form-control" rows="3" placeholder="Describe qué falla observó el encargado." required></textarea>
                             </label>
                         </div>
-                        <label class="sala-history-field" for="incidentDescription">
-                            <span>Descripción</span>
-                            <textarea id="incidentDescription" name="descripcion" class="sala-form-control" rows="3" placeholder="Describe qué falla observó el encargado." required></textarea>
-                        </label>
                         <div class="sala-incident-submit">
                             <button class="sala-form-submit" type="submit">
                                 <i class="fa-solid fa-clipboard-check" aria-hidden="true"></i> Registrar incidencia
                             </button>
-                            <p id="incidentDemoMessage" class="sala-incident-message" role="status" aria-live="polite"></p>
                         </div>
                     </div>
                 </section>
+                <p id="incidentDemoMessage" class="sala-incident-message" role="status" aria-live="polite"></p>
             </form>
         </section>
     </div>
 
     <!-- ================= VISTA DINÁMICA: SELECCIÓN DE TIPO DE AGENDAMIENTO ================= -->
     <div id="agendarSelectorView" class="sala-view-hidden">
-        <section class="sala-tools-panel sala-scheduler-panel" aria-labelledby="scheduleTitle">
+        <header class="sala-computo-heading sala-view-heading sala-reservation-heading">
+            <div>
+                <p class="sala-computo-eyebrow">Agendamiento</p>
+                <h1 id="scheduleTitle" tabindex="-1">Reserva de espacio</h1>
+                <p class="sala-computo-subtitle">Reserva la sala de cómputo para clases o eventos.</p>
+            </div>
+        </header>
+        <section class="sala-tools-panel sala-scheduler-panel" aria-labelledby="scheduleQuestion">
             <div id="salaActivityPicker">
                 <div class="sala-tools-heading">
-                    <p class="sala-computo-eyebrow">RESERVA DE ESPACIO</p>
-                    <h1 id="scheduleTitle" tabindex="-1">¿Qué deseas agendar?</h1>
+                    <h2 id="scheduleQuestion">¿Qué deseas agendar?</h2>
                     <p>Elige una opción para registrar los datos y reservar la sala de cómputo.</p>
                 </div>
 
@@ -433,7 +424,14 @@
 
 <!-- Script para la transición dinámica de vistas -->
 <script>
+    function ocultarAvisosSala() {
+        document.querySelectorAll('.sala-page-messages').forEach(function(aviso) {
+            aviso.remove();
+        });
+    }
+
     function mostrarSelectorAgendar() {
+        ocultarAvisosSala();
         document.body.classList.add('sala-subview-active');
         document.body.classList.add('sala-scheduler-selector-active');
         document.body.classList.remove('sala-class-form-active');
@@ -461,16 +459,17 @@
     }
 
     function mostrarRegistros() {
-        document.body.classList.add('sala-subview-active');
+        ocultarAvisosSala();
+        document.body.classList.add('sala-subview-active', 'sala-registros-active');
         document.getElementById('mainOperatorDashboard').classList.add('sala-view-hidden');
         document.getElementById('registrosView').classList.remove('sala-view-hidden');
         document.getElementById('salaKioskButton').setAttribute('aria-expanded', 'true');
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        document.querySelector('[data-operation-menu]').focus();
+        document.querySelector('[data-operation-menu]').focus({ preventScroll: true });
     }
 
     function regresarDeRegistros() {
-        document.body.classList.remove('sala-subview-active');
+        document.body.classList.remove('sala-subview-active', 'sala-registros-active');
         document.getElementById('registrosView').classList.add('sala-view-hidden');
         document.getElementById('mainOperatorDashboard').classList.remove('sala-view-hidden');
         document.getElementById('salaKioskButton').setAttribute('aria-expanded', 'false');
@@ -479,6 +478,7 @@
     }
 
     function mostrarBitacora() {
+        ocultarAvisosSala();
         document.body.classList.add('sala-subview-active');
         document.getElementById('mainOperatorDashboard').classList.add('sala-view-hidden');
         document.getElementById('bitacoraView').classList.remove('sala-view-hidden');
@@ -497,6 +497,7 @@
     }
 
     function mostrarIncidencias() {
+        ocultarAvisosSala();
         document.body.classList.add('sala-subview-active');
         document.getElementById('mainOperatorDashboard').classList.add('sala-view-hidden');
         document.getElementById('incidenciasView').classList.remove('sala-view-hidden');
@@ -515,166 +516,207 @@
     }
 
     const historyModuleFilter = document.getElementById('historyModuleFilter');
-    const historyDateFrom = document.getElementById('historyDateFrom');
-    const historyDateTo = document.getElementById('historyDateTo');
-    const historyRows = Array.from(document.querySelectorAll('#historyTable tbody tr'));
-    const historyEmptyState = document.getElementById('historyEmptyState');
-    const historyResultsCount = document.getElementById('historyResultsCount');
-    const historyDateFormat = new Intl.DateTimeFormat('es-MX', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    });
-    const historyMonthFormat = new Intl.DateTimeFormat('es-MX', {
-        month: 'long',
-        year: 'numeric'
-    });
+    document.querySelectorAll('[data-sala-select]').forEach((select) => {
+        const picker = document.createElement('div');
+        picker.className = 'sala-search-select';
+        picker.innerHTML = '<button class="sala-date-trigger sala-history-select-trigger" type="button" aria-expanded="false"><span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button><div class="sala-search-select-options sala-history-select-options" role="group" hidden></div>';
+        const trigger = picker.firstElementChild;
+        const value = trigger.firstElementChild;
+        const options = picker.lastElementChild;
+        const useViewport = select.hasAttribute('data-sala-viewport-select');
+        const labelId = select.getAttribute('aria-labelledby');
+        value.id = select.id + '-value';
+        options.id = select.id + '-options';
+        options.setAttribute('aria-labelledby', labelId);
+        trigger.setAttribute('aria-controls', options.id);
+        trigger.setAttribute('aria-labelledby', labelId + ' ' + value.id);
 
-    function parseHistoryDate(value) {
-        if (!value) return null;
-        const [year, month, day] = value.split('-').map(Number);
-        return new Date(year, month - 1, day);
-    }
+        function updateLabel() {
+            value.textContent = select.selectedOptions[0]?.textContent || '';
+        }
 
-    function formatHistoryDate(date) {
-        return [
-            date.getFullYear(),
-            String(date.getMonth() + 1).padStart(2, '0'),
-            String(date.getDate()).padStart(2, '0')
-        ].join('-');
-    }
-
-    function initializeHistoryDatePicker(picker) {
-        const input = picker.querySelector('input[type="hidden"]');
-        const trigger = picker.querySelector('[data-history-date-trigger]');
-        const label = picker.querySelector('[data-history-date-label]');
-        const popover = picker.querySelector('.sala-calendar-popover');
-        const title = picker.querySelector('[data-history-calendar-title]');
-        const days = picker.querySelector('[data-history-calendar-days]');
-        let visibleMonth = parseHistoryDate(input.value) || new Date();
-        visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
-
-        function closePicker() {
-            popover.hidden = true;
+        function closeOptions() {
+            options.hidden = true;
             trigger.setAttribute('aria-expanded', 'false');
         }
 
-        function renderCalendar() {
-            title.textContent = historyMonthFormat.format(visibleMonth);
-            days.replaceChildren();
-            const firstDay = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
-            const offset = (firstDay.getDay() + 6) % 7;
-            const selectedDate = parseHistoryDate(input.value);
-            const today = new Date();
+        function positionOptions() {
+            if (options.hidden) return;
+            const anchor = trigger.getBoundingClientRect();
+            const margin = 8;
+            const below = window.innerHeight - anchor.bottom - margin * 2;
+            const above = anchor.top - margin * 2;
+            options.style.width = Math.min(anchor.width, window.innerWidth - margin * 2) + 'px';
+            const openAbove = below < Math.min(224, options.scrollHeight) && above > below;
+            options.style.maxHeight = Math.min(224, Math.max(0, openAbove ? above : below)) + 'px';
+            options.style.left = Math.max(margin, Math.min(anchor.left, window.innerWidth - options.offsetWidth - margin)) + 'px';
+            options.style.top = (openAbove ? anchor.top - options.offsetHeight - margin : anchor.bottom + margin) + 'px';
+        }
 
-            for (let index = 0; index < 42; index += 1) {
-                const date = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), index - offset + 1);
-                const dayButton = document.createElement('button');
-                dayButton.type = 'button';
-                dayButton.className = 'sala-calendar-day';
-                dayButton.textContent = String(date.getDate());
-                dayButton.setAttribute('aria-label', historyDateFormat.format(date));
-                if (date.getMonth() !== visibleMonth.getMonth()) dayButton.classList.add('is-outside-month');
-                if (date.toDateString() === today.toDateString()) dayButton.classList.add('is-today');
-                if (selectedDate && date.toDateString() === selectedDate.toDateString()) {
-                    dayButton.classList.add('is-selected');
-                    dayButton.setAttribute('aria-pressed', 'true');
-                }
-                dayButton.addEventListener('click', function () {
-                    input.value = formatHistoryDate(date);
-                    label.textContent = historyDateFormat.format(date);
-                    input.dispatchEvent(new Event('change', { bubbles: true }));
-                    closePicker();
-                    trigger.focus();
+        function focusOption(button) {
+            if (!button) return;
+            button.focus({ preventScroll: true });
+            const { top, bottom } = button.getBoundingClientRect();
+            const list = options.getBoundingClientRect();
+            if (bottom > list.bottom) options.scrollTop += bottom - list.bottom;
+            if (top < list.top) options.scrollTop -= list.top - top;
+        }
+
+        trigger.addEventListener('click', () => {
+            if (!options.hidden) {
+                closeOptions();
+                return;
+            }
+
+            options.replaceChildren();
+            for (const option of select.options) {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'sala-search-select-option';
+                button.textContent = option.textContent;
+                button.disabled = option.disabled;
+                button.setAttribute('aria-pressed', String(option.selected));
+                button.addEventListener('click', () => {
+                    select.value = option.value;
+                    closeOptions();
+                    trigger.focus({ preventScroll: true });
+                    select.dispatchEvent(new Event('change', { bubbles: true }));
                 });
-                days.appendChild(dayButton);
+                options.appendChild(button);
+            }
+
+            options.hidden = false;
+            trigger.setAttribute('aria-expanded', 'true');
+            if (useViewport) positionOptions();
+            focusOption(options.children[select.selectedIndex]);
+        });
+
+        function handleOptionsKey(event) {
+            if (options.hidden) return;
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                closeOptions();
+                trigger.focus({ preventScroll: true });
+            }
+            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                event.preventDefault();
+                const buttons = Array.from(options.querySelectorAll('button:not(:disabled)'));
+                const index = buttons.indexOf(event.target);
+                const next = event.key === 'ArrowDown' ? index + 1 : index - 1;
+                focusOption(buttons[next]);
             }
         }
-
-        function setDate(date) {
-            input.value = date ? formatHistoryDate(date) : '';
-            label.textContent = date ? historyDateFormat.format(date) : 'dd/mm/aaaa';
-            input.dispatchEvent(new Event('change', { bubbles: true }));
-            closePicker();
+        picker.addEventListener('keydown', handleOptionsKey);
+        if (useViewport) {
+            options.classList.add('sala-viewport-select-options');
+            document.body.append(options);
+            options.addEventListener('keydown', handleOptionsKey);
+            window.addEventListener('resize', positionOptions);
+            window.addEventListener('scroll', positionOptions, true);
+        }
+        function closeOutside(event) {
+            if (!picker.contains(event.target) && !options.contains(event.target)) closeOptions();
+        }
+        document.addEventListener('pointerdown', closeOutside);
+        document.addEventListener('focusin', closeOutside);
+        select.addEventListener('change', updateLabel);
+        select.addEventListener('input', updateLabel);
+        select.addEventListener('invalid', (event) => {
+            event.preventDefault();
             trigger.focus();
-        }
-
-        picker.querySelector('[data-history-calendar-prev]').addEventListener('click', function () {
-            visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1);
-            renderCalendar();
         });
-        picker.querySelector('[data-history-calendar-next]').addEventListener('click', function () {
-            visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1);
-            renderCalendar();
-        });
-        picker.querySelector('[data-history-date-clear]').addEventListener('click', function () {
-            setDate(null);
-        });
-        picker.querySelector('[data-history-date-today]').addEventListener('click', function () {
-            setDate(new Date());
-        });
-        trigger.addEventListener('click', function () {
-            const isOpening = popover.hidden;
-            document.querySelectorAll('[data-history-date-picker] .sala-calendar-popover').forEach(function (other) {
-                other.hidden = true;
-                other.parentElement.querySelector('[data-history-date-trigger]').setAttribute('aria-expanded', 'false');
-            });
-            if (isOpening) {
-                const selectedDate = parseHistoryDate(input.value);
-                if (selectedDate) visibleMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
-                renderCalendar();
-                popover.hidden = false;
-                trigger.setAttribute('aria-expanded', 'true');
-            }
-        });
-        picker.addEventListener('keydown', function (event) {
-            if (event.key === 'Escape' && !popover.hidden) {
-                closePicker();
-                trigger.focus();
-            }
-        });
-        if (input.value) label.textContent = historyDateFormat.format(parseHistoryDate(input.value));
-    }
-
-    document.querySelectorAll('[data-history-date-picker]').forEach(initializeHistoryDatePicker);
-    document.addEventListener('click', function (event) {
-        document.querySelectorAll('[data-history-date-picker]').forEach(function (picker) {
-            if (!picker.contains(event.target)) {
-                const popover = picker.querySelector('.sala-calendar-popover');
-                const trigger = picker.querySelector('[data-history-date-trigger]');
-                popover.hidden = true;
-                trigger.setAttribute('aria-expanded', 'false');
-            }
-        });
+        updateLabel();
+        select.after(picker);
+        select.hidden = true;
     });
+
+
+    const historyDateFrom = document.getElementById('historyDateFrom');
+    const historyDateTo = document.getElementById('historyDateTo');
+    const historySearch = document.getElementById('historySearch');
+    const historyRows = Array.from(document.querySelectorAll('#historyTable tbody tr'));
+    const historyEmptyState = document.getElementById('historyEmptyState');
+    const historyResultsCount = document.getElementById('historyResultsCount');
+    const historyPagination = document.getElementById('historyPagination');
+    const historyPageSummary = historyPagination.querySelector('[data-history-page-summary]');
+    const historyPageNumber = historyPagination.querySelector('[data-history-page-number]');
+    const historyPrevious = historyPagination.querySelector('[data-history-page="previous"]');
+    const historyNext = historyPagination.querySelector('[data-history-page="next"]');
+    const historyStatusButtons = Array.from(document.querySelectorAll('[data-history-status]'));
+    const HISTORY_PAGE_SIZE = 5;
+    let historyStatus = 'all';
+    let historyPage = 0;
+    let filteredHistoryRows = historyRows;
+    historyRows.forEach((row) => {
+        const moduleCell = row.cells[2];
+        const moduleChip = document.createElement('span');
+        moduleChip.className = `sala-history-module-chip is-${row.dataset.module.toLowerCase()}`;
+        moduleChip.textContent = moduleCell.textContent.trim();
+        moduleCell.replaceChildren(moduleChip);
+
+        const timeCell = row.cells[1];
+        const timeText = timeCell.textContent.trim();
+        const timeRange = row.dataset.status === 'active' ? timeText.replace(/\s*[–-]\s*Activa$/i, '') : timeText;
+        timeCell.textContent = '';
+        timeCell.append(document.createTextNode(timeRange));
+        const statusChip = document.createElement('span');
+        statusChip.className = `sala-history-state-chip is-${row.dataset.status}`;
+        statusChip.textContent = row.dataset.status === 'active' ? 'Activa' : 'Finalizada';
+        timeCell.append(' ', statusChip);
+    });
+    document.querySelector('[data-history-total]').textContent = String(historyRows.length);
+    document.querySelector('[data-history-active]').textContent = String(historyRows.filter((row) => row.dataset.status === 'active').length);
 
     function filtrarHistorial() {
         const selectedModule = historyModuleFilter.value;
         const dateFrom = historyDateFrom.value;
         const dateTo = historyDateTo.value;
-        let visibleCount = 0;
-
-        historyRows.forEach((row) => {
+        const query = historySearch.value.trim().toLocaleLowerCase('es-MX');
+        filteredHistoryRows = historyRows.filter((row) => {
             const matchesModule = !selectedModule || row.dataset.module === selectedModule;
             const matchesStart = !dateFrom || row.dataset.date >= dateFrom;
             const matchesEnd = !dateTo || row.dataset.date <= dateTo;
-            const isVisible = matchesModule && matchesStart && matchesEnd;
-
-            row.hidden = !isVisible;
-            if (isVisible) visibleCount += 1;
+            const matchesStatus = historyStatus !== 'active' || row.dataset.status === 'active';
+            const matchesSearch = !query || row.textContent.toLocaleLowerCase('es-MX').includes(query);
+            return matchesModule && matchesStart && matchesEnd && matchesStatus && matchesSearch;
         });
-
+        const pageCount = Math.max(1, Math.ceil(filteredHistoryRows.length / HISTORY_PAGE_SIZE));
+        historyPage = Math.min(historyPage, pageCount - 1);
+        const pageStart = historyPage * HISTORY_PAGE_SIZE;
+        const pageRows = new Set(filteredHistoryRows.slice(pageStart, pageStart + HISTORY_PAGE_SIZE));
+        historyRows.forEach((row) => { row.hidden = !pageRows.has(row); });
+        const visibleCount = filteredHistoryRows.length;
         historyEmptyState.classList.toggle('sala-view-hidden', visibleCount > 0);
         historyResultsCount.textContent = `${visibleCount} ${visibleCount === 1 ? 'registro encontrado' : 'registros encontrados'}`;
+        historyPagination.hidden = visibleCount <= HISTORY_PAGE_SIZE;
+        historyPageSummary.textContent = visibleCount
+            ? `Mostrando ${pageStart + 1}–${Math.min(pageStart + HISTORY_PAGE_SIZE, visibleCount)} de ${visibleCount} registros`
+            : 'Mostrando 0 registros';
+        historyPageNumber.textContent = String(historyPage + 1);
+        historyPrevious.disabled = historyPage === 0;
+        historyNext.disabled = historyPage >= pageCount - 1;
     }
 
-    [historyModuleFilter, historyDateFrom, historyDateTo].forEach((filter) => {
-        filter.addEventListener('change', filtrarHistorial);
+    [historyModuleFilter, historyDateFrom].forEach((filter) => {
+        filter.addEventListener('change', () => { historyPage = 0; filtrarHistorial(); });
     });
+    historySearch.addEventListener('input', () => { historyPage = 0; filtrarHistorial(); });
+    historyStatusButtons.forEach((button) => button.addEventListener('click', () => {
+        historyStatus = button.dataset.historyStatus;
+        historyPage = 0;
+        historyStatusButtons.forEach((option) => {
+            const active = option === button;
+            option.classList.toggle('is-active', active);
+            option.setAttribute('aria-pressed', String(active));
+        });
+        filtrarHistorial();
+    }));
+    historyPrevious.addEventListener('click', () => { historyPage = Math.max(0, historyPage - 1); filtrarHistorial(); });
+    historyNext.addEventListener('click', () => { historyPage += 1; filtrarHistorial(); });
     filtrarHistorial();
 
     document.getElementById('exportHistoryButton').addEventListener('click', () => {
-        const visibleRows = historyRows.filter((row) => !row.hidden);
+        const visibleRows = filteredHistoryRows;
         const headers = Array.from(document.querySelectorAll('#historyTable thead th'), (cell) => cell.textContent.trim());
         const csvRows = [headers, ...visibleRows.map((row) =>
             Array.from(row.cells, (cell) => cell.textContent.trim())
@@ -703,7 +745,8 @@
     const incidentEquipment = document.getElementById('incidentEquipment');
     const incidentReadonlyEquipment = document.getElementById('incidentReadonlyEquipment');
     const incidentReadonlyAsset = document.getElementById('incidentReadonlyAsset');
-    const incidentUsageDate = document.getElementById('incidentUsageDate');
+    const incidentDateFrom = document.getElementById('incidentDateFrom');
+    const incidentDateTo = document.getElementById('incidentDateTo');
     const incidentHistoryPanel = document.getElementById('incidentHistoryPanel');
     const incidentHistoryStatus = document.getElementById('incidentHistoryStatus');
     const incidentNoHistory = document.getElementById('incidentNoHistory');
@@ -729,6 +772,7 @@
             const body = step.querySelector('.sala-incident-step-body');
 
             step.classList.toggle('is-active', isActive);
+            step.hidden = !incidentStepUnlocked[index];
             trigger.setAttribute('aria-expanded', String(isActive));
             trigger.disabled = !incidentStepUnlocked[index];
             body.hidden = !isActive;
@@ -749,11 +793,13 @@
         incidentReadonlyAsset.textContent = selectedOption.dataset.asset || '—';
         clearIncidentUser();
         incidentModule.value = '';
+        incidentModule.dispatchEvent(new Event('input'));
         incidentHistoryResults.replaceChildren();
         incidentHistoryPanel.hidden = true;
         incidentContinueUnknown.hidden = true;
         incidentRelatedRecord.value = '';
         incidentDetectionMoment.value = '';
+        incidentDetectionMoment.dispatchEvent(new Event('input'));
         incidentDescription.value = '';
         incidentMessage.textContent = '';
         incidentSteps[1].classList.remove('is-complete');
@@ -785,7 +831,8 @@
 
     document.getElementById('incidentLookupButton').addEventListener('click', async () => {
         const selectedEquipment = incidentEquipment.value;
-        const selectedDate = incidentUsageDate.value;
+        const dateFrom = incidentDateFrom.value;
+        const dateTo = incidentDateTo.value;
         const selectedType = incidentModule.value;
 
         clearIncidentUser();
@@ -794,9 +841,10 @@
         incidentStepUnlocked[2] = false;
         incidentStepSummaries[1].textContent = 'Filtra por fecha y tipo';
         updateIncidentReportStep();
+        activateIncidentStep(2);
         incidentHistoryPanel.hidden = false;
-        if (!selectedEquipment || !selectedDate) {
-            incidentHistoryStatus.textContent = 'Selecciona primero la PC y la fecha para consultar el historial.';
+        if (!selectedEquipment || !dateFrom || !dateTo) {
+            incidentHistoryStatus.textContent = 'Selecciona primero la PC y el rango de fechas para consultar el historial.';
             incidentNoHistory.hidden = true;
             incidentContinueUnknown.hidden = true;
             incidentHistoryResults.replaceChildren();
@@ -805,7 +853,8 @@
 
         const url = new URL('{% url "historial_equipo_sala" %}', window.location.origin);
         url.searchParams.set('equipo_id', selectedEquipment);
-        url.searchParams.set('fecha', selectedDate);
+        url.searchParams.set('fecha_desde', dateFrom);
+        url.searchParams.set('fecha_hasta', dateTo);
         if (selectedType) url.searchParams.set('tipo', selectedType);
         incidentHistoryStatus.textContent = 'Consultando el historial...';
         incidentNoHistory.hidden = true;
@@ -824,7 +873,9 @@
                 row.dataset.person = registro.persona;
                 row.dataset.account = registro.cuenta;
                 row.dataset.time = registro.hora;
+                const dateLabel = registro.fecha.split('-').reverse().join('/');
                 [
+                    dateLabel,
                     registro.hora,
                     registro.tipo,
                     registro.persona,
@@ -844,12 +895,12 @@
                 selectButton.addEventListener('click', () => {
                     incidentReadonlyIdentity.textContent = registro.persona || 'No identificada';
                     incidentReadonlyAccount.textContent = registro.cuenta || 'Sin cuenta';
-                    incidentReadonlyTime.textContent = registro.hora;
+                    incidentReadonlyTime.textContent = dateLabel + ' ' + registro.hora;
                     incidentRelatedRecord.value = registro.id;
                     incidentHistoryResults.querySelectorAll('tr').forEach((otherRow) => {
                         otherRow.classList.toggle('is-selected', otherRow === row);
                     });
-                    incidentStepSummaries[1].textContent = `${registro.hora} · ${registro.persona}`;
+                    incidentStepSummaries[1].textContent = `${dateLabel} ${registro.hora} · ${registro.persona}`;
                     incidentSteps[1].classList.add('is-complete');
                     incidentStepUnlocked[2] = true;
                     activateIncidentStep(3);
@@ -875,7 +926,7 @@
         incidentSteps[2].querySelector('.sala-incident-step-trigger').focus();
     });
 
-    [incidentModule, incidentUsageDate].forEach((filter) => {
+    [incidentModule, incidentDateFrom].forEach((filter) => {
         filter.addEventListener('change', () => {
             clearIncidentUser();
             incidentHistoryPanel.hidden = true;
@@ -894,12 +945,16 @@
     });
 
     incidentForm.addEventListener('submit', async (event) => {
+        if (event.defaultPrevented) return;
         event.preventDefault();
         incidentMessage.textContent = '';
         if (!incidentForm.reportValidity()) return;
 
+        const submitButton = incidentForm.querySelector('button[type="submit"]');
+        if (submitButton.disabled) return;
+        submitButton.disabled = true;
         try {
-            const response = await fetch('{% url "registrar_incidencia_sala" %}', {
+            const response = await fetch(incidentForm.action, {
                 method: 'POST',
                 body: new FormData(incidentForm),
                 headers: { 'X-Requested-With': 'XMLHttpRequest' },
@@ -911,6 +966,9 @@
             }
             incidentMessage.textContent = 'La incidencia se guardó correctamente.';
             incidentForm.reset();
+            incidentEquipment.dispatchEvent(new Event('input'));
+            incidentModule.dispatchEvent(new Event('input'));
+            incidentDetectionMoment.dispatchEvent(new Event('input'));
             incidentHistoryResults.replaceChildren();
             incidentHistoryPanel.hidden = true;
             incidentReadonlyEquipment.textContent = 'Selecciona una PC arriba';
@@ -928,6 +986,8 @@
             activateIncidentStep(1);
         } catch (error) {
             incidentMessage.textContent = 'No fue posible guardar la incidencia. Intenta nuevamente.';
+        } finally {
+            submitButton.disabled = false;
         }
     });
 
