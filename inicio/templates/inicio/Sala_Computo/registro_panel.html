@@ -16,14 +16,14 @@
                 <div class="registros-operation-grid">
                     <button class="registros-operation-card registros-operation-entry" type="button" data-open-operation="entrada">
                         <span class="registros-operation-icon"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i></span>
-                        <strong>Registro de entrada</strong>
-                        <small>Selecciona Clase, Evento o Visita para registrar tu acceso.</small>
+                        <strong>Registro de Entrada</strong>
+                        <small>Registra tu llegada y seleciona el tipo de acceso</small>
                         <span class="registros-operation-action">Comenzar registro</span>
                     </button>
                     <button class="registros-operation-card registros-operation-exit" type="button" data-open-operation="salida">
                         <span class="registros-operation-icon"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i></span>
-                        <strong>Registro de salida</strong>
-                        <small>Ingresa tu número de cuenta para liberar el equipo.</small>
+                        <strong>Registro de Salida</strong>
+                        <small>Finaliza tu sesión en las instalaciones</small>
                         <span class="registros-operation-action">Finalizar sesión</span>
                     </button>
                 </div>
@@ -244,22 +244,28 @@
     </div>
     <p class="registros-demo-feedback registros-global-feedback" data-global-feedback role="status" hidden></p>
     <dialog class="app-confirm-dialog" data-kiosk-exit aria-labelledby="kioskExitTitle" aria-describedby="kioskExitMessage">
-        <button type="button" class="app-confirm-cancel registros-exit-close" data-close-kiosk-exit aria-label="Cerrar confirmación">
+        <button type="button" class="registros-exit-icon-button registros-exit-close" data-close-kiosk-exit aria-label="Cerrar confirmación">
             <i class="fa-solid fa-xmark" aria-hidden="true"></i>
         </button>
         <div class="app-confirm-icon" aria-hidden="true"><i class="fa-solid fa-lock"></i></div>
         <h2 id="kioskExitTitle">¿Salir de los registros?</h2>
         <p id="kioskExitMessage">Confirma con las credenciales de un usuario autorizado para volver al panel.</p>
-        <form method="post" action="{% url 'confirmar_salida_registros' %}" data-confirm-exempt>
+        <form class="registros-exit-credentials" method="post" action="{% url 'confirmar_salida_registros' %}" data-confirm-exempt>
             {% csrf_token %}
             {% if not request.user.is_superuser and not request.user.mod_sala_computo %}
                 <label for="kioskExitUsername">Usuario autorizado</label>
                 <input id="kioskExitUsername" class="sala-form-control" name="username" autocomplete="username" required autofocus>
             {% endif %}
             <label for="kioskExitPassword">Contraseña</label>
-            <input id="kioskExitPassword" class="sala-form-control" type="password" name="password" autocomplete="current-password" required {% if request.user.is_superuser or request.user.mod_sala_computo %}autofocus{% endif %}>
+            <div class="registros-exit-password-row">
+                <input id="kioskExitPassword" class="sala-form-control" type="password" name="password" autocomplete="current-password" placeholder="Ingresa tu contraseña" required {% if request.user.is_superuser or request.user.mod_sala_computo %}autofocus{% endif %}>
+                <button type="button" class="registros-exit-icon-button" data-toggle-exit-password aria-label="Mostrar contraseña" aria-controls="kioskExitPassword" aria-pressed="false">
+                    <i class="fa-solid fa-eye" aria-hidden="true"></i>
+                </button>
+            </div>
             <p data-kiosk-exit-error role="alert" hidden></p>
             <div class="app-confirm-actions">
+                <button type="button" class="app-confirm-cancel" data-close-kiosk-exit>Cancelar</button>
                 <button type="submit" class="app-confirm-accept">Confirmar salida</button>
             </div>
         </form>
@@ -271,15 +277,29 @@
         const exitDialog = document.querySelector('[data-kiosk-exit]');
         const exitForm = exitDialog.querySelector('form');
         const exitPassword = exitForm.elements.password;
+        const exitPasswordToggle = exitForm.querySelector('[data-toggle-exit-password]');
+        const exitPasswordIcon = exitPasswordToggle.querySelector('i');
         const exitError = exitDialog.querySelector('[data-kiosk-exit-error]');
         const exitSubmit = exitForm.querySelector('[type="submit"]');
         let exitRequest;
 
+        function setExitPasswordVisible(visible) {
+            exitPassword.type = visible ? 'text' : 'password';
+            exitPasswordToggle.setAttribute('aria-pressed', String(visible));
+            exitPasswordIcon.classList.toggle('fa-eye', !visible);
+            exitPasswordIcon.classList.toggle('fa-eye-slash', visible);
+        }
+
+        exitPasswordToggle.addEventListener('click', () => setExitPasswordVisible(exitPassword.type === 'password'));
+
         document.querySelector('[data-open-kiosk-exit]').addEventListener('click', () => exitDialog.showModal());
-        exitDialog.querySelector('[data-close-kiosk-exit]').addEventListener('click', () => exitDialog.close());
+        exitDialog.querySelectorAll('[data-close-kiosk-exit]').forEach((button) => {
+            button.addEventListener('click', () => exitDialog.close());
+        });
         exitDialog.addEventListener('close', () => {
             exitRequest?.abort();
             exitForm.reset();
+            setExitPasswordVisible(false);
             exitError.hidden = true;
         });
         exitForm.addEventListener('submit', async (event) => {
@@ -291,6 +311,7 @@
             exitRequest = new AbortController();
             const { signal } = exitRequest;
             exitPassword.value = '';
+            setExitPasswordVisible(false);
             try {
                 const response = await fetch(exitForm.action, { method: 'POST', body: credentials, signal });
                 const result = await response.json();
