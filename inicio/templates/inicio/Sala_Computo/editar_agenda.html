@@ -4,7 +4,7 @@
 {% block title %}{{ titulo }} | Sala de Cómputo{% endblock %}
 {% block body_class %}sala-computo-body sala-edit-booking-body{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'inicio/css/salacomputo/salacomputo.css' %}?v=20261119-edit-class-spacing-v3">
+<link rel="stylesheet" href="{% static 'inicio/css/salacomputo/salacomputo.css' %}?v=20261124-cancelar-verde">
 {% endblock %}
 
 {% block content %}
@@ -169,7 +169,7 @@
                 {% endif %}
             </div>
             <div class="sala-form-actions">
-                <a class="sala-agenda-edit" href="{% url 'agenda_programada_sala' %}">Cancelar</a>
+                <a class="sala-agenda-edit sala-edit-cancel" href="{% url 'agenda_programada_sala' %}">Cancelar</a>
                 <button class="sala-form-submit" type="submit"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Guardar cambios</button>
             </div>
         </form>
