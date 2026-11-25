@@ -208,6 +208,20 @@ class AutoAccesoViewTests(TestCase):
             lugar='Auto Acceso',
             estado='Ocupado',
         )
+        occupied = Equipo.objects.get(no_equipo='AA-02')
+        active_student = Persona.objects.create(
+            perfil='Alumno',
+            matricula='ALU-AUTO-ACTIVE-1',
+            nombre='Elena',
+            apellidos='Díaz',
+        )
+        Registro.objects.create(
+            modulo='Auto_Acceso',
+            persona=active_student,
+            equipo=occupied,
+            fecha=timezone.localdate(),
+            hora_entrada=time(9, 0),
+        )
         Equipo.objects.create(
             no_equipo='AA-03',
             lugar='Auto Acceso',
@@ -218,23 +232,45 @@ class AutoAccesoViewTests(TestCase):
             lugar='Sala',
             estado='Disponible',
         )
+        stale = Equipo.objects.create(
+            no_equipo='AA-04',
+            lugar='Auto Acceso',
+            estado='Ocupado',
+        )
+        yesterday = timezone.localdate() - timedelta(days=1)
+        student = Persona.objects.create(
+            perfil='Alumno',
+            matricula='ALU-AUTO-STALE-1',
+            nombre='Luis',
+            apellidos='López',
+        )
+        Registro.objects.create(
+            modulo='Auto_Acceso',
+            persona=student,
+            equipo=stale,
+            fecha=yesterday,
+            hora_entrada=time(9, 0),
+        )
 
         response = self.client.get(reverse('autoacceso'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['equipos_total'], 3)
+        self.assertEqual(response.context['equipos_total'], 4)
         self.assertEqual(response.context['equipos_ocupados'], 1)
-        self.assertEqual(response.context['equipos_disponibles'], 1)
-        self.assertEqual(response.context['equipos_ocupados_porcentaje'], 33)
-        self.assertContains(response, 'data-ocupados-porcentaje="33"')
+        self.assertEqual(response.context['equipos_disponibles'], 2)
+        self.assertEqual(response.context['equipos_ocupados_porcentaje'], 25)
+        self.assertContains(response, 'data-ocupados-porcentaje="25"')
         self.assertEqual(
             list(response.context['equipos_autoacceso']),
-            [disponible],
+            [disponible, stale],
         )
         self.assertContains(response, 'AA-01')
         self.assertNotContains(response, 'AA-02')
         self.assertNotContains(response, 'AA-03')
         self.assertNotContains(response, 'SALA-01')
+        stale.refresh_from_db()
+        self.assertEqual(stale.estado, 'Ocupado')
+        self.assertIsNone(Registro.objects.get(equipo=stale).hora_salida)
 
     def test_autoacceso_entry_wires_student_lookup_to_readonly_fields(self):
         response = self.client.get(reverse('autoacceso'))
@@ -299,6 +335,43 @@ class AutoAccesoViewTests(TestCase):
         self.assertEqual(registro.equipo, equipment)
         equipment.refresh_from_db()
         self.assertEqual(equipment.estado, 'Ocupado')
+
+    def test_autoacceso_entry_reuses_equipment_with_an_open_record_from_a_prior_day(self):
+        equipment = Equipo.objects.create(
+            no_equipo='AA-ENTRY-OLD',
+            lugar='Auto Acceso',
+            estado='Ocupado',
+        )
+        previous_student = Persona.objects.create(
+            perfil='Alumno',
+            matricula='ALU-AUTO-OLD-1',
+            nombre='Luis',
+            apellidos='López',
+        )
+        Registro.objects.create(
+            modulo='Auto_Acceso',
+            persona=previous_student,
+            equipo=equipment,
+            fecha=timezone.localdate() - timedelta(days=3),
+            hora_entrada=time(9, 0),
+        )
+        student = Persona.objects.create(
+            perfil='Alumno',
+            matricula='ALU-AUTO-NEW-1',
+            nombre='Ana',
+            apellidos='Pérez',
+        )
+
+        response = self.client.post(reverse('autoacceso'), {
+            'numero_cuenta': student.matricula,
+            'motivo_uso': 'visita',
+            'aaNecesitaEquipo': 'si',
+            'numero_equipo': str(equipment.pk),
+            'descripcion_actividad': '',
+        })
+
+        self.assertEqual(response.status_code, 201, response.json())
+        self.assertEqual(Registro.objects.filter(equipo=equipment).count(), 2)
 
     def test_autoacceso_entry_rejects_equipment_that_is_not_available(self):
         student = Persona.objects.create(
@@ -679,7 +752,7 @@ class SalaComputoViewTests(TestCase):
         self.assertEqual(response.context['active_schedule_view'], 'evento')
 
     def test_internal_speaker_lookup_returns_administrator_or_teacher(self):
-        for perfil, matricula in (('Administrador', 'ADM-101'), ('Docente', 'DOC-101')):
+        for perfil, matricula in (('Administrador', '101'), ('Docente', '102')):
             with self.subTest(perfil=perfil):
                 persona = Persona.objects.create(
                     perfil=perfil,
@@ -700,15 +773,51 @@ class SalaComputoViewTests(TestCase):
     def test_internal_speaker_lookup_rejects_student_profile(self):
         Persona.objects.create(
             perfil='Alumno',
-            matricula='ALU-101',
+            matricula='101',
             nombre='Luis',
             apellidos='López',
         )
 
-        response = self.client.get(reverse('buscar_ponente_sala'), {'cuenta': 'ALU-101'})
+        response = self.client.get(reverse('buscar_ponente_sala'), {'cuenta': '101'})
 
         self.assertEqual(response.status_code, 404)
         self.assertFalse(response.json()['encontrado'])
+
+    def test_internal_speaker_lookup_rejects_non_numeric_account(self):
+        response = self.client.get(
+            reverse('buscar_ponente_sala'),
+            {'cuenta': '101-A'},
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('únicamente números', response.json()['error'])
+
+    def test_student_lookup_rejects_non_numeric_account(self):
+        response = self.client.get(
+            reverse('buscar_alumno_sala'),
+            {'cuenta': '301-A'},
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('únicamente números', response.json()['error'])
+
+    def test_exit_lookup_rejects_non_numeric_account_without_a_folio(self):
+        response = self.client.get(
+            reverse('buscar_salida_sala'),
+            {'cuenta': '301-A'},
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('únicamente números', response.json()['error'])
+
+    def test_class_search_rejects_non_numeric_teacher_account(self):
+        response = self.client.get(
+            reverse('buscar_clases_registro'),
+            {'docente': 'DOC-103'},
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('únicamente números', response.json()['error'])
 
     def test_teacher_lookup_returns_teacher_and_career_from_database(self):
         career = Carrera.objects.create(nombre_carrera='Sistemas')
@@ -731,6 +840,15 @@ class SalaComputoViewTests(TestCase):
             'carrera': 'Sistemas',
         })
 
+    def test_teacher_lookup_can_enforce_numeric_accounts_for_sala_forms(self):
+        response = self.client.get(reverse('buscar_docente_sala'), {
+            'cuenta': 'DOC-102',
+            'numeric_only': '1',
+        })
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('únicamente números', response.json()['error'])
+
     def test_teacher_lookup_does_not_return_students(self):
         Persona.objects.create(
             perfil='Alumno',
@@ -749,7 +867,7 @@ class SalaComputoViewTests(TestCase):
         other_career = Carrera.objects.create(nombre_carrera='Contabilidad')
         teacher = Persona.objects.create(
             perfil='Docente',
-            matricula='DOC-103',
+            matricula='103',
             nombre='Ana',
             apellidos='Pérez',
             carrera=career,
@@ -781,7 +899,7 @@ class SalaComputoViewTests(TestCase):
         other_career = Carrera.objects.create(nombre_carrera='Contabilidad')
         teacher = Persona.objects.create(
             perfil='Docente',
-            matricula='DOC-104',
+            matricula='104',
             nombre='Ana',
             apellidos='Pérez',
             carrera=career,
@@ -795,12 +913,23 @@ class SalaComputoViewTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn('La carrera seleccionada no corresponde al docente.', response.json()['error'])
 
+    def test_class_catalogs_reject_non_numeric_teacher_accounts(self):
+        career = Carrera.objects.create(nombre_carrera='Sistemas')
+
+        response = self.client.get(reverse('catalogos_clase_docente'), {
+            'cuenta': 'DOC-104',
+            'carrera': career.pk,
+        })
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('únicamente números', response.json()['error'])
+
     def test_unassigned_teacher_can_load_catalogs_for_a_selected_career(self):
         career = Carrera.objects.create(nombre_carrera='Sistemas')
         other_career = Carrera.objects.create(nombre_carrera='Contabilidad')
         teacher = Persona.objects.create(
             perfil='Docente',
-            matricula='DOC-104A',
+            matricula='105',
             nombre='Ana',
             apellidos='Pérez',
         )
@@ -831,7 +960,7 @@ class SalaComputoViewTests(TestCase):
         career = Carrera.objects.create(nombre_carrera='Sistemas')
         teacher = Persona.objects.create(
             perfil='Docente',
-            matricula='DOC-105',
+            matricula='106',
             nombre='Ana',
             apellidos='Pérez',
             carrera=career,
@@ -864,7 +993,7 @@ class SalaComputoViewTests(TestCase):
         career = Carrera.objects.create(nombre_carrera='Sistemas')
         teacher = Persona.objects.create(
             perfil='Docente',
-            matricula='DOC-105A',
+            matricula='107',
             nombre='Ana',
             apellidos='Pérez',
         )
@@ -900,7 +1029,7 @@ class SalaComputoViewTests(TestCase):
         other_career = Carrera.objects.create(nombre_carrera='Contabilidad')
         teacher = Persona.objects.create(
             perfil='Docente',
-            matricula='DOC-106',
+            matricula='108',
             nombre='Ana',
             apellidos='Pérez',
             carrera=career,
@@ -947,6 +1076,66 @@ class SalaComputoViewTests(TestCase):
             [item['id'] for item in all_response.json()['equipos']],
             [available.pk, occupied.pk],
         )
+
+    def test_equipment_lookup_releases_a_device_with_an_open_record_from_a_prior_day(self):
+        equipment = Equipo.objects.create(
+            no_equipo='PC-OLD',
+            lugar='Sala',
+            estado='Ocupado',
+        )
+        previous_student = Persona.objects.create(
+            perfil='Alumno',
+            matricula='501',
+            nombre='Luis',
+            apellidos='López',
+        )
+        record = Registro.objects.create(
+            modulo='Sala_Computo',
+            tipo_registro='Visita',
+            persona=previous_student,
+            equipo=equipment,
+            fecha=timezone.localdate() - timedelta(days=4),
+            hora_entrada=time(9, 0),
+        )
+
+        response = self.client.get(reverse('equipos_sala'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([item['id'] for item in response.json()['equipos']], [equipment.pk])
+        equipment.refresh_from_db()
+        record.refresh_from_db()
+        self.assertEqual(equipment.estado, 'Ocupado')
+        self.assertIsNone(record.hora_salida)
+
+    def test_entry_can_use_a_device_with_an_open_record_from_a_prior_day(self):
+        equipment = Equipo.objects.create(
+            no_equipo='PC-OLD-ENTRY',
+            lugar='Sala',
+            estado='Ocupado',
+        )
+        student = Persona.objects.create(
+            perfil='Alumno',
+            matricula='502',
+            nombre='Luis',
+            apellidos='López',
+        )
+        Registro.objects.create(
+            modulo='Sala_Computo',
+            tipo_registro='Visita',
+            persona=student,
+            equipo=equipment,
+            fecha=timezone.localdate() - timedelta(days=4),
+            hora_entrada=time(9, 0),
+        )
+
+        response = self.client.post(reverse('registrar_entrada_sala'), {
+            'tipo': 'visita',
+            'persona_id': student.pk,
+            'equipo_id': equipment.pk,
+        })
+
+        self.assertEqual(response.status_code, 200, response.json())
+        self.assertEqual(Registro.objects.filter(equipo=equipment).count(), 2)
 
     def test_equipment_lookup_sorts_numeric_numbers_in_natural_order(self):
         for number in ('10', '2', '1'):
@@ -1102,6 +1291,104 @@ class SalaComputoViewTests(TestCase):
         self.assertIsNotNone(record.hora_salida)
         self.assertEqual(equipment.estado, 'Disponible')
 
+    def test_visit_rejects_a_second_open_session_for_the_same_person(self):
+        student = Persona.objects.create(
+            perfil='Alumno',
+            matricula='301',
+            nombre='Ana',
+            apellidos='Pérez',
+        )
+        Registro.objects.create(
+            persona=student,
+            modulo='Sala_Computo',
+            tipo_registro='Visita',
+            fecha=timezone.localdate(),
+            hora_entrada=time(9, 0),
+        )
+
+        response = self.client.post(reverse('registrar_entrada_sala'), {
+            'tipo': 'visita',
+            'persona_id': student.pk,
+        })
+
+        self.assertEqual(response.status_code, 409)
+        self.assertIn('sesión activa', response.json()['error'])
+        self.assertEqual(Registro.objects.filter(persona=student).count(), 1)
+
+    def test_visit_allows_a_new_session_after_the_previous_one_closed(self):
+        student = Persona.objects.create(
+            perfil='Alumno',
+            matricula='302',
+            nombre='Ana',
+            apellidos='Pérez',
+        )
+        Registro.objects.create(
+            persona=student,
+            modulo='Sala_Computo',
+            tipo_registro='Visita',
+            fecha=timezone.localdate(),
+            hora_entrada=time(8, 0),
+            hora_salida=time(8, 30),
+        )
+
+        response = self.client.post(reverse('registrar_entrada_sala'), {
+            'tipo': 'visita',
+            'persona_id': student.pk,
+        })
+
+        self.assertEqual(response.status_code, 200, response.json())
+        self.assertEqual(Registro.objects.filter(persona=student).count(), 2)
+
+    def test_event_rejects_the_same_attendee_twice(self):
+        speaker = Externo.objects.create(
+            nombre='Ponente',
+            apellidos='Externo',
+            institucion='Universidad de prueba',
+        )
+        with patch(
+            'inicio.models.timezone.localtime',
+            return_value=datetime.combine(timezone.localdate(), time(8, 0)),
+        ):
+            event = EventoTallerConferencia.objects.create(
+                tipo_evento='Taller',
+                nombre_evento='Taller de prueba',
+                tipo_ponente='Externo',
+                ponente_externo=speaker,
+                fecha=timezone.localdate(),
+                hora_inicio=time(9, 0),
+                hora_fin=time(10, 0),
+            )
+        attendee = Externo.objects.create(
+            nombre='María',
+            apellidos='Gómez',
+            institucion='Institución visitante',
+        )
+        Registro.objects.create(
+            externo=attendee,
+            evento=event,
+            modulo='Sala_Computo',
+            tipo_registro='Evento',
+            fecha=timezone.localdate(),
+            hora_entrada=time(9, 0),
+            hora_salida=time(9, 15),
+        )
+
+        with patch(
+            'inicio.views.timezone.localtime',
+            return_value=datetime.combine(timezone.localdate(), time(9, 30)),
+        ):
+            response = self.client.post(reverse('registrar_entrada_sala'), {
+                'tipo': 'evento',
+                'evento_id': event.pk,
+                'nombre': 'maría',
+                'apellidos': 'GÓMEZ',
+                'institucion': 'institución visitante',
+            })
+
+        self.assertEqual(response.status_code, 409)
+        self.assertIn('ya está registrada', response.json()['error'])
+        self.assertEqual(Registro.objects.filter(evento=event).count(), 1)
+
     def test_class_attendance_saves_presence_absence_and_equipment_use(self):
         career = Carrera.objects.create(nombre_carrera='Sistemas')
         group = Grupo.objects.create(nombre_grupo='A', carrera=career)
@@ -1168,6 +1455,60 @@ class SalaComputoViewTests(TestCase):
         equipment.refresh_from_db()
         self.assertEqual(equipment.estado, 'Ocupado')
 
+    def test_class_attendance_rejects_a_person_with_another_open_session(self):
+        career = Carrera.objects.create(nombre_carrera='Sistemas')
+        group = Grupo.objects.create(nombre_grupo='A', carrera=career)
+        subject = Materia.objects.create(nombre_materia='Programación', carrera=career)
+        teacher = Persona.objects.create(
+            perfil='Docente',
+            matricula='401',
+            nombre='Elena',
+            apellidos='Ruiz',
+            carrera=career,
+        )
+        student = Persona.objects.create(
+            perfil='Alumno',
+            matricula='402',
+            nombre='Luis',
+            apellidos='López',
+            carrera=career,
+            grupo=group,
+        )
+        with patch(
+            'inicio.models.timezone.localtime',
+            return_value=datetime.combine(timezone.localdate(), time(8, 0)),
+        ):
+            clase = Clase.objects.create(
+                materia=subject,
+                grupo=group,
+                docente=teacher,
+                fecha=timezone.localdate(),
+                hora_inicio=time(9, 0),
+                hora_fin=time(10, 0),
+            )
+        Registro.objects.create(
+            persona=student,
+            modulo='Sala_Computo',
+            tipo_registro='Visita',
+            fecha=timezone.localdate(),
+            hora_entrada=time(8, 30),
+        )
+
+        with patch(
+            'inicio.views.timezone.localtime',
+            return_value=datetime.combine(timezone.localdate(), time(9, 30)),
+        ):
+            response = self.client.post(reverse('registrar_asistencia_sala'), {
+                'clase_id': clase.pk,
+                'asistencias': (
+                    f'[{{"alumno_id": {student.pk}, "estado": "Asistió", "equipo_id": ""}}]'
+                ),
+            })
+
+        self.assertEqual(response.status_code, 409)
+        self.assertIn('sesión activa', response.json()['error'])
+        self.assertFalse(Asistencia.objects.filter(clase=clase).exists())
+
 
 class RegistroClaseFormValidationTests(TestCase):
     def form(self, **data):
@@ -1188,6 +1529,15 @@ class RegistroClaseFormValidationTests(TestCase):
 
         self.assertFalse(form.is_valid())
         self.assertIn('La fecha de inicio no puede ser anterior a hoy.', form.errors['fecha'])
+
+    def test_rejects_non_numeric_teacher_account(self):
+        form = self.form(numero_cuenta_docente='DOC-123')
+
+        self.assertFalse(form.is_valid())
+        self.assertIn(
+            'El número de cuenta debe contener únicamente números.',
+            form.errors['numero_cuenta_docente'],
+        )
 
     def test_rejects_end_date_in_the_past(self):
         yesterday = timezone.localdate() - timedelta(days=1)
@@ -1316,7 +1666,7 @@ class RegistroEventoFormValidationTests(TestCase):
         self.assertTrue(form.errors['hora_fin'])
 
     def test_accepts_administrator_or_teacher_as_internal_speaker(self):
-        for perfil, matricula in (('Administrador', 'ADM-201'), ('Docente', 'DOC-201')):
+        for perfil, matricula in (('Administrador', '201'), ('Docente', '202')):
             with self.subTest(perfil=perfil):
                 persona = Persona.objects.create(
                     perfil=perfil,
@@ -1333,16 +1683,30 @@ class RegistroEventoFormValidationTests(TestCase):
                 self.assertTrue(form.is_valid(), form.errors)
                 self.assertEqual(form.cleaned_data['persona'], persona)
 
+    def test_rejects_non_numeric_internal_speaker_account(self):
+        form = self.form(
+            pertenece_al_plantel='si',
+            numero_cuenta_ponente='201-A',
+            persona_id='1',
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn(
+            'El número de cuenta debe contener únicamente números.',
+            form.errors['numero_cuenta_ponente'],
+        )
+        self.assertEqual(len(form.errors['numero_cuenta_ponente']), 1)
+
     def test_rejects_a_student_as_internal_speaker(self):
         Persona.objects.create(
             perfil='Alumno',
-            matricula='ALU-201',
+            matricula='203',
             nombre='Luis',
             apellidos='López',
         )
         form = self.form(
             pertenece_al_plantel='si',
-            numero_cuenta_ponente='ALU-201',
+            numero_cuenta_ponente='203',
             persona_id='1',
         )
 
@@ -1392,7 +1756,7 @@ class HorarioNormalizacionTests(TestCase):
         )
         cls.persona = Persona.objects.create(
             perfil='Docente',
-            matricula='DOC-001',
+            matricula='001',
             nombre='Ana',
             apellidos='Prueba',
             carrera=cls.carrera,

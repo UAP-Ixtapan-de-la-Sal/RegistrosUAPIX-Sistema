@@ -1,8 +1,11 @@
 import os #Owen
 import json
+import re
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
+from django.db.models import Exists, OuterRef, Q
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.views.decorators.http import require_POST
@@ -25,6 +28,9 @@ from .forms import (
 )
 
 
+ZONA_HORARIA_CLASE_SALA = ZoneInfo('America/Mexico_City')
+
+
 def _ordenar_equipos_por_numero(equipos):
     def clave(equipo):
         numero = equipo.no_equipo.strip()
@@ -33,6 +39,48 @@ def _ordenar_equipos_por_numero(equipos):
         return (1, 0, numero.casefold())
 
     return sorted(equipos, key=clave)
+
+
+def _es_numero_cuenta(cuenta):
+    return bool(re.fullmatch(r'[0-9]+', cuenta))
+
+
+def _registros_abiertos_de_equipo(*, fecha=None, fecha_antes_de=None):
+    registros = Registro.objects.filter(
+        equipo_id=OuterRef('pk'),
+        hora_salida__isnull=True,
+    )
+    if fecha is not None:
+        registros = registros.filter(fecha=fecha)
+    if fecha_antes_de is not None:
+        registros = registros.filter(fecha__lt=fecha_antes_de)
+    return registros
+
+
+def _equipos_disponibles(lugar):
+    hoy = timezone.localdate()
+    registros_hoy = _registros_abiertos_de_equipo(fecha=hoy)
+    registros_anteriores = _registros_abiertos_de_equipo(fecha_antes_de=hoy)
+    return (
+        Equipo.objects.filter(
+            lugar=lugar,
+            estado__in=('Disponible', 'Ocupado'),
+        )
+        .filter(~Exists(registros_hoy))
+        .filter(
+            Q(estado='Disponible')
+            | (Q(estado='Ocupado') & Exists(registros_anteriores))
+        )
+    )
+
+
+def _contar_equipos_ocupados(equipos):
+    hoy = timezone.localdate()
+    registros_hoy = _registros_abiertos_de_equipo(fecha=hoy)
+    registros_anteriores = _registros_abiertos_de_equipo(fecha_antes_de=hoy)
+    return equipos.filter(estado='Ocupado').filter(
+        Exists(registros_hoy) | ~Exists(registros_anteriores),
+    ).count()
 
 
 # AQUI EMPEZO A MODIFICAR OWEN
@@ -338,8 +386,9 @@ def sala_computo_view(request):
         return redirect('sala_computo')
 
     equipos_sala = Equipo.objects.filter(lugar='Sala')
+    equipos_sala_disponibles = _equipos_disponibles('Sala')
     total_equipos = equipos_sala.count()
-    equipos_ocupados = equipos_sala.filter(estado='Ocupado').count()
+    equipos_ocupados = _contar_equipos_ocupados(equipos_sala)
     registros = Registro.objects.filter(modulo='Sala_Computo').select_related(
         'persona', 'externo', 'equipo', 'clase__materia', 'clase__grupo', 'evento',
     ).order_by('-fecha', '-hora_entrada')
@@ -349,7 +398,7 @@ def sala_computo_view(request):
         'active_schedule_view': 'clase' if es_envio_clase else 'evento' if es_envio_evento else '',
         'equipos_total': total_equipos,
         'equipos_ocupados': equipos_ocupados,
-        'equipos_disponibles': equipos_sala.filter(estado='Disponible').count(),
+        'equipos_disponibles': equipos_sala_disponibles.count(),
         'equipos_ocupados_porcentaje': round(equipos_ocupados * 100 / total_equipos) if total_equipos else 0,
         'fecha_hoy': timezone.localdate().isoformat(),
         'historial_registros': registros,
@@ -646,6 +695,11 @@ def buscar_docente_sala_view(request):
     cuenta = request.GET.get('cuenta', '').strip()
     if not cuenta:
         return JsonResponse({'encontrado': False, 'error': 'Ingresa el número de cuenta del docente.'}, status=400)
+    if request.GET.get('numeric_only') == '1' and not _es_numero_cuenta(cuenta):
+        return JsonResponse({
+            'encontrado': False,
+            'error': 'El número de cuenta debe contener únicamente números.',
+        }, status=400)
 
     docente = Persona.objects.con_perfiles('Docente').select_related('carrera').filter(
         matricula=cuenta,
@@ -696,6 +750,10 @@ def catalogos_clase_docente_view(request):
         return JsonResponse({
             'error': 'Indica el número de cuenta del docente y la carrera.',
         }, status=400)
+    if not _es_numero_cuenta(cuenta):
+        return JsonResponse({
+            'error': 'El número de cuenta debe contener únicamente números.',
+        }, status=400)
 
     docente = Persona.objects.con_perfiles('Docente').select_related('carrera').filter(
         matricula=cuenta,
@@ -714,15 +772,19 @@ def catalogos_clase_docente_view(request):
     return JsonResponse(_catalogos_clase_por_carrera(carrera, docente))
 
 
-def clases_registro_view(request):
-    if request.method != 'GET':
-        return JsonResponse({'error': 'Método no permitido.'}, status=405)
-
-    fecha = timezone.localdate()
-    clases = Clase.objects.filter(fecha=fecha).select_related(
+def _clases_para_registro(fecha):
+    return Clase.objects.filter(fecha=fecha).select_related(
         'docente', 'materia', 'grupo',
     ).order_by('hora_inicio')
-    clases = [clase for clase in clases if _esta_en_horario(clase.hora_inicio, clase.hora_fin)]
+
+
+def _clase_en_horario(clase, momento):
+    inicio = datetime.combine(clase.fecha, clase.hora_inicio) - timedelta(minutes=5)
+    fin = datetime.combine(clase.fecha, clase.hora_fin)
+    return inicio <= momento.replace(tzinfo=None) <= fin
+
+
+def _respuesta_clases_registro(clases, momento):
     return JsonResponse({
         'clases': [
             {
@@ -735,10 +797,20 @@ def clases_registro_view(request):
                 'cuenta_docente': clase.docente.matricula or '',
                 'materia': clase.materia.nombre_materia,
                 'grupo': str(clase.grupo),
+                'nombre_grupo': clase.grupo.nombre_grupo,
+                'en_horario': _clase_en_horario(clase, momento),
             }
             for clase in clases
         ],
     })
+
+
+def clases_registro_view(request):
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Método no permitido.'}, status=405)
+
+    momento = timezone.localtime(timezone=ZONA_HORARIA_CLASE_SALA)
+    return _respuesta_clases_registro(_clases_para_registro(momento.date()), momento)
 
 
 def buscar_clases_registro_view(request):
@@ -750,30 +822,20 @@ def buscar_clases_registro_view(request):
     materia = request.GET.get('materia', '').strip()
     if not any((cuenta, grupo, materia)):
         return JsonResponse({'error': 'Indica al menos un dato para buscar la clase.'}, status=400)
+    if cuenta and not _es_numero_cuenta(cuenta):
+        return JsonResponse({
+            'error': 'El número de cuenta debe contener únicamente números.',
+        }, status=400)
 
-    clases = Clase.objects.filter(
-        fecha=timezone.localdate(),
-    ).select_related('docente', 'materia', 'grupo')
+    momento = timezone.localtime(timezone=ZONA_HORARIA_CLASE_SALA)
+    clases = _clases_para_registro(momento.date())
     if cuenta:
         clases = clases.filter(docente__matricula__icontains=cuenta)
     if grupo:
         clases = clases.filter(grupo__nombre_grupo__icontains=grupo)
     if materia:
         clases = clases.filter(materia__nombre_materia__icontains=materia)
-    clases = [clase for clase in clases.order_by('hora_inicio')
-              if _esta_en_horario(clase.hora_inicio, clase.hora_fin)]
-    return JsonResponse({
-        'clases': [
-            {
-                'id': clase.pk,
-                'nombre': (
-                    f'{clase.materia.nombre_materia} · Grupo {clase.grupo} · '
-                    f'{clase.hora_inicio:%H:%M}–{clase.hora_fin:%H:%M}'
-                ),
-            }
-            for clase in clases
-        ],
-    })
+    return _respuesta_clases_registro(clases, momento)
 
 
 def alumnos_clase_registro_view(request):
@@ -784,12 +846,13 @@ def alumnos_clase_registro_view(request):
         clase_id = int(request.GET.get('clase', ''))
     except (TypeError, ValueError):
         return JsonResponse({'error': 'Selecciona una clase válida.'}, status=400)
+    momento = timezone.localtime(timezone=ZONA_HORARIA_CLASE_SALA)
     clase = Clase.objects.filter(
-        pk=clase_id, fecha=timezone.localdate(),
+        pk=clase_id, fecha=momento.date(),
     ).select_related('grupo', 'materia', 'docente').first()
     if clase is None:
         return JsonResponse({'error': 'No se encontró una clase registrada para hoy.'}, status=404)
-    if not _esta_en_horario(clase.hora_inicio, clase.hora_fin):
+    if not _clase_en_horario(clase, momento):
         return JsonResponse({
             'error': 'La clase no puede registrarse fuera de su horario.',
         }, status=409)
@@ -797,9 +860,7 @@ def alumnos_clase_registro_view(request):
     alumnos = Persona.objects.con_perfiles('Alumno').filter(
         grupo_id=clase.grupo_id,
     ).order_by('apellidos', 'nombre')
-    equipos = _ordenar_equipos_por_numero(
-        Equipo.objects.filter(lugar='Sala', estado='Disponible'),
-    )
+    equipos = _ordenar_equipos_por_numero(_equipos_disponibles('Sala'))
     return JsonResponse({
         'alumnos': [
             {
@@ -845,6 +906,11 @@ def alumnos_busqueda_view(request):
     cuenta = request.GET.get('cuenta', '').strip()
     if not cuenta:
         return JsonResponse({'encontrado': False, 'error': 'Ingresa el número de cuenta del alumno.'}, status=400)
+    if not _es_numero_cuenta(cuenta):
+        return JsonResponse({
+            'encontrado': False,
+            'error': 'El número de cuenta debe contener únicamente números.',
+        }, status=400)
     alumno = Persona.objects.con_perfiles('Alumno').filter(matricula=cuenta).first()
     if alumno is None:
         return JsonResponse({'encontrado': False, 'error': 'No se encontró un alumno con ese número de cuenta.'}, status=404)
@@ -860,7 +926,7 @@ def equipos_sala_view(request):
         return JsonResponse({'error': 'Método no permitido.'}, status=405)
     equipos = Equipo.objects.filter(lugar='Sala')
     if request.GET.get('todos') != '1':
-        equipos = equipos.filter(estado='Disponible')
+        equipos = _equipos_disponibles('Sala')
     equipos = _ordenar_equipos_por_numero(equipos)
     return JsonResponse({
         'equipos': [
@@ -913,6 +979,20 @@ def _crear_registro(request, persona=None, externo=None, equipo=None, clase=None
     return registro
 
 
+def _registros_sala_por_externo(nombre, apellidos, institucion):
+    registros = Registro.objects.filter(
+        modulo='Sala_Computo',
+        externo__nombre__iexact=nombre,
+        externo__apellidos__iexact=apellidos,
+    )
+    if institucion:
+        return registros.filter(externo__institucion__iexact=institucion)
+    return registros.filter(
+        Q(externo__institucion__isnull=True)
+        | Q(externo__institucion=''),
+    )
+
+
 def registrar_entrada_view(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Método no permitido.'}, status=405)
@@ -922,25 +1002,36 @@ def registrar_entrada_view(request):
         equipo_id = _id_formulario(request.POST, 'equipo_id', requerido=False)
         with transaction.atomic():
             equipo = None
-            if equipo_id is not None:
-                equipo = Equipo.objects.select_for_update().filter(
-                    pk=equipo_id, lugar='Sala', estado='Disponible',
-                ).first()
-                if equipo is None:
-                    return JsonResponse({'error': 'El equipo seleccionado ya no está disponible.'}, status=409)
 
             if tipo == 'visita':
                 persona_id = _id_formulario(request.POST, 'persona_id')
-                persona = Persona.objects.con_perfiles('Alumno').filter(pk=persona_id).first()
+                persona = Persona.objects.select_for_update().con_perfiles('Alumno').filter(pk=persona_id).first()
                 if persona is None:
                     return JsonResponse({'error': 'No se encontró al alumno seleccionado.'}, status=404)
+                if Registro.objects.filter(
+                    modulo='Sala_Computo',
+                    persona=persona,
+                    fecha=timezone.localdate(),
+                    hora_salida__isnull=True,
+                ).exists():
+                    return JsonResponse({
+                        'error': 'La persona ya tiene una sesión activa en Sala de Cómputo.',
+                    }, status=409)
+                if equipo_id is not None:
+                    equipo = _equipos_disponibles('Sala').select_for_update().filter(
+                        pk=equipo_id,
+                    ).first()
+                    if equipo is None:
+                        return JsonResponse({
+                            'error': 'El equipo seleccionado ya no está disponible.',
+                        }, status=409)
                 registro = _crear_registro(
                     request, persona=persona, equipo=equipo,
                     tipo_registro='Visita', motivo_uso='Visita',
                 )
             elif tipo == 'evento':
                 evento_id = _id_formulario(request.POST, 'evento_id')
-                evento = EventoTallerConferencia.objects.filter(
+                evento = EventoTallerConferencia.objects.select_for_update().filter(
                     pk=evento_id, fecha=timezone.localdate(),
                 ).first()
                 if evento is None:
@@ -954,6 +1045,32 @@ def registrar_entrada_view(request):
                 institucion = request.POST.get('institucion', '').strip()
                 if not nombre or not apellidos:
                     return JsonResponse({'error': 'Captura nombre y apellidos del asistente.'}, status=400)
+                asistentes_previos = _registros_sala_por_externo(
+                    nombre,
+                    apellidos,
+                    institucion,
+                ).filter(evento=evento)
+                if asistentes_previos.exists():
+                    return JsonResponse({
+                        'error': 'Esta persona ya está registrada para el evento.',
+                    }, status=409)
+                sesiones_activas = _registros_sala_por_externo(
+                    nombre,
+                    apellidos,
+                    institucion,
+                ).filter(fecha=timezone.localdate(), hora_salida__isnull=True)
+                if sesiones_activas.exists():
+                    return JsonResponse({
+                        'error': 'La persona ya tiene una sesión activa en Sala de Cómputo.',
+                    }, status=409)
+                if equipo_id is not None:
+                    equipo = _equipos_disponibles('Sala').select_for_update().filter(
+                        pk=equipo_id,
+                    ).first()
+                    if equipo is None:
+                        return JsonResponse({
+                            'error': 'El equipo seleccionado ya no está disponible.',
+                        }, status=409)
                 externo = Externo(nombre=nombre, apellidos=apellidos, institucion=institucion or None)
                 externo.full_clean()
                 externo.save()
@@ -981,12 +1098,13 @@ def registrar_asistencia_view(request):
         if not isinstance(asistencias, list) or not asistencias:
             raise ValidationError('Selecciona al menos un alumno para registrar.')
         with transaction.atomic():
+            momento = timezone.localtime(timezone=ZONA_HORARIA_CLASE_SALA)
             clase = Clase.objects.select_for_update().filter(
-                pk=clase_id, fecha=timezone.localdate(),
+                pk=clase_id, fecha=momento.date(),
             ).select_related('grupo').first()
             if clase is None:
                 return JsonResponse({'error': 'La clase seleccionada ya no está disponible.'}, status=404)
-            if not _esta_en_horario(clase.hora_inicio, clase.hora_fin):
+            if not _clase_en_horario(clase, momento):
                 return JsonResponse({
                     'error': 'La clase no puede registrarse fuera de su horario.',
                 }, status=409)
@@ -1008,6 +1126,25 @@ def registrar_asistencia_view(request):
                 raise ValidationError('Registra asistencia o falta para todos los alumnos del grupo.')
             if Asistencia.objects.filter(clase=clase, alumno_id__in=marcados).exists():
                 return JsonResponse({'error': 'Ya existe asistencia registrada para esta clase.'}, status=409)
+            alumnos_presentes_ids = [
+                alumno_id
+                for alumno_id, (estado, _) in marcados.items()
+                if estado == 'Asistió'
+            ]
+            list(
+                Persona.objects.select_for_update()
+                .filter(pk__in=alumnos_presentes_ids)
+                .order_by('pk')
+            )
+            if Registro.objects.filter(
+                modulo='Sala_Computo',
+                persona_id__in=alumnos_presentes_ids,
+                fecha=timezone.localdate(),
+                hora_salida__isnull=True,
+            ).exists():
+                return JsonResponse({
+                    'error': 'Una o más personas ya tienen una sesión activa en Sala de Cómputo.',
+                }, status=409)
 
             for alumno_id, (estado, equipo_id) in marcados.items():
                 alumno = alumnos[alumno_id]
@@ -1015,8 +1152,8 @@ def registrar_asistencia_view(request):
                 registro = None
                 if estado == 'Asistió':
                     if equipo_id:
-                        equipo = Equipo.objects.select_for_update().filter(
-                            pk=int(equipo_id), lugar='Sala', estado='Disponible',
+                        equipo = _equipos_disponibles('Sala').select_for_update().filter(
+                            pk=int(equipo_id),
                         ).first()
                         if equipo is None:
                             raise ValidationError('Uno de los equipos seleccionados ya no está disponible.')
@@ -1044,6 +1181,7 @@ def buscar_salida_view(request):
     folio = request.GET.get('folio', '').strip()
     filtros = Registro.objects.filter(
         modulo='Sala_Computo',
+        fecha=timezone.localdate(),
         hora_salida__isnull=True,
     )
     if folio:
@@ -1054,6 +1192,11 @@ def buscar_salida_view(request):
         except ValueError:
             return JsonResponse({'encontrado': False, 'error': 'Ingresa un folio válido, por ejemplo R-123.'}, status=400)
     elif cuenta:
+        if not _es_numero_cuenta(cuenta):
+            return JsonResponse({
+                'encontrado': False,
+                'error': 'El número de cuenta debe contener únicamente números.',
+            }, status=400)
         filtros = filtros.filter(persona__matricula=cuenta)
     else:
         return JsonResponse({'encontrado': False, 'error': 'Ingresa tu número de cuenta o folio de entrada.'}, status=400)
@@ -1088,7 +1231,8 @@ def registrar_salida_view(request):
         registro_id = _id_formulario(request.POST, 'registro_id')
         with transaction.atomic():
             registro = Registro.objects.select_for_update().filter(
-                pk=registro_id, modulo='Sala_Computo', hora_salida__isnull=True,
+                pk=registro_id, modulo='Sala_Computo',
+                fecha=timezone.localdate(), hora_salida__isnull=True,
             ).first()
             if registro is None:
                 return JsonResponse({'error': 'La entrada ya fue cerrada o no existe.'}, status=404)
@@ -1172,6 +1316,11 @@ def buscar_ponente_sala_view(request):
     cuenta = request.GET.get('cuenta', '').strip()
     if not cuenta:
         return JsonResponse({'encontrado': False, 'error': 'Ingresa el número de cuenta del ponente.'}, status=400)
+    if not _es_numero_cuenta(cuenta):
+        return JsonResponse({
+            'encontrado': False,
+            'error': 'El número de cuenta debe contener únicamente números.',
+        }, status=400)
 
     persona = Persona.objects.con_perfiles('Administrador', 'Docente').filter(
         matricula=cuenta,
@@ -1245,10 +1394,8 @@ def autoacceso_view(request):
         try:
             with transaction.atomic():
                 if necesita_equipo == 'si':
-                    equipo = Equipo.objects.select_for_update().filter(
+                    equipo = _equipos_disponibles('Auto Acceso').select_for_update().filter(
                         pk=equipo_id,
-                        lugar='Auto Acceso',
-                        estado='Disponible',
                     ).first()
                     if equipo is None:
                         return JsonResponse(
@@ -1284,10 +1431,10 @@ def autoacceso_view(request):
 
     equipos_autoacceso = Equipo.objects.filter(lugar='Auto Acceso')
     equipos_disponibles = _ordenar_equipos_por_numero(
-        equipos_autoacceso.filter(estado='Disponible')
+        _equipos_disponibles('Auto Acceso')
     )
     equipos_total = equipos_autoacceso.count()
-    equipos_ocupados = equipos_autoacceso.filter(estado='Ocupado').count()
+    equipos_ocupados = _contar_equipos_ocupados(equipos_autoacceso)
 
     return render(
         request,

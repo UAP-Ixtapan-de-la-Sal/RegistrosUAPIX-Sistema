@@ -261,7 +261,7 @@
             if (!number) { feedback.textContent = 'Busca al docente por su número de cuenta.'; return; }
             feedback.textContent = 'Buscando docente...';
             try {
-                const url = new URL(page.dataset.docenteUrl, location.origin); url.searchParams.set('cuenta', number);
+                const url = new URL(page.dataset.docenteUrl, location.origin); url.searchParams.set('cuenta', number); url.searchParams.set('numeric_only', '1');
                 const response = await fetch(url, {headers:{'X-Requested-With':'XMLHttpRequest'}}); const data = await response.json();
                 if (token !== lookupToken) return;
                 if (!response.ok || !data.encontrado) { feedback.textContent = data.error || 'No se encontró el docente.'; account.setCustomValidity(feedback.textContent); return; }
@@ -275,7 +275,7 @@
         }
         career.addEventListener('change', () => { if (docenteId.value) loadCatalogs(++lookupToken); });
         account.addEventListener('change', findTeacher); lookupButton.addEventListener('click', findTeacher);
-        account.addEventListener('input', () => { lookupToken++; docenteId.value = ''; teacherName.value = ''; resetTeacherCatalogs(); account.setCustomValidity('Verifica el número de cuenta del docente.'); });
+        account.addEventListener('input', () => { const soloNumeros = account.value.replace(/[^0-9]/g, ''); if (account.value !== soloNumeros) account.value = soloNumeros; lookupToken++; docenteId.value = ''; teacherName.value = ''; resetTeacherCatalogs(); account.setCustomValidity('Verifica el número de cuenta del docente.'); });
     }
 
     if (type === 'evento') {
@@ -288,7 +288,7 @@
         const personId = form.querySelector('[data-persona-ponente]');
         function updateSpeaker() { const isInternal = kind.value === 'si'; internal.hidden = !isInternal; internalNameField.hidden = !isInternal || !internalName.value; external.hidden = kind.value !== 'no'; account.disabled = !isInternal; account.required = isInternal; Array.from(external.querySelectorAll('input')).forEach(i => { i.disabled = kind.value !== 'no'; i.required = kind.value === 'no' && ['nombre_ponente_externo','apellidos_ponente_externo'].includes(i.name); }); }
         kind.addEventListener('change', updateSpeaker); updateSpeaker();
-        account.addEventListener('input', () => { personId.value=''; internalName.value=''; internalNameField.hidden=true; account.setCustomValidity(account.value.trim()?'Verifica el número de cuenta del ponente.':''); });
+        account.addEventListener('input', () => { const soloNumeros = account.value.replace(/[^0-9]/g, ''); if (account.value !== soloNumeros) account.value = soloNumeros; personId.value=''; internalName.value=''; internalNameField.hidden=true; account.setCustomValidity(account.value.trim()?'Verifica el número de cuenta del ponente.':''); });
         account.addEventListener('change', async () => { const url = new URL(page.dataset.ponenteUrl, location.origin); url.searchParams.set('cuenta', account.value.trim()); try { const response = await fetch(url, {headers:{'X-Requested-With':'XMLHttpRequest'}}); const data = await response.json(); if (!response.ok || !data.encontrado) { account.setCustomValidity(data.error || 'No se encontró el ponente.'); return; } personId.value=data.persona_id; internalName.value=data.nombre; internalNameField.hidden=false; account.setCustomValidity(''); } catch (_) { account.setCustomValidity('No fue posible buscar al ponente.'); } });
     }
 

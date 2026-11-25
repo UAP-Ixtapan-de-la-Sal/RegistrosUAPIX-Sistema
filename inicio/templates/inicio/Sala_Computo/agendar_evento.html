@@ -171,6 +171,8 @@
         actualizarTipoPonente();
 
         cuenta.addEventListener('input', function() {
+            const soloNumeros = cuenta.value.replace(/[^0-9]/g, '');
+            if (cuenta.value !== soloNumeros) cuenta.value = soloNumeros;
             solicitudActual += 1;
             cuentaEnConsulta = '';
             personaId.value = '';

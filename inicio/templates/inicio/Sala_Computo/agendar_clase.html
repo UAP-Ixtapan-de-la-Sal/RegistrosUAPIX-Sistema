@@ -393,6 +393,11 @@
             }
         }
 
+        cuentaInput.addEventListener('input', function() {
+            const soloNumeros = cuentaInput.value.replace(/[^0-9]/g, '');
+            if (cuentaInput.value !== soloNumeros) cuentaInput.value = soloNumeros;
+        });
+
         cuentaInput.addEventListener('change', async function() {
             const cuenta = cuentaInput.value.trim();
             const solicitud = ++solicitudActual;
@@ -413,6 +418,7 @@
             try {
                 const url = new URL('{% url "buscar_docente_sala" %}', window.location.origin);
                 url.searchParams.set('cuenta', cuenta);
+                url.searchParams.set('numeric_only', '1');
                 const response = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
                 const resultado = await response.json();
                 if (solicitud !== solicitudActual) return;

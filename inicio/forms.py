@@ -1,8 +1,15 @@
 from datetime import timedelta
 
 from django import forms
+from django.core.validators import RegexValidator
 from django.utils import timezone
 from .models import Persona, UsuarioSistema, normalizar_hora
+
+VALIDAR_NUMERO_CUENTA = RegexValidator(
+    regex=r'\A[0-9]+\Z',
+    message='El número de cuenta debe contener únicamente números.',
+)
+
 
 class RegistroUsuarioForm(forms.ModelForm):
     class Meta:
@@ -78,10 +85,13 @@ class RegistroClaseForm(forms.Form):
     numero_cuenta_docente = forms.CharField(
         label='Número de cuenta del docente',
         max_length=20,
+        validators=[VALIDAR_NUMERO_CUENTA],
         widget=forms.TextInput(attrs={
             'class': 'sala-form-control',
             'autocomplete': 'off',
             'inputmode': 'numeric',
+            'pattern': '[0-9]*',
+            'title': 'Ingresa únicamente números.',
             'placeholder': 'Ingresa el número de cuenta',
             'data-docente-lookup': 'true',
         }),
@@ -221,10 +231,13 @@ class RegistroEventoForm(forms.Form):
         label='Número de cuenta del ponente',
         max_length=20,
         required=False,
+        validators=[VALIDAR_NUMERO_CUENTA],
         widget=forms.TextInput(attrs={
             'class': 'sala-form-control',
             'autocomplete': 'off',
             'inputmode': 'numeric',
+            'pattern': '[0-9]*',
+            'title': 'Ingresa únicamente números.',
             'data-cuenta-ponente': 'true',
         }),
     )
@@ -278,7 +291,8 @@ class RegistroEventoForm(forms.Form):
 
         if es_interno == 'si':
             if not cuenta:
-                self.add_error('numero_cuenta_ponente', 'Ingresa el número de cuenta del ponente.')
+                if 'numero_cuenta_ponente' not in self.errors:
+                    self.add_error('numero_cuenta_ponente', 'Ingresa el número de cuenta del ponente.')
             else:
                 try:
                     persona = Persona.objects.con_perfiles('Administrador', 'Docente').get(
@@ -330,7 +344,8 @@ class EditarClaseAgendadaForm(forms.Form):
     tipo_actividad = forms.ChoiceField(choices=(('regular', 'Clase regular'),), initial='regular', widget=forms.HiddenInput())
     numero_cuenta_docente = forms.CharField(
         label='Número de cuenta del docente', max_length=20,
-        widget=forms.TextInput(attrs={'class': 'sala-form-control', 'autocomplete': 'off', 'inputmode': 'numeric', 'placeholder': 'Ingresa el número de cuenta', 'data-docente-lookup': 'true'}),
+        validators=[VALIDAR_NUMERO_CUENTA],
+        widget=forms.TextInput(attrs={'class': 'sala-form-control', 'autocomplete': 'off', 'inputmode': 'numeric', 'pattern': '[0-9]*', 'title': 'Ingresa únicamente números.', 'placeholder': 'Ingresa el número de cuenta', 'data-docente-lookup': 'true'}),
     )
     docente_id = forms.IntegerField(widget=forms.HiddenInput(attrs={'data-docente-id': 'true'}))
     carrera = forms.ChoiceField(label='Carrera', choices=(), widget=forms.Select(attrs={'class': 'sala-form-control', 'data-carrera-select': 'true'}))
