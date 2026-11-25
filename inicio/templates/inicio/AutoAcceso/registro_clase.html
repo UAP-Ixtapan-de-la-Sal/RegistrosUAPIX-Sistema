@@ -715,6 +715,25 @@
         tablaAlumnos.replaceChildren(fila);
     }
 
+    function actualizarEquiposAsignados() {
+        const selectores = Array.from(
+            tablaAlumnos.querySelectorAll(".aa-clase-equipo")
+        );
+        const equiposSeleccionados = new Set(
+            selectores.map(function (selector) {
+                return selector.value;
+            }).filter(Boolean)
+        );
+
+        selectores.forEach(function (selector) {
+            Array.from(selector.options).forEach(function (opcion) {
+                if (!opcion.value) return;
+                opcion.disabled = equiposSeleccionados.has(opcion.value)
+                    && selector.value !== opcion.value;
+            });
+        });
+    }
+
     function crearFilaAlumno(alumno, numero, datosClase) {
         const fila = document.createElement("tr");
         fila.className = "aa-clase-fila-alumno";
@@ -765,6 +784,7 @@
                     opcion.value
                 ));
             });
+        equipo.addEventListener("change", actualizarEquiposAsignados);
 
         ["Asistió", "Falta"].forEach(function (estado) {
             const etiqueta = document.createElement("label");
@@ -779,6 +799,7 @@
                 if (!asistio) {
                     equipo.value = "";
                 }
+                actualizarEquiposAsignados();
             });
             etiqueta.appendChild(radio);
             etiqueta.appendChild(document.createTextNode(" " + estado));
@@ -931,6 +952,7 @@
             });
 
             tablaAlumnos.replaceChildren(...filas);
+            actualizarEquiposAsignados();
             datosGenerales.hidden = true;
             datosGenerales.style.display = "none";
             claveAlumnosCargados = claveDatosClase();
@@ -1237,6 +1259,19 @@
             );
 
             fin.focus();
+            return;
+        }
+
+        const equiposSeleccionados = Array.from(
+            tablaAlumnos.querySelectorAll(".aa-clase-equipo")
+        ).map(function (selector) {
+            return selector.value;
+        }).filter(Boolean);
+        if (new Set(equiposSeleccionados).size !== equiposSeleccionados.length) {
+            mostrarMensaje(
+                "Cada alumno debe tener un equipo distinto.",
+                true
+            );
             return;
         }
 

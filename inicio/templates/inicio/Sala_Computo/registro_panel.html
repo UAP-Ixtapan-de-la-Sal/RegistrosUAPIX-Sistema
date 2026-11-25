@@ -91,7 +91,7 @@
                 <div class="registros-search-form">
                     <label class="sala-form-field">
                         <span>Número de cuenta del docente</span>
-                        <input class="sala-form-control" type="search" data-search-teacher placeholder="Ej. 1234567">
+                        <input class="sala-form-control" type="search" inputmode="numeric" pattern="[0-9]*" title="Ingresa únicamente números." data-search-teacher placeholder="Ej. 1234567">
                     </label>
                     <label class="sala-form-field">
                         <span>No. de grupo</span>
@@ -168,7 +168,7 @@
                 <p>Busca al alumno del plantel por su número de cuenta.</p>
             </div>
             <div class="registros-form-grid">
-                <label class="sala-form-field"><span>No. de cuenta</span><input class="sala-form-control" type="search" data-visit-account placeholder="Número de cuenta"></label>
+                <label class="sala-form-field"><span>No. de cuenta</span><input class="sala-form-control" type="search" inputmode="numeric" pattern="[0-9]*" title="Ingresa únicamente números." data-visit-account placeholder="Número de cuenta"></label>
                 <button class="sala-form-submit registros-lookup-button" type="button" data-search-student><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Buscar alumno</button>
                 <label class="sala-form-field"><span>Nombre</span><input class="sala-form-control" type="text" data-visit-name placeholder="Nombre del alumno" readonly></label>
                 <label class="sala-form-field">
@@ -359,8 +359,18 @@
         const searchFeedback = document.querySelector('[data-search-feedback]');
         const eventFeedback = document.querySelector('[data-event-feedback]');
         const visitFeedback = document.querySelector('[data-visit-feedback]');
+        const visitAccount = document.querySelector('[data-visit-account]');
+        const searchTeacherAccount = document.querySelector('[data-search-teacher]');
+        const searchGroup = document.querySelector('[data-search-group]');
+        const searchSubject = document.querySelector('[data-search-subject]');
+        const searchButton = document.querySelector('[data-search-classes]');
+        const groupSuggestions = document.querySelector('#registro-grupos');
+        const subjectSuggestions = document.querySelector('#registro-materias');
         let selectedType = null;
         let selectedClassId = '';
+        let searchResults = [];
+        let classOptionsVersion = 0;
+        let rosterVersion = 0;
         let selectedStudentId = '';
         let selectedExitRecordId = '';
 
@@ -419,6 +429,7 @@
         }
 
         function clearRoster() {
+            rosterVersion += 1;
             selectedClassId = '';
             rosterBody.replaceChildren();
             classSubmit.disabled = true;
@@ -428,6 +439,7 @@
 
         function resetTypeSelection() {
             selectedType = null;
+            classOptionsVersion += 1;
             typeButtons.forEach(function (button) {
                 button.classList.remove('is-selected');
                 button.setAttribute('aria-pressed', 'false');
@@ -447,9 +459,6 @@
                 radio.checked = radio.value === 'si';
             });
             updateAgendaMode();
-            document.querySelector('[data-search-teacher]').value = '';
-            document.querySelector('[data-search-group]').value = '';
-            document.querySelector('[data-search-subject]').value = '';
             fillSelect(classSelects[1], [], 'Busca y selecciona una clase', 'id', 'nombre');
             selectedStudentId = '';
             document.querySelector('[data-visit-account]').value = '';
@@ -491,6 +500,7 @@
                 section.hidden = section.dataset.registroFields !== type;
             });
             typeSelectionStatus.textContent = 'Tipo seleccionado: ' + type + '. No podrás cambiarlo durante esta sesión.';
+            if (type === 'Clase') updateAgendaMode();
         }
 
         typeButtons.forEach(function (button) {
@@ -504,6 +514,12 @@
             agendaSection.hidden = !isScheduled;
             searchSection.hidden = isScheduled;
             clearRoster();
+            classSelects.forEach(function (select) { select.value = ''; });
+            searchTeacherAccount.value = '';
+            searchGroup.value = '';
+            searchSubject.value = '';
+            searchFeedback.hidden = true;
+            if (selectedType === 'Clase') loadClassOptions(isScheduled);
         }
         agendaModes.forEach(function (radio) {
             radio.addEventListener('change', updateAgendaMode);
@@ -513,10 +529,12 @@
         async function loadRoster(classId) {
             clearRoster();
             if (!classId) return;
+            const version = rosterVersion;
             selectedClassId = classId;
             classFeedback.textContent = 'Cargando alumnos y equipos...';
             try {
                 const result = await requestJson(apiUrl('{% url "alumnos_clase_registro" %}', { clase: classId }));
+                if (version !== rosterVersion) return;
                 result.alumnos.forEach(function (alumno) {
                     const row = document.createElement('tr');
                     const accountCell = document.createElement('td');
@@ -558,6 +576,7 @@
                 classSubmit.disabled = result.alumnos.length === 0;
                 updateEquipmentAvailability();
             } catch (error) {
+                if (version !== rosterVersion) return;
                 selectedClassId = '';
                 setMessage(classFeedback, error.message, true);
             }
@@ -578,45 +597,74 @@
                 classSelects.forEach(function (other) {
                     if (other !== select) other.value = '';
                 });
+                if (select === classSelects[1]) {
+                    const clase = searchResults.find(function (item) { return String(item.id) === select.value; });
+                    if (clase) {
+                        searchGroup.value = clase.nombre_grupo;
+                        searchSubject.value = clase.materia;
+                    }
+                }
                 loadRoster(select.value);
             });
         });
 
-        document.querySelector('[data-search-classes]').addEventListener('click', async function () {
+        searchButton.addEventListener('click', function () {
             searchFeedback.textContent = '';
-            const params = {
-                docente: document.querySelector('[data-search-teacher]').value.trim(),
-                grupo: document.querySelector('[data-search-group]').value.trim(),
-                materia: document.querySelector('[data-search-subject]').value.trim(),
-            };
-            try {
-                const result = await requestJson(apiUrl('{% url "buscar_clases_registro" %}', params));
-                fillSelect(classSelects[1], result.clases, 'Selecciona una clase', 'id', 'nombre');
-                setMessage(searchFeedback, result.clases.length
-                    ? 'Selecciona una clase para cargar su lista.'
-                    : 'No se encontraron clases para hoy con esos datos.', false);
-            } catch (error) {
-                fillSelect(classSelects[1], [], 'Busca y selecciona una clase', 'id', 'nombre');
-                setMessage(searchFeedback, error.message, true);
+            const teacherAccount = searchTeacherAccount.value.trim();
+            if (teacherAccount && !/^[0-9]+$/.test(teacherAccount)) {
+                setMessage(searchFeedback, 'El número de cuenta debe contener únicamente números.', true);
+                return;
             }
+            const params = {
+                docente: teacherAccount,
+                grupo: searchGroup.value.trim(),
+                materia: searchSubject.value.trim(),
+            };
+            clearRoster();
+            loadClassOptions(false, Object.values(params).some(Boolean) ? params : null);
         });
 
-        async function loadInitialOptions() {
-            try {
-                const result = await requestJson('{% url "clases_registro" %}');
-                fillSelect(classSelects[0], result.clases, 'Selecciona una clase de hoy', 'id', 'nombre');
-                fillAutocomplete(
-                    document.querySelector('#registro-grupos'),
-                    result.clases.map(function (clase) { return clase.grupo; }),
-                );
-                fillAutocomplete(
-                    document.querySelector('#registro-materias'),
-                    result.clases.map(function (clase) { return clase.materia; }),
-                );
-            } catch (error) {
-                fillSelect(classSelects[0], [], 'No fue posible cargar las clases', 'id', 'nombre');
-                setMessage(classFeedback, error.message, true);
+        async function loadClassOptions(isScheduled, filters) {
+            const version = ++classOptionsVersion;
+            const select = classSelects[isScheduled ? 0 : 1];
+            fillSelect(select, [], 'Cargando clases de hoy...', 'id', 'nombre');
+            if (!isScheduled) {
+                searchResults = [];
+                searchButton.disabled = true;
+                if (!filters) {
+                    groupSuggestions.replaceChildren();
+                    subjectSuggestions.replaceChildren();
+                }
             }
+            try {
+                const url = filters
+                    ? apiUrl('{% url "buscar_clases_registro" %}', filters)
+                    : '{% url "clases_registro" %}';
+                const result = await requestJson(url);
+                if (version !== classOptionsVersion) return;
+                if (isScheduled) {
+                    const scheduledClasses = result.clases.filter(function (clase) { return clase.en_horario; });
+                    fillSelect(select, scheduledClasses, 'Selecciona una clase de hoy', 'id', 'nombre');
+                    return;
+                }
+                searchResults = result.clases;
+                fillSelect(select, searchResults, 'Selecciona una clase', 'id', 'nombre');
+                if (!filters) {
+                    fillAutocomplete(groupSuggestions, searchResults.map(function (clase) { return clase.nombre_grupo; }));
+                    fillAutocomplete(subjectSuggestions, searchResults.map(function (clase) { return clase.materia; }));
+                }
+                const noResults = filters ? 'No se encontraron clases para hoy con esos datos.' : 'No se encontraron clases para hoy.';
+                setMessage(searchFeedback, searchResults.length ? 'Selecciona una clase para cargar su lista.' : noResults, false);
+            } catch (error) {
+                if (version !== classOptionsVersion) return;
+                fillSelect(select, [], 'No fue posible cargar las clases', 'id', 'nombre');
+                setMessage(isScheduled ? classFeedback : searchFeedback, error.message, true);
+            } finally {
+                if (!isScheduled && version === classOptionsVersion) searchButton.disabled = false;
+            }
+        }
+
+        async function loadInitialOptions() {
             try {
                 const result = await requestJson('{% url "eventos_registro" %}');
                 fillSelect(document.querySelector('[data-event-select]'), result.eventos, 'Selecciona el evento de hoy', 'id', 'nombre');
@@ -643,6 +691,8 @@
         }
 
         document.querySelector('[data-register-attendance]').addEventListener('click', async function () {
+            const classId = selectedClassId;
+            const version = rosterVersion;
             const rows = Array.from(rosterBody.querySelectorAll('tr'));
             const attendance = rows.map(function (row) {
                 return {
@@ -651,31 +701,42 @@
                     equipo_id: row.querySelector('[data-attendance-equipment]').value,
                 };
             });
-            if (!selectedClassId || !rows.length || attendance.some(function (item) { return !item.estado; })) {
+            if (!classId || !rows.length || attendance.some(function (item) { return !item.estado; })) {
                 setMessage(classFeedback, 'Selecciona asistencia o falta para cada alumno antes de registrar.', true);
                 return;
             }
             this.disabled = true;
             try {
-                if (!await window.confirmarAccion('¿Confirmas que deseas registrar la asistencia de esta clase?', {
+                const confirmed = await window.confirmarAccion('¿Confirmas que deseas registrar la asistencia de esta clase?', {
                     title: 'Confirmar asistencia', acceptText: 'Registrar asistencia',
-                })) return;
+                });
+                if (!confirmed || version !== rosterVersion) return;
                 const result = await requestJson('{% url "registrar_asistencia_sala" %}', postData({
-                    clase_id: selectedClassId,
+                    clase_id: classId,
                     asistencias: JSON.stringify(attendance),
                 }));
+                if (version !== rosterVersion) return;
                 setMessage(classFeedback, 'Se guardó la asistencia de ' + result.total + ' alumnos.', false);
                 rosterBody.replaceChildren();
                 selectedClassId = '';
             } catch (error) {
-                setMessage(classFeedback, error.message, true);
+                if (version === rosterVersion) setMessage(classFeedback, error.message, true);
             } finally {
-                this.disabled = !selectedClassId || !rosterBody.querySelector('tr');
+                if (version === rosterVersion) this.disabled = !selectedClassId || !rosterBody.querySelector('tr');
             }
         });
 
+        visitAccount.addEventListener('input', function () {
+            const soloNumeros = visitAccount.value.replace(/[^0-9]/g, '');
+            if (visitAccount.value !== soloNumeros) visitAccount.value = soloNumeros;
+        });
+        searchTeacherAccount.addEventListener('input', function () {
+            const soloNumeros = searchTeacherAccount.value.replace(/[^0-9]/g, '');
+            if (searchTeacherAccount.value !== soloNumeros) searchTeacherAccount.value = soloNumeros;
+        });
+
         document.querySelector('[data-search-student]').addEventListener('click', async function () {
-            const account = document.querySelector('[data-visit-account]').value.trim();
+            const account = visitAccount.value.trim();
             selectedStudentId = '';
             document.querySelector('[data-visit-name]').value = '';
             document.querySelector('[data-register-visit]').disabled = true;
@@ -708,7 +769,7 @@
                 }));
                 setMessage(visitFeedback, 'Entrada registrada. Folio: R-' + result.registro_id + '.', false);
                 selectedStudentId = '';
-                document.querySelector('[data-visit-account]').value = '';
+                visitAccount.value = '';
                 document.querySelector('[data-visit-name]').value = '';
             } catch (error) {
                 setMessage(visitFeedback, error.message, true);
@@ -789,6 +850,10 @@
             const version = exitLookupVersion;
             const identifier = exitIdentifier.value.trim();
             const folio = identifier.match(/^R-(\d+)$/i);
+            if (!folio && !/^[0-9]+$/.test(identifier)) {
+                setMessage(exitFeedback, 'Ingresa una cuenta con solo números o un folio como R-123.', true);
+                return;
+            }
             const params = folio ? { folio: folio[1] } : { cuenta: identifier };
             try {
                 const result = await requestJson(apiUrl('{% url "buscar_salida_sala" %}', params));
