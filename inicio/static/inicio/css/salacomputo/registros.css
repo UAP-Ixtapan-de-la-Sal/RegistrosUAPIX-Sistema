@@ -278,16 +278,81 @@ body.sala-registros-active > .main-container > .sala-computo-page > .sala-comput
     box-shadow: 0 5px 12px rgba(62, 80, 64, 0.1);
 }
 
-.app-confirm-dialog .registros-exit-close {
-    position: absolute;
-    top: 14px;
-    right: 14px;
+.registros-exit-icon-button {
     display: grid;
     place-items: center;
     width: 40px;
     height: 40px;
-    min-width: 0;
     padding: 0;
+    border: 1px solid transparent;
+    border-radius: 50%;
+    background: transparent;
+    color: #344638;
+    cursor: pointer;
+    transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.registros-exit-icon-button:hover,
+.registros-exit-icon-button[aria-pressed="true"] {
+    border-color: #c5d1c4;
+    background: #e2ebdf;
+}
+
+.registros-exit-icon-button:focus-visible {
+    outline: 2px solid #526855;
+    outline-offset: 2px;
+}
+
+.registros-exit-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    border-color: #d9e1d8;
+    background: #fff;
+}
+
+.registros-exit-credentials {
+    display: grid;
+    gap: 8px;
+    text-align: left;
+}
+
+.registros-exit-credentials label {
+    color: #46554a;
+    font-size: 0.88rem;
+    font-weight: 700;
+}
+
+.registros-exit-password-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+}
+
+.registros-exit-credentials .sala-form-control {
+    min-width: 0;
+    min-height: 42px;
+    padding-inline: 16px;
+    border-radius: 999px;
+    background: #fff;
+}
+
+.registros-exit-credentials .app-confirm-actions {
+    flex-wrap: wrap;
+}
+
+.registros-exit-credentials .app-confirm-actions button {
+    flex: 1 1 auto;
+}
+
+.registros-exit-credentials .app-confirm-accept {
+    border-radius: 12px;
+    background: #526855;
+}
+
+.registros-exit-credentials .app-confirm-accept:hover {
+    background: #405544;
 }
 
 .registros-exit-panel {
