@@ -1,3 +1,7 @@
+body.sala-registros-active > .institutional-header .header-action--home {
+    display: none;
+}
+
 body.sala-registros-active > .main-container {
     justify-content: center;
     padding-block: clamp(16px, 3vh, 32px);

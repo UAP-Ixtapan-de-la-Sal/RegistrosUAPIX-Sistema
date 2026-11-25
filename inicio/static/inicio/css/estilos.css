@@ -1503,14 +1503,26 @@ body.add-user-view {
     box-shadow: 0 8px 16px rgba(31, 48, 35, 0.16);
 }
 
-.app-confirm-cancel {
-    border-color: rgba(82, 104, 85, 0.2) !important;
+:is(.app-confirm-actions .app-confirm-cancel, .sala-edit-booking-page .sala-form-actions .sala-edit-cancel, .sala-computo-body .sala-time-popover .sala-time-actions button.sala-time-cancel) {
+    border: 1px solid #718a72;
+    border-radius: 8px;
     background: #fff;
-    color: var(--color-green-hover);
+    color: #344638;
+    text-decoration: none;
+    transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
 }
 
-.app-confirm-cancel:hover {
-    background: #f1f5f1;
+:is(.app-confirm-actions .app-confirm-cancel, .sala-edit-booking-page .sala-form-actions .sala-edit-cancel, .sala-computo-body .sala-time-popover .sala-time-actions button.sala-time-cancel):is(:hover, :focus-visible) {
+    border-color: #526855;
+    background-color: #d5e3d2;
+    color: #344638;
+    text-decoration: none;
+    box-shadow: 0 3px 8px rgba(62, 80, 64, 0.16);
+}
+
+:is(.app-confirm-actions .app-confirm-cancel, .sala-edit-booking-page .sala-form-actions .sala-edit-cancel, .sala-computo-body .sala-time-popover .sala-time-actions button.sala-time-cancel):active {
+    background-color: #c8dac5;
+    box-shadow: inset 0 1px 3px rgba(62, 80, 64, 0.18);
 }
 
 .app-confirm-accept {

@@ -6,8 +6,8 @@
 {% block body_class %}sala-computo-body{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'inicio/css/salacomputo/salacomputo.css' %}?v=20261124-encabezado-bitacora">
-<link rel="stylesheet" href="{% static 'inicio/css/salacomputo/registros.css' %}?v=20261124-boton-salir">
+<link rel="stylesheet" href="{% static 'inicio/css/salacomputo/salacomputo.css' %}?v=20261124-espacio-evento">
+<link rel="stylesheet" href="{% static 'inicio/css/salacomputo/registros.css' %}?v=20261124-navegacion-registros">
 <link rel="stylesheet" href="{% static 'inicio/vendor/flatpickr/flatpickr.min.css' %}">
 <script src="{% static 'inicio/vendor/flatpickr/flatpickr.min.js' %}" defer></script>
 <script src="{% static 'inicio/vendor/flatpickr/es.js' %}" defer></script>
@@ -144,10 +144,6 @@
                 <p class="sala-computo-subtitle">Consulta entradas, sesiones activas y salidas registradas.</p>
             </div>
             <div class="sala-view-heading-actions">
-                <div class="sala-history-summary" aria-label="Resumen del historial">
-                    <span class="sala-history-total"><strong data-history-total>0</strong> registros</span>
-                    <span class="sala-history-active"><i aria-hidden="true"></i><strong data-history-active>0</strong> activas</span>
-                </div>
                 <button class="sala-back-btn" type="button" onclick="regresarDeBitacora()" aria-label="Volver a Sala de Cómputo">
                     <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver al panel
                 </button>
@@ -664,8 +660,6 @@
         statusChip.textContent = row.dataset.status === 'active' ? 'Activa' : 'Finalizada';
         timeCell.append(' ', statusChip);
     });
-    document.querySelector('[data-history-total]').textContent = String(historyRows.length);
-    document.querySelector('[data-history-active]').textContent = String(historyRows.filter((row) => row.dataset.status === 'active').length);
 
     function filtrarHistorial() {
         const selectedModule = historyModuleFilter.value;

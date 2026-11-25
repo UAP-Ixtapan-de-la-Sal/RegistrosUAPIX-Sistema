@@ -3439,6 +3439,7 @@ body.sala-class-form-active .sala-form-panel--class .sala-weekday-option span {
 body.sala-schedule-form-active .sala-form-panel--schedule .sala-form-actions,
 body.sala-class-form-active .sala-form-panel--class .sala-form-actions {
     margin-top: 4px;
+    justify-content: center;
 }
 
 body.sala-schedule-form-active .sala-form-panel--schedule .sala-form-submit,
@@ -4981,11 +4982,6 @@ body.sala-subview-active .sala-time-popover .sala-time-apply:hover {
 }
 
 .sala-agenda-page.is-calendar-view .sala-agenda-toolbar {
-    display: flex;
-    justify-content: flex-end;
-}
-
-.sala-agenda-page.is-calendar-view .sala-agenda-date-filters {
     display: none;
 }
 
@@ -4994,24 +4990,6 @@ body.sala-subview-active .sala-time-popover .sala-time-apply:hover {
 .sala-agenda-page > .sala-view-heading > .sala-agenda-back:focus-visible,
 .sala-agenda-page > .sala-view-heading > .sala-agenda-back:active {
     text-decoration: none;
-}
-
-.sala-agenda-page.is-calendar-view .sala-agenda-toolbar {
-    min-height: 0;
-    margin: 0 0 -54px;
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-    transform: translateY(-54px);
-}
-
-@media (max-width: 620px) {
-    .sala-agenda-page.is-calendar-view .sala-agenda-toolbar {
-        margin-bottom: -38px;
-        transform: translateY(-38px);
-    }
 }
 
 .sala-agenda-view-switch {
@@ -5727,8 +5705,6 @@ body.sala-subview-active .sala-time-popover .sala-time-apply:hover {
     gap: 9px;
 }
 
-.sala-agenda-heading-meta [data-section-chevron] { display: none; }
-
 .sala-agenda-page.is-compact-overview .sala-agenda-section-heading {
     min-height: 46px;
     margin-bottom: 0;
@@ -5738,21 +5714,22 @@ body.sala-subview-active .sala-time-popover .sala-time-apply:hover {
     gap: 2px;
 }
 
-.sala-agenda-page.is-compact-overview .sala-agenda-heading-meta [data-section-chevron] {
+.sala-agenda-heading-meta [data-section-chevron] {
     display: inline-block;
     color: #527b57;
     font-size: 0.8rem;
     transition: transform 0.2s ease;
 }
 
-.sala-agenda-page.is-compact-overview .sala-agenda-section.is-collapsed > .sala-agenda-list,
-.sala-agenda-page.is-compact-overview .sala-agenda-section.is-collapsed > .sala-agenda-pagination,
-.sala-agenda-page.is-compact-overview .sala-agenda-section.is-collapsed > .sala-agenda-empty {
+.sala-agenda-section.is-collapsed > .sala-agenda-list,
+.sala-agenda-section.is-collapsed > .sala-agenda-pagination,
+.sala-agenda-section.is-collapsed > .sala-agenda-empty {
     display: none;
 }
 
-.sala-agenda-page.is-compact-overview .sala-agenda-section.is-collapsed {
+.sala-agenda-page .sala-agenda-section.is-collapsed {
     padding-block: 12px;
+    min-height: 0;
 }
 
 .sala-agenda-sidebar {
@@ -7670,6 +7647,17 @@ body.sala-edit-booking-body .sala-edit-registration-form .sala-form-actions {
     body.sala-edit-booking-body .sala-edit-scope-option small { font-size: 0.73rem; }
 }
 
+.sala-edit-booking-page .sala-agenda-back,
+.sala-edit-booking-page .sala-agenda-back:is(:hover, :focus-visible, :active),
+.sala-edit-booking-page .sala-edit-cancel,
+.sala-edit-booking-page .sala-edit-cancel:is(:hover, :focus-visible, :active) {
+    text-decoration: none;
+}
+
+body.sala-edit-booking-body .sala-edit-scope {
+    margin-top: clamp(12px, 2vh, 20px);
+}
+
 /* Márgenes uniformes para el formulario de edición dentro de su panel. */
 @media (min-width: 900px) and (min-height: 680px) {
     body.sala-edit-booking-body .sala-edit-registration-form {
@@ -8077,26 +8065,34 @@ body.sala-edit-booking-body .sala-edit-registration-form .sala-form-actions {
 
 .sala-agenda-calendar-event {
     margin: 1px 0;
-    padding: 2px 4px;
-    gap: 1px;
-    font-size: 0.58rem;
-    line-height: 1.15;
+    padding: 3px 5px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+    font-size: 0.72rem;
+    line-height: 1.25;
 }
 
-@media (max-width: 620px) {
-    .sala-agenda-calendar-view { padding: 6px; }
+@media (max-width: 1100px) {
     .sala-agenda-calendar-content { grid-template-columns: minmax(0, 1fr); }
-    .sala-agenda-calendar-content .sala-agenda-day-details { max-height: 180px; }
-    .sala-agenda-calendar-cell { min-height: 65px; padding: 3px; }
-    .sala-agenda-calendar-event { font-size: 0.52rem; }
+    .sala-agenda-calendar-content .sala-agenda-day-details { max-height: none; }
 }
 
 @media (max-width: 620px) {
-    .sala-agenda-calendar-toolbar { flex-wrap: wrap; }
-    .sala-agenda-calendar-toolbar .sala-agenda-return-list {
-        width: 100%;
-        margin: 4px 0 0;
+    .sala-agenda-calendar-view { padding: 8px; }
+    .sala-agenda-calendar-toolbar {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        gap: 8px;
     }
+    .sala-agenda-calendar-toolbar h2 { min-width: 0; font-size: 1rem; }
+    .sala-agenda-calendar-toolbar .sala-agenda-return-list {
+        grid-column: 1 / -1;
+        justify-self: end;
+        margin: 0;
+    }
+    .sala-agenda-calendar-cell { min-height: 58px; padding: 4px; }
+    .sala-agenda-calendar-event { font-size: 0.65rem; }
+    .sala-agenda-calendar-event span { display: none; }
 }
 
 /* Más espacio para leer los datos de cada reserva en la lista. */
@@ -8150,5 +8146,56 @@ body.sala-edit-booking-body .sala-edit-registration-form .sala-form-actions {
 @media (max-width: 700px) {
     .sala-agenda-list-view .sala-agenda-item-main {
         grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+#agendarEventoView > .sala-view-heading {
+    margin-bottom: clamp(20px, 3vh, 28px);
+}
+
+#agendarEventoView .sala-form-grid {
+    align-items: start;
+    align-content: start;
+}
+
+#agendarEventoView .sala-form-grid > [data-ponente-externo-fields],
+#agendarEventoView .sala-form-grid > [data-date-picker] {
+    grid-column-start: 1;
+}
+
+#agendarEventoView .sala-form-grid > [data-ponente-externo-fields] {
+    grid-column-end: -1;
+}
+
+@media (min-width: 761px) {
+    #agendarEventoView .sala-form-grid,
+    #agendarEventoView [data-ponente-externo-fields]:not([hidden]) {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        column-gap: 16px;
+    }
+
+    #agendarEventoView [data-ponente-externo-fields] > label {
+        grid-row: 1;
+        align-self: end;
+    }
+
+    #agendarEventoView [data-ponente-externo-fields] > input {
+        grid-row: 2;
+        min-width: 0;
+    }
+
+    #agendarEventoView [data-ponente-externo-fields] > :is(label, input):nth-of-type(1) { grid-column: 1; }
+    #agendarEventoView [data-ponente-externo-fields] > :is(label, input):nth-of-type(2) { grid-column: 2; }
+    #agendarEventoView [data-ponente-externo-fields] > :is(label, input):nth-of-type(3) { grid-column: 3; }
+
+    #agendarEventoView [data-ponente-externo-fields] > .sala-field-error {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (min-width: 601px) and (max-width: 760px) {
+    #agendarEventoView .sala-form-grid > [data-date-picker] {
+        grid-column-end: -1;
     }
 }

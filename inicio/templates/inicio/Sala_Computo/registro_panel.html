@@ -216,7 +216,10 @@
         </form>
         <div class="registros-exit-summary">
             <h3><i class="fa-solid fa-users" aria-hidden="true"></i> Usuarios en sesión</h3>
-            <span class="registros-exit-badge" data-exit-count aria-live="polite">0 sesiones activas</span>
+            <div class="sala-history-summary" role="status" aria-label="Resumen de la consulta de salida">
+                <span data-exit-total>0 registros</span>
+                <span class="sala-history-active"><i aria-hidden="true"></i><strong data-exit-count>0</strong> activas</span>
+            </div>
         </div>
         <div class="registros-exit-table-wrap">
             <table class="registros-exit-table" aria-label="Resultados de sesiones activas">
@@ -733,6 +736,7 @@
         const exitResultType = document.querySelector('[data-exit-result-type]');
         const exitEmpty = document.querySelector('[data-exit-empty]');
         const exitCount = document.querySelector('[data-exit-count]');
+        const exitTotal = document.querySelector('[data-exit-total]');
         let exitLookupVersion = 0;
 
         function renderExitResults() {
@@ -742,7 +746,8 @@
             exitEmpty.firstElementChild.textContent = selectedExitRecordId
                 ? 'La sesión encontrada no coincide con el motivo de uso.'
                 : 'Busca por número de cuenta o folio para ver tu sesión activa.';
-            exitCount.textContent = matches ? '1 sesión activa' : '0 sesiones activas';
+            exitTotal.textContent = matches ? '1 registro' : '0 registros';
+            exitCount.textContent = matches ? '1' : '0';
         }
 
         function resetExitResults() {

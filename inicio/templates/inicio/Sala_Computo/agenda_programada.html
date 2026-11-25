@@ -4,7 +4,7 @@
 {% block title %}Agenda programada | Sala de Cómputo{% endblock %}
 {% block body_class %}sala-computo-body{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'inicio/css/salacomputo/salacomputo.css' %}?v=20261124-boton-agenda">
+<link rel="stylesheet" href="{% static 'inicio/css/salacomputo/salacomputo.css' %}?v=20261124-controles-agenda">
 {% endblock %}
 
 {% block content %}
@@ -260,12 +260,12 @@
 
         document.querySelectorAll('[data-agenda-section-toggle]').forEach(function(toggle) {
             toggle.addEventListener('click', function() {
-                if (!isCompactOverview()) return;
                 const section = toggle.closest('[data-agenda-section]');
                 const opening = section.classList.contains('is-collapsed');
-                sections.forEach(function(otherSection) {
-                    setSectionExpanded(otherSection, opening && otherSection === section);
-                });
+                if (isCompactOverview() && opening) {
+                    sections.forEach(function(otherSection) { setSectionExpanded(otherSection, false); });
+                }
+                setSectionExpanded(section, opening);
             });
         });
 
@@ -291,6 +291,11 @@
 
         document.querySelectorAll('[data-agenda-filter]').forEach(function(button) {
             button.addEventListener('click', function() {
+                if (button.dataset.agendaFilter === 'clases' && activeFilter === 'class') {
+                    classSubfilters.hidden = !classSubfilters.hidden;
+                    button.setAttribute('aria-expanded', String(!classSubfilters.hidden));
+                    return;
+                }
                 activateCategory(button.dataset.agendaFilter);
             });
         });
@@ -299,12 +304,10 @@
             button.addEventListener('click', function() {
                 activeFilter = 'class';
                 activeClassFilter = button.dataset.agendaClassFilter;
-                classSubfilters.hidden = true;
                 document.querySelectorAll('[data-agenda-filter]').forEach(function(option) {
                     const active = option.dataset.agendaFilter === 'clases';
                     option.classList.toggle('is-active', active);
                     option.setAttribute('aria-pressed', String(active));
-                    if (option.dataset.agendaFilter === 'clases') option.setAttribute('aria-expanded', 'false');
                 });
                 document.querySelectorAll('[data-agenda-class-filter]').forEach(function(option) {
                     const active = option === button;
@@ -350,12 +353,17 @@
                 document.querySelector('.sala-agenda-page').classList.toggle('is-calendar-view', calendarSelected);
                 document.querySelector('.sala-agenda-page').classList.toggle('is-list-view', !calendarSelected);
                 actualizarAgenda(true);
-                if (calendarSelected) renderMonthCalendar();
+                if (calendarSelected) {
+                    renderMonthCalendar();
+                    document.querySelector('[data-agenda-month-prev]').focus();
+                }
             });
         });
 
         document.querySelector('[data-agenda-return-list]').addEventListener('click', function() {
-            document.querySelector('[data-agenda-view="list"]').click();
+            const listButton = document.querySelector('[data-agenda-view="list"]');
+            listButton.click();
+            listButton.focus();
         });
 
         function renderMonthCalendar() {
@@ -413,6 +421,7 @@
                     block.type = 'button';
                     block.className = 'sala-agenda-calendar-event is-' + record.kind;
                     block.title = record.title + (record.time ? ' · ' + record.time : '');
+                    block.setAttribute('aria-label', block.title);
                     block.appendChild(makeText('strong', '', record.title));
                     if (record.time) block.appendChild(makeText('span', '', record.time));
                     block.addEventListener('click', function() { selectCalendarDate(iso); });
@@ -428,6 +437,7 @@
         function selectCalendarDate(isoDate) {
             selectedCalendarDate = isoDate;
             renderMonthCalendar();
+            calendarGrid.querySelector('.is-selected-day .sala-agenda-calendar-date')?.focus({ preventScroll: true });
         }
 
         function renderCalendarDayDetails(records) {

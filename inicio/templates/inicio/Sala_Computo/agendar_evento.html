@@ -73,7 +73,12 @@
                 {% elif field.name == 'numero_cuenta_ponente' %}
                 <div class="sala-form-field" data-ponente-interno-fields hidden>
                     {{ field.label_tag }}
-                    {{ field }}
+                    <div class="sala-account-search-row">
+                        {{ field }}
+                        <button class="sala-search-teacher-btn" type="button" data-buscar-ponente aria-label="Buscar ponente" title="Buscar ponente">
+                            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                        </button>
+                    </div>
                     <span id="ponenteLookupFeedback" class="sala-field-hint" role="status" aria-live="polite">Busca al ponente por su número de cuenta.</span>
                     {% for error in field.errors %}<span class="sala-field-error">{{ error }}</span>{% endfor %}
                 </div>
@@ -123,15 +128,18 @@
         const camposExternos = document.querySelector('[data-ponente-externo-fields]');
         const campoNombreInterno = document.querySelector('[data-nombre-ponente-interno-field]');
         const cuenta = document.querySelector('[data-cuenta-ponente]');
+        const botonBuscar = camposInternos?.querySelector('[data-buscar-ponente]');
         const nombreInterno = document.querySelector('[data-nombre-ponente-interno]');
         const personaId = document.querySelector('[data-persona-ponente]');
         const feedback = document.getElementById('ponenteLookupFeedback');
-        if (!tipoPonente || !camposInternos || !camposExternos || !campoNombreInterno || !cuenta || !nombreInterno || !personaId || !feedback) return;
+        if (!tipoPonente || !camposInternos || !camposExternos || !campoNombreInterno || !cuenta || !botonBuscar || !nombreInterno || !personaId || !feedback) return;
         const camposExternosInput = Array.from(camposExternos.querySelectorAll('input'));
         let solicitudActual = 0;
+        let cuentaEnConsulta = '';
 
         function limpiarPonenteInterno() {
             solicitudActual += 1;
+            cuentaEnConsulta = '';
             cuenta.value = '';
             nombreInterno.value = '';
             personaId.value = '';
@@ -164,6 +172,7 @@
 
         cuenta.addEventListener('input', function() {
             solicitudActual += 1;
+            cuentaEnConsulta = '';
             personaId.value = '';
             nombreInterno.value = '';
             campoNombreInterno.hidden = true;
@@ -173,12 +182,16 @@
                 : 'Busca al ponente por su número de cuenta.';
         });
 
-        cuenta.addEventListener('change', async function() {
+        async function buscarPonente(event) {
+            if (cuenta.disabled) return;
             const numeroCuenta = cuenta.value.trim();
             if (!numeroCuenta) {
                 limpiarPonenteInterno();
+                if (event.type !== 'change') cuenta.reportValidity();
                 return;
             }
+            if (cuentaEnConsulta === numeroCuenta || (personaId.value && nombreInterno.value)) return;
+            cuentaEnConsulta = numeroCuenta;
             const solicitud = ++solicitudActual;
             personaId.value = '';
             nombreInterno.value = '';
@@ -206,7 +219,17 @@
                 if (solicitud !== solicitudActual) return;
                 cuenta.setCustomValidity('No fue posible buscar al ponente. Intenta nuevamente.');
                 feedback.textContent = 'No fue posible buscar al ponente. Intenta nuevamente.';
+            } finally {
+                if (solicitud === solicitudActual) cuentaEnConsulta = '';
             }
+        }
+
+        cuenta.addEventListener('change', buscarPonente);
+        botonBuscar.addEventListener('click', buscarPonente);
+        cuenta.addEventListener('keydown', function(event) {
+            if (event.key !== 'Enter' || event.isComposing) return;
+            event.preventDefault();
+            buscarPonente(event);
         });
     })();
 </script>
