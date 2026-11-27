@@ -4,7 +4,8 @@
 {% block title %}{{ titulo }} | Sala de Cómputo{% endblock %}
 {% block body_class %}sala-computo-body sala-edit-booking-body{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'inicio/css/salacomputo/salacomputo.css' %}?v=20261124-cancelar-verde">
+<link rel="stylesheet" href="{% static 'inicio/css/salacomputo/salacomputo.css' %}?v=20261127-reloj-estilo">
+<script src="{% static 'inicio/js/sala_time_picker.js' %}?v=20261127-reloj-estilo" defer></script>
 {% endblock %}
 
 {% block content %}
@@ -99,16 +100,7 @@
                         <span class="sala-form-label">{{ field.label }}</span>
                         <div class="sala-time-picker" data-time-picker>
                             {{ field }}
-                            <button class="sala-time-trigger" type="button" aria-label="{{ field.label }}: seleccionar hora" aria-haspopup="dialog" aria-expanded="false" data-time-trigger><span data-time-label>Selecciona una hora</span><i class="fa-regular fa-clock" aria-hidden="true"></i></button>
-                            <div class="sala-time-popover" role="dialog" aria-label="Seleccionar hora" hidden>
-                                <div class="sala-time-picker-heading"><strong>{{ field.label }}</strong><span data-time-preview>Elige hora, minutos y periodo</span></div>
-                                <div class="sala-time-columns">
-                                    <div class="sala-time-column" role="group" aria-label="Hora" data-time-hours></div>
-                                    <div class="sala-time-column" role="group" aria-label="Minutos" data-time-minutes></div>
-                                    <div class="sala-time-column sala-time-period" role="group" aria-label="Periodo" data-time-period></div>
-                                </div>
-                                <div class="sala-time-actions"><button class="sala-time-cancel" type="button" data-time-cancel>Cancelar</button><button class="sala-time-apply" type="button" data-time-apply>Aceptar</button></div>
-                            </div>
+                            {% include 'inicio/Sala_Computo/selector_hora.html' with titulo=field.label only %}
                         </div>
                         <span class="sala-field-error" data-time-error hidden>Selecciona una hora.</span>
                         {% for error in field.errors %}<span class="sala-field-error">{{ error }}</span>{% endfor %}
@@ -291,25 +283,6 @@
         account.addEventListener('input', () => { const soloNumeros = account.value.replace(/[^0-9]/g, ''); if (account.value !== soloNumeros) account.value = soloNumeros; personId.value=''; internalName.value=''; internalNameField.hidden=true; account.setCustomValidity(account.value.trim()?'Verifica el número de cuenta del ponente.':''); });
         account.addEventListener('change', async () => { const url = new URL(page.dataset.ponenteUrl, location.origin); url.searchParams.set('cuenta', account.value.trim()); try { const response = await fetch(url, {headers:{'X-Requested-With':'XMLHttpRequest'}}); const data = await response.json(); if (!response.ok || !data.encontrado) { account.setCustomValidity(data.error || 'No se encontró el ponente.'); return; } personId.value=data.persona_id; internalName.value=data.nombre; internalNameField.hidden=false; account.setCustomValidity(''); } catch (_) { account.setCustomValidity('No fue posible buscar al ponente.'); } });
     }
-
-    form.querySelectorAll('[data-time-picker]').forEach(picker => {
-        const input=picker.querySelector('input[type="time"]'), trigger=picker.querySelector('[data-time-trigger]'), label=picker.querySelector('[data-time-label]'), popover=picker.querySelector('.sala-time-popover'), preview=picker.querySelector('[data-time-preview]'), hours=picker.querySelector('[data-time-hours]'), minutes=picker.querySelector('[data-time-minutes]'), periods=picker.querySelector('[data-time-period]');
-        if (!input || !trigger || !popover) return;
-        input.required=false; input.tabIndex=-1; input.setAttribute('aria-hidden','true'); popover.id=input.id+'-time-popover'; trigger.setAttribute('aria-controls',popover.id);
-        let h=12,m=0,p='AM';
-        function update(){ preview.textContent=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+(p==='AM'?' a. m.':' p. m.'); popover.querySelectorAll('[data-time-hour]').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.timeHour)===h))); popover.querySelectorAll('[data-time-minute]').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.timeMinute)===m))); popover.querySelectorAll('[data-time-period-value]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.timePeriodValue===p))); }
-        function save(){input.value=String((h%12)+(p==='PM'?12:0)).padStart(2,'0')+':'+String(m).padStart(2,'0'); input.dispatchEvent(new Event('change',{bubbles:true})); label.textContent=preview.textContent;}
-        function add(text, attr, value, list, fn){const b=document.createElement('button');b.type='button';b.className='sala-time-option';b.textContent=text;b.setAttribute(attr,value);b.setAttribute('aria-pressed','false');b.addEventListener('click',()=>{fn();update();save();});list.appendChild(b);}
-        for(let x=1;x<=12;x++) add(String(x).padStart(2,'0'),'data-time-hour',x,hours,()=>h=x);
-        for(let x=0;x<60;x++) add(String(x).padStart(2,'0'),'data-time-minute',x,minutes,()=>m=x);
-        [['AM','a. m.'],['PM','p. m.']].forEach(([v,t])=>add(t,'data-time-period-value',v,periods,()=>p=v));
-        function load(){const match=input.value.match(/^(\d{2}):(\d{2})$/);if(match){const n=Number(match[1]);h=n%12||12;m=Number(match[2]);p=n>=12?'PM':'AM';label.textContent=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+(p==='AM'?' a. m.':' p. m.');}else label.textContent='Selecciona una hora';update();}
-        trigger.addEventListener('click',()=>{document.querySelectorAll('.sala-time-popover').forEach(other=>{if(other!==popover)other.hidden=true;});document.querySelectorAll('.sala-calendar-popover').forEach(cal=>cal.hidden=true);load();document.body.appendChild(popover);popover.hidden=false;trigger.setAttribute('aria-expanded','true');const r=trigger.getBoundingClientRect();popover.style.position='fixed';popover.style.zIndex='1300';popover.style.left=Math.max(12,Math.min(r.left,innerWidth-popover.offsetWidth-12))+'px';popover.style.top=(r.bottom+popover.offsetHeight+12<innerHeight?r.bottom+8:Math.max(12,r.top-popover.offsetHeight-8))+'px';});
-        picker.querySelector('[data-time-cancel]').addEventListener('click',()=>{popover.hidden=true;trigger.setAttribute('aria-expanded','false');});
-        picker.querySelector('[data-time-apply]').addEventListener('click',()=>{save();popover.hidden=true;trigger.setAttribute('aria-expanded','false');});
-        document.addEventListener('pointerdown',e=>{if(!picker.contains(e.target)&&!popover.contains(e.target)){popover.hidden=true;trigger.setAttribute('aria-expanded','false');}},true);
-        load();
-    });
 
     form.querySelectorAll('[data-edit-scope-choice]').forEach(choice => {
         choice.addEventListener('change', () => {

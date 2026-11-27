@@ -34,18 +34,24 @@
             </section>
 
             <section class="registros-operation-view" data-operation-view="entrada" hidden aria-labelledby="entrada-title">
-                <button class="registros-view-back" type="button" data-back-menu>
-                    <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Regresar
-                </button>
-                <section class="registros-panel" aria-labelledby="entrada-title">
-        <div class="registros-panel-heading">
-            <div>
-                <p class="sala-computo-eyebrow">NUEVO ACCESO</p>
-                <h2 id="entrada-title">Registro de entrada</h2>
-                <p>Elige el tipo de ingreso para mostrar el formulario correspondiente.</p>
-            </div>
-        </div>
+                <div class="registros-entry-actions">
+                    <button class="sala-back-btn" type="button" data-back-menu>
+                        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver al menú
+                    </button>
+                    <button class="registros-view-back" type="button" data-change-entry-type>
+                        <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i> Cambiar tipo de ingreso
+                    </button>
+                </div>
+                <header class="registros-panel-heading registros-entry-heading">
+                    <div>
+                        <p class="sala-computo-eyebrow">NUEVO ACCESO</p>
+                        <h2 id="entrada-title">Registro de entrada</h2>
+                        <p>Elige el tipo de ingreso para mostrar el formulario correspondiente.</p>
+                    </div>
+                </header>
+                <div class="registros-panel">
 
+        <div data-entry-type-picker>
         <div class="registros-type-grid" role="group" aria-label="Tipo de entrada">
             <button type="button" class="registros-type-card" data-registro-type="Clase" aria-pressed="false">
                 <span class="registros-type-icon"><i class="fa-solid fa-book-open" aria-hidden="true"></i></span>
@@ -63,59 +69,153 @@
                 <small>Alumno que visita la sala</small>
             </button>
         </div>
-        <p class="registros-type-selection-status" data-type-selection-status role="status" aria-live="polite">
-            Selecciona un tipo de entrada. Una vez seleccionado, no podrás cambiarlo durante esta sesión.
+        <p class="registros-type-selection-status">
+            Selecciona un tipo de entrada.
         </p>
+        </div>
 
         <div class="registros-fields" data-registro-fields="Clase" hidden>
             <div class="registros-section-title">
                 <h3>Registro de clase</h3>
-                <p>Selecciona una clase en curso o busca una clase que no aparece en la agenda.</p>
             </div>
             <fieldset class="registros-mode-field">
-                <legend>¿La clase está agendada?</legend>
-                <label><input type="radio" name="clase_agendada" value="si" checked> Sí, seleccionar clase</label>
-                <label><input type="radio" name="clase_agendada" value="no"> No, buscar clase</label>
+                <legend class="sala-sr-only">Modo de registro de clase</legend>
+                <label><input type="radio" name="clase_agendada" value="si" checked> Clase agendada</label>
+                <label><input type="radio" name="clase_agendada" value="no"> Captura manual</label>
             </fieldset>
 
-            <div class="registros-form-grid" data-agenda>
-                <label class="sala-form-field">
-                    <span>Clase agendada para este horario</span>
-                    <select class="sala-form-control" data-agenda-class>
-                        <option value="">Cargando clases de hoy...</option>
-                    </select>
-                </label>
-            </div>
+            <fieldset class="registros-scheduled-classes" data-agenda>
+                <legend>Clases agendadas para hoy</legend>
+                <p class="registros-scheduled-status" data-scheduled-status role="status"></p>
+                <div class="registros-scheduled-options" data-agenda-class></div>
+            </fieldset>
 
-            <div class="registros-class-search" data-class-search hidden>
-                <div class="registros-search-form">
+            <section class="registros-class-search" data-class-search aria-labelledby="registrosManualClassTitle" hidden>
+                <h4 id="registrosManualClassTitle" class="registros-manual-heading">
+                    <i class="fa-solid fa-clipboard-list" aria-hidden="true"></i> Datos de la clase
+                </h4>
+                <div class="registros-manual-class-grid" data-manual-class>
+                    <div class="sala-form-field">
+                        <label for="registroManualDocente">Docente</label>
+                        <div class="sala-account-search-row">
+                            <input id="registroManualDocente" class="sala-form-control" type="text" inputmode="numeric" maxlength="20" autocomplete="off" placeholder="Número de cuenta">
+                            <button class="sala-search-teacher-btn" type="button" data-manual-teacher-search aria-label="Buscar docente">
+                                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    </div>
                     <label class="sala-form-field">
-                        <span>Número de cuenta del docente</span>
-                        <input class="sala-form-control" type="search" inputmode="numeric" pattern="[0-9]*" title="Ingresa únicamente números." data-search-teacher placeholder="Ej. 1234567">
+                        <span>Carrera</span>
+                        <select class="sala-form-control" data-manual-career disabled>
+                            <option value="">Busca primero al docente</option>
+                            {% for value, label in clase_form.carrera.field.choices %}
+                                {% if value %}<option value="{{ value }}">{{ label }}</option>{% endif %}
+                            {% endfor %}
+                        </select>
                     </label>
-                    <label class="sala-form-field">
-                        <span>No. de grupo</span>
-                        <input class="sala-form-control" type="text" data-search-group list="registro-grupos" placeholder="Ej. 301">
-                        <datalist id="registro-grupos"></datalist>
-                    </label>
-                    <label class="sala-form-field">
-                        <span>Materia</span>
-                        <input class="sala-form-control" type="search" data-search-subject list="registro-materias" placeholder="Nombre de la materia">
-                        <datalist id="registro-materias"></datalist>
-                    </label>
-                    <button class="sala-form-submit registros-search-submit" type="button" data-search-classes>
-                        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Buscar clase
+                    <label class="sala-form-field"><span>Grupo</span><select class="sala-form-control" data-manual-group disabled><option value="">Selecciona una carrera</option></select></label>
+                    <div class="sala-form-field">
+                        <label for="registroManualMateria">Materia</label>
+                        <div class="sala-search-select" data-manual-subject-picker>
+                            <input id="registroManualMateria" class="sala-form-control" type="text" inputmode="search" placeholder="Selecciona una carrera" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="registroManualMateriaOpciones" disabled>
+                            <span class="registros-selected-subject" aria-hidden="true" hidden></span>
+                            <div id="registroManualMateriaOpciones" class="sala-search-select-options" role="listbox" aria-label="Materias disponibles" hidden></div>
+                        </div>
+                        <div hidden><select data-manual-subject disabled><option value="">Selecciona una carrera</option></select></div>
+                    </div>
+                    <p class="registros-manual-class-status" data-manual-class-status role="status" hidden></p>
+                    <fieldset class="registros-manual-schedule">
+                        <legend><span class="registros-manual-heading"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i> Fecha y horario de la clase</span></legend>
+                        <div class="registros-manual-schedule-grid">
+                            <div class="sala-form-field" data-date-picker data-allow-past>
+                                <input id="registroManualFecha" type="date" value="{{ fecha_hoy|date:'Y-m-d'|default:fecha_hoy }}" data-calendar-value hidden>
+                                <label for="registroManualFecha-trigger">Fecha de clase</label>
+                                <button id="registroManualFecha-trigger" class="sala-date-trigger" type="button" aria-haspopup="dialog" aria-expanded="false" data-date-trigger>
+                                    <span data-date-label>Selecciona una fecha</span>
+                                    <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+                                </button>
+                                <div class="sala-calendar-popover" role="dialog" aria-label="Seleccionar fecha de clase" hidden>
+                                    <div class="sala-calendar-heading">
+                                        <button class="sala-calendar-nav" type="button" aria-label="Mes anterior" data-calendar-prev><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
+                                        <strong data-calendar-title></strong>
+                                        <button class="sala-calendar-nav" type="button" aria-label="Mes siguiente" data-calendar-next><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+                                    </div>
+                                    <div class="sala-calendar-weekdays" aria-hidden="true">
+                                        <span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span>
+                                    </div>
+                                    <div class="sala-calendar-days" data-calendar-days></div>
+                                </div>
+                            </div>
+                            <div class="sala-form-field">
+                                <span>Hora de inicio</span>
+                                <div class="sala-time-picker" data-time-picker>
+                                    <input id="registroManualHoraInicio" class="sala-form-control" type="time" aria-label="Hora de inicio">
+                                    {% include 'inicio/Sala_Computo/selector_hora.html' with titulo='Hora de inicio' only %}
+                                </div>
+                            </div>
+                            <div class="sala-form-field">
+                                <span>Hora de término</span>
+                                <div class="sala-time-picker" data-time-picker>
+                                    <input id="registroManualHoraFin" class="sala-form-control" type="time" aria-label="Hora de término">
+                                    {% include 'inicio/Sala_Computo/selector_hora.html' with titulo='Hora de término' only %}
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
+                <p class="registros-manual-summary-help">Datos de solo lectura. Se mostrarán al seleccionar el docente, la carrera, el grupo y la materia.</p>
+                <dl class="registros-manual-summary" aria-label="Resumen de la clase" aria-live="polite">
+                    <div><dt>Docente</dt><dd data-manual-summary="teacher">—</dd></div>
+                    <div><dt>Carrera</dt><dd data-manual-summary="career">—</dd></div>
+                    <div><dt>Grupo</dt><dd data-manual-summary="group">—</dd></div>
+                    <div><dt>Materia</dt><dd data-manual-summary="subject">—</dd></div>
+                    <div><dt>Horario</dt><dd data-manual-summary="schedule">—</dd></div>
+                </dl>
+                <p class="registros-manual-roster-status" data-manual-review-status role="status" hidden></p>
+                <button class="registros-view-back" type="button" data-review-manual-class hidden>Revisar datos de la clase</button>
+                <div class="registros-manual-roster-toolbar">
+                    <h4>Lista de alumnos</h4>
+                    <button class="registros-view-back registros-edit-manual-data" type="button" data-edit-manual-data disabled>
+                        <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> Editar datos
+                    </button>
+                    <button class="sala-form-submit" type="button" data-add-manual-student aria-expanded="false" aria-controls="registroAlumnoAdicional" disabled>
+                        <i class="fa-solid fa-user-plus" aria-hidden="true"></i> Agregar alumno
                     </button>
                 </div>
-                <p class="registros-demo-feedback" data-search-feedback role="status" hidden></p>
-                <label class="sala-form-field">
-                    <span>Resultado de búsqueda</span>
-                    <select class="sala-form-control" data-search-results>
-                        <option value="">Busca y selecciona una clase</option>
-                    </select>
-                </label>
-            </div>
+                <form id="registroAlumnoAdicional" class="registros-add-student" data-manual-student-form hidden>
+                    <label class="sala-form-field" for="registroCuentaAdicional">
+                        <span>No. de cuenta</span>
+                        <input id="registroCuentaAdicional" class="sala-form-control" type="text" inputmode="numeric" pattern="[0-9]+" maxlength="20" autocomplete="off" required>
+                    </label>
+                    <button class="sala-form-submit" type="submit">Agregar a la lista</button>
+                </form>
+                <p class="registros-manual-roster-status" data-manual-student-status role="status" hidden></p>
+                <div class="registros-manual-roster registros-table-wrap">
+                    <table class="registros-table" aria-label="Alumnos del grupo para captura manual">
+                        <thead>
+                            <tr><th scope="col">No.</th><th scope="col">No. cuenta</th><th scope="col">Nombre del alumno</th><th scope="col">Grupo</th><th scope="col">Asistencia</th><th scope="col">No. PC</th></tr>
+                        </thead>
+                        <tbody data-manual-roster></tbody>
+                    </table>
+                </div>
+                <p class="registros-manual-roster-status" data-manual-roster-status role="status">Selecciona el grupo y la materia para cargar los alumnos.</p>
+                <div class="registros-manual-save-actions">
+                    <label class="sala-form-field">
+                        <span>Conservar durante</span>
+                        <select class="sala-form-control" data-manual-retention>
+                            <option>1 día</option>
+                            <option selected>7 días</option>
+                            <option>30 días</option>
+                        </select>
+                    </label>
+                    <button class="sala-form-submit" type="button" data-preview-manual-save>
+                        <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Guardar lista
+                    </button>
+                </div>
+                <p class="registros-manual-class-note" data-manual-save-status role="status">Vista previa. El guardado de la lista aún no está habilitado.</p>
+            </section>
 
+            <div class="registros-class-attendance">
             <div class="registros-section-title registros-roster-heading">
                 <h3>Alumnos de la clase</h3>
                 <p>Marca asistencia y asigna equipo a cada alumno.</p>
@@ -133,6 +233,7 @@
                 <button class="sala-form-submit" type="button" data-register-attendance disabled>
                     <i class="fa-solid fa-check" aria-hidden="true"></i> Registrar entrada de clase
                 </button>
+            </div>
             </div>
         </div>
 
@@ -183,7 +284,8 @@
                 </button>
             </div>
         </div>
-    </section>
+                </div>
+            </section>
 
             <section class="registros-operation-view" data-operation-view="salida" hidden aria-labelledby="salida-title">
                 <button class="registros-view-back" type="button" data-back-menu>
@@ -244,21 +346,14 @@
     </div>
     <p class="registros-demo-feedback registros-global-feedback" data-global-feedback role="status" hidden></p>
     <dialog class="app-confirm-dialog" data-kiosk-exit aria-labelledby="kioskExitTitle" aria-describedby="kioskExitMessage">
-        <button type="button" class="registros-exit-icon-button registros-exit-close" data-close-kiosk-exit aria-label="Cerrar confirmación">
-            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-        </button>
         <div class="app-confirm-icon" aria-hidden="true"><i class="fa-solid fa-lock"></i></div>
         <h2 id="kioskExitTitle">¿Salir de los registros?</h2>
-        <p id="kioskExitMessage">Confirma con las credenciales de un usuario autorizado para volver al panel.</p>
+        <p id="kioskExitMessage">Ingresa la contraseña de tu sesión autorizada para volver al panel.</p>
         <form class="registros-exit-credentials" method="post" action="{% url 'confirmar_salida_registros' %}" data-confirm-exempt>
             {% csrf_token %}
-            {% if not request.user.is_superuser and not request.user.mod_sala_computo %}
-                <label for="kioskExitUsername">Usuario autorizado</label>
-                <input id="kioskExitUsername" class="sala-form-control" name="username" autocomplete="username" required autofocus>
-            {% endif %}
             <label for="kioskExitPassword">Contraseña</label>
             <div class="registros-exit-password-row">
-                <input id="kioskExitPassword" class="sala-form-control" type="password" name="password" autocomplete="current-password" placeholder="Ingresa tu contraseña" required {% if request.user.is_superuser or request.user.mod_sala_computo %}autofocus{% endif %}>
+                <input id="kioskExitPassword" class="sala-form-control" type="password" name="password" autocomplete="current-password" placeholder="Ingresa tu contraseña" required autofocus>
                 <button type="button" class="registros-exit-icon-button" data-toggle-exit-password aria-label="Mostrar contraseña" aria-controls="kioskExitPassword" aria-pressed="false">
                     <i class="fa-solid fa-eye" aria-hidden="true"></i>
                 </button>
@@ -293,9 +388,7 @@
         exitPasswordToggle.addEventListener('click', () => setExitPasswordVisible(exitPassword.type === 'password'));
 
         document.querySelector('[data-open-kiosk-exit]').addEventListener('click', () => exitDialog.showModal());
-        exitDialog.querySelectorAll('[data-close-kiosk-exit]').forEach((button) => {
-            button.addEventListener('click', () => exitDialog.close());
-        });
+        exitForm.querySelector('[data-close-kiosk-exit]').addEventListener('click', () => exitDialog.close());
         exitDialog.addEventListener('close', () => {
             exitRequest?.abort();
             exitForm.reset();
@@ -342,33 +435,61 @@
 
         const typeButtons = Array.from(document.querySelectorAll('[data-registro-type]'));
         const typeSections = Array.from(document.querySelectorAll('[data-registro-fields]'));
-        const typeSelectionStatus = document.querySelector('[data-type-selection-status]');
+        const entryTypePicker = document.querySelector('[data-entry-type-picker]');
+        const changeEntryType = document.querySelector('[data-change-entry-type]');
         const agendaModes = document.querySelectorAll('input[name="clase_agendada"]');
+        const scheduledMode = document.querySelector('input[name="clase_agendada"][value="si"]');
         const agendaSection = document.querySelector('[data-agenda]');
         const searchSection = document.querySelector('[data-class-search]');
+        const manualClass = searchSection.querySelector('[data-manual-class]');
+        const manualTeacher = manualClass.querySelector('#registroManualDocente');
+        const manualCareer = manualClass.querySelector('[data-manual-career]');
+        const manualGroup = manualClass.querySelector('[data-manual-group]');
+        const manualSubject = manualClass.querySelector('[data-manual-subject]');
+        const manualSubjectPicker = manualClass.querySelector('[data-manual-subject-picker]');
+        const manualSubjectSearch = manualSubjectPicker.querySelector('input');
+        const manualSubjectValue = manualSubjectPicker.querySelector('.registros-selected-subject');
+        const manualTeacherSearch = manualClass.querySelector('[data-manual-teacher-search]');
+        const manualSubjectOptions = manualSubjectPicker.querySelector('[role="listbox"]');
+        const manualStatus = manualClass.querySelector('[data-manual-class-status]');
+        const manualSummary = searchSection.querySelector('.registros-manual-summary');
+        const manualTimeFields = Array.from(manualClass.querySelectorAll('input[type="time"]'));
+        const manualDate = manualClass.querySelector('#registroManualFecha');
+        const manualReviewStatus = searchSection.querySelector('[data-manual-review-status]');
+        const manualReviewButton = searchSection.querySelector('[data-review-manual-class]');
+        let manualReviewKey = '';
+        let manualReviewPending = false;
+        const manualRoster = searchSection.querySelector('[data-manual-roster]');
+        const manualRosterStatus = searchSection.querySelector('[data-manual-roster-status]');
+        const addManualStudent = searchSection.querySelector('[data-add-manual-student]');
+        const editManualData = searchSection.querySelector('[data-edit-manual-data]');
+        const manualStudentForm = searchSection.querySelector('[data-manual-student-form]');
+        const manualStudentAccount = manualStudentForm.querySelector('input');
+        const manualStudentSubmit = manualStudentForm.querySelector('button[type="submit"]');
+        const manualStudentStatus = searchSection.querySelector('[data-manual-student-status]');
+        const manualRetention = searchSection.querySelector('[data-manual-retention]');
+        const manualSaveButton = searchSection.querySelector('[data-preview-manual-save]');
+        const manualSaveStatus = searchSection.querySelector('[data-manual-save-status]');
+        let manualRosterData;
+        let manualDetailsLocked = false;
+        let manualLookupVersion = 0;
+        let manualRosterVersion = 0;
+        let activeManualPcOptions;
+        let manualTeacherName = '';
         const operationMenu = document.querySelector('[data-operation-menu]');
         const operationViews = document.querySelectorAll('[data-operation-view]');
         const csrfToken = document.querySelector('[name="csrfmiddlewaretoken"]').value;
-        const classSelects = [
-            document.querySelector('[data-agenda-class]'),
-            document.querySelector('[data-search-results]'),
-        ];
+        const scheduledClasses = agendaSection.querySelector('[data-agenda-class]');
+        const scheduledStatus = agendaSection.querySelector('[data-scheduled-status]');
         const rosterBody = document.querySelector('[data-class-roster]');
         const classFeedback = document.querySelector('[data-class-feedback]');
         const classSubmit = document.querySelector('[data-register-attendance]');
-        const searchFeedback = document.querySelector('[data-search-feedback]');
         const eventFeedback = document.querySelector('[data-event-feedback]');
         const visitFeedback = document.querySelector('[data-visit-feedback]');
         const visitAccount = document.querySelector('[data-visit-account]');
-        const searchTeacherAccount = document.querySelector('[data-search-teacher]');
-        const searchGroup = document.querySelector('[data-search-group]');
-        const searchSubject = document.querySelector('[data-search-subject]');
-        const searchButton = document.querySelector('[data-search-classes]');
-        const groupSuggestions = document.querySelector('#registro-grupos');
-        const subjectSuggestions = document.querySelector('#registro-materias');
         let selectedType = null;
+        let entryVersion = 0;
         let selectedClassId = '';
-        let searchResults = [];
         let classOptionsVersion = 0;
         let rosterVersion = 0;
         let selectedStudentId = '';
@@ -414,12 +535,548 @@
             });
         }
 
-        function fillAutocomplete(list, values) {
-            list.replaceChildren();
-            Array.from(new Set(values)).forEach(function (value) {
-                list.appendChild(new Option(value));
-            });
+        function closeManualSubjectOptions() {
+            manualSubjectOptions.hidden = true;
+            manualSubjectSearch.setAttribute('aria-expanded', 'false');
+            const selected = manualSubject.value ? manualSubject.selectedOptions[0].textContent : '';
+            if (selected) {
+                manualSubjectSearch.value = selected;
+            }
+            manualSubjectValue.textContent = selected;
+            manualSubjectValue.hidden = !selected;
         }
+
+        function syncManualSubjectSearch(placeholder) {
+            manualSubjectSearch.value = '';
+            manualSubjectSearch.disabled = manualSubject.disabled;
+            manualSubjectSearch.placeholder = placeholder;
+            closeManualSubjectOptions();
+        }
+
+        function showManualSubjectOptions() {
+            if (manualSubjectSearch.disabled || manualSubjectSearch.readOnly) return;
+            const normalize = (text) => text.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('es-MX');
+            const query = normalize(manualSubjectSearch.value.trim());
+            const matches = Array.from(manualSubject.options).filter((option) => option.value && normalize(option.textContent).includes(query));
+            manualSubjectOptions.replaceChildren(...matches.map((option) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'sala-search-select-option';
+                button.tabIndex = -1;
+                button.setAttribute('role', 'option');
+                button.setAttribute('aria-selected', String(manualSubject.value === option.value));
+                button.textContent = option.textContent;
+                button.addEventListener('click', () => {
+                    const changed = manualSubject.value !== option.value;
+                    manualSubjectSearch.focus({ preventScroll: true });
+                    manualSubject.value = option.value;
+                    manualSubjectSearch.value = option.textContent;
+                    closeManualSubjectOptions();
+                    if (changed) manualSubject.dispatchEvent(new Event('change'));
+                });
+                return button;
+            }));
+            if (!matches.length) {
+                const empty = document.createElement('div');
+                empty.className = 'sala-search-select-empty';
+                empty.textContent = 'No se encontraron materias.';
+                manualSubjectOptions.append(empty);
+            }
+            manualSubjectOptions.hidden = false;
+            manualSubjectValue.hidden = true;
+            manualSubjectSearch.setAttribute('aria-expanded', 'true');
+        }
+
+        function openManualSubjectSearch() {
+            if (manualSubjectSearch.disabled || manualSubjectSearch.readOnly) return;
+            if (manualSubject.value) manualSubjectSearch.value = '';
+            showManualSubjectOptions();
+        }
+
+        manualSubjectSearch.addEventListener('focus', openManualSubjectSearch);
+        manualSubjectSearch.addEventListener('click', () => {
+            if (manualSubjectSearch.readOnly) editManualClass(manualSubjectSearch);
+            else openManualSubjectSearch();
+        });
+        manualSubjectSearch.addEventListener('input', () => {
+            if (manualSubject.value) {
+                manualSubject.value = '';
+                manualSubject.dispatchEvent(new Event('change'));
+            }
+            showManualSubjectOptions();
+        });
+        manualSubjectPicker.addEventListener('focusout', (event) => {
+            if (!manualSubjectPicker.contains(event.relatedTarget)) closeManualSubjectOptions();
+        });
+        manualSubjectPicker.addEventListener('keydown', (event) => {
+            if (manualSubjectSearch.readOnly && (event.key === 'Enter' || event.key === 'ArrowDown')) {
+                event.preventDefault();
+                editManualClass(manualSubjectSearch);
+                return;
+            }
+            if (event.key === 'Escape' && !manualSubjectOptions.hidden) {
+                event.preventDefault();
+                manualSubjectSearch.focus({ preventScroll: true });
+                closeManualSubjectOptions();
+            } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                event.preventDefault();
+                if (manualSubjectOptions.hidden) showManualSubjectOptions();
+                const buttons = Array.from(manualSubjectOptions.querySelectorAll('button'));
+                const index = buttons.indexOf(event.target);
+                if (event.key === 'ArrowDown') buttons[index + 1]?.focus();
+                else if (index > 0) buttons[index - 1].focus();
+                else manualSubjectSearch.focus({ preventScroll: true });
+            } else if (event.key === 'Enter' && event.target === manualSubjectSearch && !manualSubjectOptions.hidden && !event.isComposing) {
+                event.preventDefault();
+                manualSubjectOptions.querySelector('button')?.click();
+            }
+        });
+
+        function clearManualCatalogs() {
+            resetManualRoster();
+            manualRosterStatus.textContent = 'Selecciona el grupo y la materia para cargar los alumnos.';
+            [manualGroup, manualSubject].forEach((select) => {
+                fillSelect(select, [], 'Selecciona una carrera', 'id', 'nombre');
+                select.disabled = true;
+            });
+            syncManualSubjectSearch('Selecciona una carrera');
+        }
+
+        function resetManualRoster() {
+            manualRosterVersion += 1;
+            activeManualPcOptions?.close();
+            manualRoster.replaceChildren();
+            manualRosterData = undefined;
+            setManualDetailsLocked(false);
+            addManualStudent.disabled = true;
+            editManualData.disabled = true;
+            manualStudentSubmit.disabled = false;
+            manualStudentForm.reset();
+            manualStudentForm.hidden = true;
+            addManualStudent.setAttribute('aria-expanded', 'false');
+            manualStudentStatus.hidden = true;
+            manualSaveStatus.textContent = 'Vista previa. El guardado de la lista aún no está habilitado.';
+        }
+
+        function setManualDetailsLocked(locked) {
+            if (locked === manualDetailsLocked) return;
+            manualDetailsLocked = locked;
+            [manualTeacher, manualTeacherSearch, manualCareer, manualGroup].forEach((field) => {
+                field.disabled = locked;
+            });
+            manualSubjectSearch.readOnly = locked;
+            if (locked) closeManualSubjectOptions();
+        }
+
+        async function editManualClass(field) {
+            const version = manualRosterVersion;
+            if (manualDetailsLocked) {
+                try {
+                    const confirmed = await window.confirmarAccion(
+                        'Si cambias los datos de la clase, se reiniciará la lista y se perderán las asistencias, las PCs asignadas y los alumnos adicionales.',
+                        { title: '¿Editar datos de la clase?', acceptText: 'Editar datos' },
+                    );
+                    if (!confirmed || version !== manualRosterVersion) return;
+                    setManualDetailsLocked(false);
+                } catch (error) {
+                    if (version === manualRosterVersion) manualRosterStatus.textContent = error.message;
+                    return;
+                }
+            }
+            field.focus();
+            if (field === manualSubjectSearch) openManualSubjectSearch();
+        }
+
+        editManualData.addEventListener('click', () => editManualClass(manualTeacher));
+
+        function groupCode(groupLabel) {
+            return groupLabel?.split(/\s+[-–—]\s+/, 1)[0].trim() || '—';
+        }
+
+        function formatManualTime(value) {
+            const [hour, minute] = value.split(':');
+            const hour24 = Number(hour);
+            return `${hour24 % 12 || 12}:${minute} ${hour24 < 12 ? 'a. m.' : 'p. m.'}`;
+        }
+
+        function updateManualSummary() {
+            const schedule = manualTimeFields.map((field) => field.value);
+            const values = {
+                teacher: manualTeacherName,
+                career: manualCareer.value && manualCareer.selectedOptions[0]?.textContent.trim(),
+                group: groupCode(manualGroup.value && manualGroup.selectedOptions[0]?.textContent),
+                subject: manualSubject.value && manualSubject.selectedOptions[0]?.textContent.trim(),
+                schedule: schedule.every(Boolean) ? schedule.map(formatManualTime).join(' – ') : '—',
+            };
+            manualSummary.querySelectorAll('[data-manual-summary]').forEach((field) => {
+                const value = values[field.dataset.manualSummary] || '—';
+                if (field.textContent !== value) field.textContent = value;
+            });
+            queueMicrotask(reviewManualClass);
+        }
+
+        async function reviewManualClass() {
+            const [start, end] = manualTimeFields.map((field) => field.value);
+            const fields = [manualTeacherName, manualCareer.value, manualGroup.value, manualSubject.value, manualDate.value, start, end];
+            if (!fields.every(Boolean) || selectedType !== 'Clase' || searchSection.hidden) {
+                manualReviewKey = '';
+                manualReviewStatus.hidden = true;
+                manualReviewButton.hidden = true;
+                return;
+            }
+            if (end <= start) {
+                manualReviewKey = '';
+                manualReviewButton.hidden = true;
+                setMessage(manualReviewStatus, 'La hora de término debe ser posterior a la de inicio.', true);
+                return;
+            }
+            const key = JSON.stringify(fields);
+            if (manualReviewPending || key === manualReviewKey) return;
+            manualReviewKey = key;
+            manualReviewPending = true;
+            manualReviewStatus.hidden = true;
+            manualReviewButton.hidden = true;
+            const date = manualDate.value.split('-').reverse().join('/');
+            const subject = manualSubject.selectedOptions[0].textContent;
+            const career = manualCareer.selectedOptions[0].textContent;
+            const group = groupCode(manualGroup.selectedOptions[0].textContent);
+            try {
+                const confirmed = await window.confirmarAccion(
+                    'Revisa los datos de la clase antes de continuar.',
+                    {
+                        title: '¿Confirmas los datos de la clase?',
+                        acceptText: 'Confirmar datos',
+                        details: [
+                            ['Docente', manualTeacherName],
+                            ['Carrera', career],
+                            ['Grupo', group],
+                            ['Materia', subject],
+                            ['Fecha', date],
+                            ['Horario', `${formatManualTime(start)} – ${formatManualTime(end)}`],
+                        ],
+                    },
+                );
+                if (key !== manualReviewKey) return;
+                setMessage(manualReviewStatus, confirmed ? 'Datos de la clase confirmados.' : 'Revisa los datos de la clase y vuelve a confirmarlos.', false);
+                manualReviewButton.hidden = confirmed;
+            } catch (error) {
+                if (key === manualReviewKey) {
+                    setMessage(manualReviewStatus, 'No se pudo abrir la confirmación. Intenta de nuevo.', true);
+                    manualReviewButton.hidden = false;
+                }
+            } finally {
+                manualReviewPending = false;
+            }
+        }
+
+        manualReviewButton.addEventListener('click', () => {
+            manualReviewKey = '';
+            reviewManualClass();
+        });
+
+        function resetManualTeacher() {
+            manualLookupVersion += 1;
+            manualTeacherName = '';
+            manualCareer.value = '';
+            manualCareer.disabled = true;
+            manualStatus.hidden = true;
+            clearManualCatalogs();
+            updateManualSummary();
+        }
+
+        manualTeacher.addEventListener('input', resetManualTeacher);
+        manualDate.addEventListener('change', reviewManualClass);
+        manualTimeFields.forEach((field) => field.addEventListener('change', updateManualSummary));
+        manualGroup.addEventListener('change', loadManualRoster);
+        manualSubject.addEventListener('change', loadManualRoster);
+
+        async function loadManualRoster() {
+            updateManualSummary();
+            resetManualRoster();
+            const version = manualRosterVersion;
+            if (!manualTeacherName || !manualCareer.value || !manualGroup.value || !manualSubject.value) {
+                manualRosterStatus.textContent = 'Selecciona el grupo y la materia para cargar los alumnos.';
+                return;
+            }
+            manualRosterStatus.textContent = 'Cargando alumnos y equipos…';
+            try {
+                const [roster, equipment] = await Promise.all([
+                    requestJson(apiUrl('{% url "alumnos_autoacceso_grupo" %}', {
+                        carrera: manualCareer.value,
+                        grupo: manualGroup.selectedOptions[0].textContent.trim(),
+                        materia: manualSubject.value,
+                    })),
+                    requestJson('{% url "equipos_sala" %}'),
+                ]);
+                if (version !== manualRosterVersion) return;
+                manualRosterData = {
+                    pcs: equipment.equipos,
+                    assignedPcs: new Set(),
+                    studentIds: new Set(roster.alumnos.map((alumno) => String(alumno.id))),
+                };
+                const rows = roster.alumnos.map((alumno, index) => createManualStudentRow(alumno, index + 1));
+                manualRoster.replaceChildren(...rows);
+                addManualStudent.disabled = false;
+                editManualData.disabled = false;
+                manualRosterStatus.textContent = rows.length ? `Alumnos del grupo: ${rows.length}.` : 'El grupo no tiene alumnos registrados.';
+            } catch (error) {
+                if (version === manualRosterVersion) manualRosterStatus.textContent = error.message;
+            }
+        }
+
+        function createManualStudentRow(alumno, number) {
+            const row = document.createElement('tr');
+            [number, alumno.matricula || '—', alumno.nombre, groupCode(alumno.grupo)].forEach((value) => {
+                row.insertCell().textContent = value;
+            });
+            const attendance = document.createElement('div');
+            attendance.className = 'registros-manual-attendance';
+            attendance.setAttribute('role', 'group');
+            attendance.setAttribute('aria-label', 'Asistencia de ' + alumno.nombre);
+            ['Asistió', 'Falta'].forEach((state) => {
+                const label = document.createElement('label');
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = 'asistencia_manual_' + alumno.id;
+                radio.value = state;
+                label.append(radio, state);
+                attendance.append(label);
+            });
+            row.insertCell().append(attendance);
+            const pcPicker = createManualPcPicker(alumno, manualRosterData.pcs, manualRosterData.assignedPcs);
+            row.insertCell().append(pcPicker.element);
+            attendance.addEventListener('change', (event) => {
+                pcPicker.setEnabled(event.target.value === 'Asistió');
+                setManualDetailsLocked(true);
+            });
+            return row;
+        }
+
+        addManualStudent.addEventListener('click', () => {
+            manualStudentForm.hidden = !manualStudentForm.hidden;
+            addManualStudent.setAttribute('aria-expanded', String(!manualStudentForm.hidden));
+            if (!manualStudentForm.hidden) manualStudentAccount.focus();
+        });
+
+        manualStudentForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (!manualRosterData || manualStudentSubmit.disabled) return;
+            const version = manualRosterVersion;
+            const cuenta = manualStudentAccount.value.trim();
+            manualStudentSubmit.disabled = true;
+            setMessage(manualStudentStatus, 'Buscando alumno…', false);
+            try {
+                const alumno = await requestJson(apiUrl('{% url "buscar_alumno_sala" %}', { cuenta }));
+                if (version !== manualRosterVersion) return;
+                const id = String(alumno.persona_id);
+                if (manualRosterData.studentIds.has(id)) {
+                    setMessage(manualStudentStatus, 'El alumno ya está en la lista.', true);
+                    manualStudentAccount.focus();
+                    return;
+                }
+                manualRoster.append(createManualStudentRow({ id, matricula: cuenta, nombre: alumno.nombre }, manualRoster.rows.length + 1));
+                manualRosterData.studentIds.add(id);
+                setManualDetailsLocked(true);
+                manualRosterStatus.textContent = `Alumnos en la lista: ${manualRoster.rows.length}.`;
+                setMessage(manualStudentStatus, `${alumno.nombre} se agregó al final de la lista.`, false);
+                manualStudentForm.reset();
+                manualStudentForm.hidden = true;
+                addManualStudent.setAttribute('aria-expanded', 'false');
+                addManualStudent.focus();
+            } catch (error) {
+                if (version === manualRosterVersion) setMessage(manualStudentStatus, error.message, true);
+            } finally {
+                if (version === manualRosterVersion) manualStudentSubmit.disabled = false;
+            }
+        });
+
+        manualSaveButton.addEventListener('click', async () => {
+            const total = manualRoster.rows.length;
+            if (!total) {
+                manualSaveStatus.textContent = 'Carga o agrega al menos un alumno antes de guardar la lista.';
+                return;
+            }
+            const version = manualRosterVersion;
+            const retention = manualRetention.value;
+            manualSaveButton.disabled = true;
+            try {
+                const confirmed = await window.confirmarAccion(
+                    `La lista contiene ${total} ${total === 1 ? 'alumno' : 'alumnos'}. El periodo elegido es de ${retention}. Esta es una vista previa.`,
+                    { title: 'Confirmar guardado de lista', acceptText: 'Confirmar' },
+                );
+                if (version !== manualRosterVersion) return;
+                manualSaveStatus.textContent = confirmed
+                    ? 'Vista previa confirmada. El guardado aún no está habilitado.'
+                    : 'Guardado cancelado. La lista sigue en pantalla.';
+            } catch (error) {
+                if (version === manualRosterVersion) manualSaveStatus.textContent = error.message;
+            } finally {
+                manualSaveButton.disabled = false;
+            }
+        });
+
+        function createManualPcPicker(alumno, pcs, assignedPcs) {
+            const element = document.createElement('div');
+            element.className = 'registros-manual-pc';
+            const toggle = document.createElement('button');
+            toggle.type = 'button';
+            toggle.className = 'registros-manual-pc-toggle';
+            toggle.setAttribute('aria-expanded', 'false');
+            const label = document.createElement('span');
+            const icon = document.createElement('i');
+            icon.className = 'fa-solid fa-chevron-down';
+            icon.setAttribute('aria-hidden', 'true');
+            toggle.append(label, icon);
+            const options = document.createElement('div');
+            options.className = 'registros-manual-pc-options';
+            options.id = 'registroManualPcOptions-' + alumno.id;
+            options.setAttribute('popover', 'manual');
+            options.hidden = true;
+            toggle.setAttribute('aria-controls', options.id);
+            const feedback = document.createElement('p');
+            feedback.className = 'registros-manual-pc-error';
+            feedback.id = 'registroManualPcError-' + alumno.id;
+            feedback.setAttribute('role', 'status');
+            toggle.setAttribute('aria-describedby', feedback.id);
+            element.append(toggle, options, feedback);
+            let assignedId;
+
+            function closeOptions() {
+                if (options.hidden) return;
+                options.hidden = true;
+                toggle.setAttribute('aria-expanded', 'false');
+                if (activeManualPcOptions === menu) activeManualPcOptions = undefined;
+                options.hidePopover?.();
+            }
+
+            function positionOptions() {
+                const rect = toggle.getBoundingClientRect();
+                const margin = 8;
+                const viewportWidth = document.documentElement.clientWidth;
+                const viewportHeight = window.innerHeight;
+                if (!rect.width || rect.bottom < 0 || rect.top > viewportHeight) {
+                    closeOptions();
+                    return;
+                }
+                const below = viewportHeight - rect.bottom - margin * 2;
+                const above = rect.top - margin * 2;
+                const openAbove = below < Math.min(130, options.scrollHeight) && above > below;
+                const width = Math.min(rect.width, viewportWidth - margin * 2);
+                options.style.width = `${width}px`;
+                options.style.maxHeight = `${Math.max(0, Math.min(130, openAbove ? above : below))}px`;
+                options.style.left = `${Math.max(margin, Math.min(rect.left, viewportWidth - width - margin))}px`;
+                options.style.top = `${openAbove ? rect.top - options.offsetHeight - margin : rect.bottom + margin}px`;
+            }
+
+            const menu = { close: closeOptions, position: positionOptions };
+
+            function selectPc(pc) {
+                if (pc && pc.id !== assignedId && assignedPcs.has(pc.id)) {
+                    feedback.textContent = `La PC ${pc.nombre} ya no está disponible. Selecciona otra.`;
+                    return;
+                }
+                feedback.textContent = '';
+                assignedPcs.delete(assignedId);
+                assignedId = pc?.id;
+                if (pc) assignedPcs.add(pc.id);
+                label.textContent = pc ? pc.nombre : 'Sin equipo';
+                toggle.setAttribute('aria-label', `Número de PC de ${alumno.nombre}: ${label.textContent}`);
+            }
+
+            function setEnabled(enabled) {
+                toggle.disabled = !enabled;
+                if (!enabled) {
+                    selectPc(null);
+                    closeOptions();
+                }
+            }
+
+            toggle.addEventListener('click', () => {
+                if (!options.hidden) {
+                    closeOptions();
+                    return;
+                }
+                activeManualPcOptions?.close();
+                const available = pcs.filter((pc) => pc.id === assignedId || !assignedPcs.has(pc.id));
+                options.replaceChildren(...[null, ...available].map((pc) => {
+                    const option = document.createElement('button');
+                    option.type = 'button';
+                    option.textContent = pc ? pc.nombre : 'Sin equipo';
+                    option.setAttribute('aria-pressed', String(pc?.id === assignedId));
+                    option.addEventListener('click', () => {
+                        selectPc(pc);
+                        closeOptions();
+                        toggle.focus();
+                    });
+                    return option;
+                }));
+                options.hidden = false;
+                options.showPopover?.();
+                activeManualPcOptions = menu;
+                toggle.setAttribute('aria-expanded', 'true');
+                positionOptions();
+                options.querySelector('[aria-pressed="true"]')?.focus({ preventScroll: true });
+            });
+            element.addEventListener('focusout', (event) => {
+                if (!element.contains(event.relatedTarget)) closeOptions();
+            });
+            element.addEventListener('keydown', (event) => {
+                if (event.key !== 'Escape' || options.hidden) return;
+                event.preventDefault();
+                closeOptions();
+                toggle.focus();
+            });
+            setEnabled(false);
+            return { element, setEnabled };
+        }
+
+        window.addEventListener('resize', () => activeManualPcOptions?.position());
+        window.addEventListener('scroll', () => activeManualPcOptions?.position(), true);
+        manualTeacherSearch.addEventListener('click', async function () {
+            resetManualTeacher();
+            const version = manualLookupVersion;
+            const cuenta = manualTeacher.value.trim();
+            if (!/^\d+$/.test(cuenta)) {
+                setMessage(manualStatus, 'Ingresa un número de cuenta válido.', true);
+                return;
+            }
+            setMessage(manualStatus, 'Buscando docente…', false);
+            try {
+                const docente = await requestJson(apiUrl('{% url "buscar_docente_sala" %}', { cuenta }));
+                if (version !== manualLookupVersion) return;
+                manualTeacherName = docente.nombre;
+                manualCareer.disabled = false;
+                updateManualSummary();
+                setMessage(manualStatus, 'Docente: ' + manualTeacherName, false);
+                if (docente.carrera_id && Array.from(manualCareer.options).some((option) => option.value === String(docente.carrera_id))) {
+                    manualCareer.value = String(docente.carrera_id);
+                    manualCareer.dispatchEvent(new Event('change'));
+                }
+            } catch (error) {
+                if (version === manualLookupVersion) setMessage(manualStatus, error.message, true);
+            }
+        });
+
+        manualCareer.addEventListener('change', async function () {
+            const version = ++manualLookupVersion;
+            clearManualCatalogs();
+            updateManualSummary();
+            setMessage(manualStatus, 'Docente: ' + manualTeacherName, false);
+            if (!manualCareer.value) return;
+            try {
+                const catalogos = await requestJson(apiUrl('{% url "catalogos_clase_docente" %}', {
+                    cuenta: manualTeacher.value.trim(), carrera: manualCareer.value,
+                }));
+                if (version !== manualLookupVersion) return;
+                fillSelect(manualGroup, catalogos.grupos, 'Selecciona un grupo', 'id', 'nombre');
+                fillSelect(manualSubject, catalogos.materias, 'Selecciona una materia', 'id', 'nombre');
+                manualGroup.disabled = !catalogos.grupos.length;
+                manualSubject.disabled = !catalogos.materias.length;
+                syncManualSubjectSearch(manualSubject.disabled ? 'No hay materias disponibles' : 'Busca una materia');
+            } catch (error) {
+                if (version === manualLookupVersion) setMessage(manualStatus, error.message, true);
+            }
+        });
 
         function showOperation(operation) {
             operationMenu.hidden = true;
@@ -437,8 +1094,15 @@
             classFeedback.classList.remove('is-error');
         }
 
-        function resetTypeSelection() {
+        function resetEntry() {
+            manualClass.querySelectorAll('input').forEach((input) => {
+                input.value = input.defaultValue;
+                if (input.type === 'time' || input.matches('[data-calendar-value]')) input.dispatchEvent(new Event('change'));
+            });
+            resetManualTeacher();
+            entryVersion += 1;
             selectedType = null;
+            entryTypePicker.hidden = false;
             classOptionsVersion += 1;
             typeButtons.forEach(function (button) {
                 button.classList.remove('is-selected');
@@ -448,18 +1112,10 @@
             typeSections.forEach(function (section) {
                 section.hidden = true;
             });
-            typeSelectionStatus.textContent = 'Selecciona un tipo de entrada. Una vez seleccionado, no podrás cambiarlo durante esta sesión.';
-            clearRoster();
-        }
-
-        function showOperationMenu() {
-            resetTypeSelection();
-            classSelects.forEach(function (select) { select.value = ''; });
             document.querySelectorAll('input[name="clase_agendada"]').forEach(function (radio) {
                 radio.checked = radio.value === 'si';
             });
             updateAgendaMode();
-            fillSelect(classSelects[1], [], 'Busca y selecciona una clase', 'id', 'nombre');
             selectedStudentId = '';
             document.querySelector('[data-visit-account]').value = '';
             document.querySelector('[data-visit-name]').value = '';
@@ -467,6 +1123,18 @@
             document.querySelector('[data-event-first-name]').value = '';
             document.querySelector('[data-event-last-name]').value = '';
             document.querySelector('[data-event-institution]').value = '';
+            document.querySelectorAll('[data-event-select], [data-event-equipment], [data-visit-equipment]').forEach(function (select) {
+                select.value = '';
+            });
+            [eventFeedback, visitFeedback].forEach(function (feedback) {
+                feedback.textContent = '';
+                feedback.classList.remove('is-error');
+                feedback.hidden = true;
+            });
+        }
+
+        function showOperationMenu() {
+            resetEntry();
             exitSearchForm.reset();
             resetExitResults();
             exitFeedback.hidden = true;
@@ -485,11 +1153,17 @@
         document.querySelectorAll('[data-back-menu]').forEach(function (button) {
             button.addEventListener('click', showOperationMenu);
         });
+        changeEntryType.addEventListener('click', function () {
+            const previousType = selectedType;
+            resetEntry();
+            typeButtons.find((button) => button.dataset.registroType === previousType)?.focus();
+        });
 
         function setType(type) {
             if (selectedType !== null) return;
 
             selectedType = type;
+            entryTypePicker.hidden = true;
             typeButtons.forEach(function (button) {
                 const selected = button.dataset.registroType === type;
                 button.classList.toggle('is-selected', selected);
@@ -499,8 +1173,12 @@
             typeSections.forEach(function (section) {
                 section.hidden = section.dataset.registroFields !== type;
             });
-            typeSelectionStatus.textContent = 'Tipo seleccionado: ' + type + '. No podrás cambiarlo durante esta sesión.';
             if (type === 'Clase') updateAgendaMode();
+            const heading = typeSections.find((section) => !section.hidden)?.querySelector('h3');
+            if (heading) {
+                heading.tabIndex = -1;
+                heading.focus({ preventScroll: true });
+            }
         }
 
         typeButtons.forEach(function (button) {
@@ -510,16 +1188,15 @@
         });
 
         function updateAgendaMode() {
-            const isScheduled = document.querySelector('input[name="clase_agendada"]:checked').value === 'si';
+            const isScheduled = scheduledMode.checked;
             agendaSection.hidden = !isScheduled;
             searchSection.hidden = isScheduled;
+            queueMicrotask(reviewManualClass);
             clearRoster();
-            classSelects.forEach(function (select) { select.value = ''; });
-            searchTeacherAccount.value = '';
-            searchGroup.value = '';
-            searchSubject.value = '';
-            searchFeedback.hidden = true;
-            if (selectedType === 'Clase') loadClassOptions(isScheduled);
+            scheduledClasses.replaceChildren();
+            scheduledStatus.textContent = '';
+            classOptionsVersion += 1;
+            if (isScheduled && selectedType === 'Clase') loadClassOptions();
         }
         agendaModes.forEach(function (radio) {
             radio.addEventListener('change', updateAgendaMode);
@@ -564,7 +1241,7 @@
                         if (equipment.disabled) equipment.value = '';
                         updateEquipmentAvailability();
                     });
-                    equipment.addEventListener('change', updateEquipmentAvailability);
+                    equipment.addEventListener('change', () => updateEquipmentAvailability());
                     attendanceCell.appendChild(attendance);
                     equipmentCell.appendChild(equipment);
                     row.append(accountCell, nameCell, attendanceCell, equipmentCell);
@@ -582,8 +1259,8 @@
             }
         }
 
-        function updateEquipmentAvailability() {
-            const selectors = Array.from(rosterBody.querySelectorAll('[data-attendance-equipment]'));
+        function updateEquipmentAvailability(container = rosterBody) {
+            const selectors = Array.from(container.querySelectorAll('[data-attendance-equipment]'));
             const assigned = new Set(selectors.map(function (select) { return select.value; }).filter(Boolean));
             selectors.forEach(function (select) {
                 Array.from(select.options).forEach(function (option) {
@@ -592,75 +1269,40 @@
             });
         }
 
-        classSelects.forEach(function (select) {
-            select.addEventListener('change', function () {
-                classSelects.forEach(function (other) {
-                    if (other !== select) other.value = '';
-                });
-                if (select === classSelects[1]) {
-                    const clase = searchResults.find(function (item) { return String(item.id) === select.value; });
-                    if (clase) {
-                        searchGroup.value = clase.nombre_grupo;
-                        searchSubject.value = clase.materia;
-                    }
-                }
-                loadRoster(select.value);
-            });
+        scheduledClasses.addEventListener('change', function (event) {
+            loadRoster(event.target.value);
         });
 
-        searchButton.addEventListener('click', function () {
-            searchFeedback.textContent = '';
-            const teacherAccount = searchTeacherAccount.value.trim();
-            if (teacherAccount && !/^[0-9]+$/.test(teacherAccount)) {
-                setMessage(searchFeedback, 'El número de cuenta debe contener únicamente números.', true);
-                return;
-            }
-            const params = {
-                docente: teacherAccount,
-                grupo: searchGroup.value.trim(),
-                materia: searchSubject.value.trim(),
-            };
-            clearRoster();
-            loadClassOptions(false, Object.values(params).some(Boolean) ? params : null);
-        });
-
-        async function loadClassOptions(isScheduled, filters) {
+        async function loadClassOptions() {
             const version = ++classOptionsVersion;
-            const select = classSelects[isScheduled ? 0 : 1];
-            fillSelect(select, [], 'Cargando clases de hoy...', 'id', 'nombre');
-            if (!isScheduled) {
-                searchResults = [];
-                searchButton.disabled = true;
-                if (!filters) {
-                    groupSuggestions.replaceChildren();
-                    subjectSuggestions.replaceChildren();
-                }
-            }
+            scheduledStatus.textContent = 'Cargando clases de hoy…';
             try {
-                const url = filters
-                    ? apiUrl('{% url "buscar_clases_registro" %}', filters)
-                    : '{% url "clases_registro" %}';
-                const result = await requestJson(url);
+                const result = await requestJson('{% url "clases_registro" %}');
                 if (version !== classOptionsVersion) return;
-                if (isScheduled) {
-                    const scheduledClasses = result.clases.filter(function (clase) { return clase.en_horario; });
-                    fillSelect(select, scheduledClasses, 'Selecciona una clase de hoy', 'id', 'nombre');
-                    return;
-                }
-                searchResults = result.clases;
-                fillSelect(select, searchResults, 'Selecciona una clase', 'id', 'nombre');
-                if (!filters) {
-                    fillAutocomplete(groupSuggestions, searchResults.map(function (clase) { return clase.nombre_grupo; }));
-                    fillAutocomplete(subjectSuggestions, searchResults.map(function (clase) { return clase.materia; }));
-                }
-                const noResults = filters ? 'No se encontraron clases para hoy con esos datos.' : 'No se encontraron clases para hoy.';
-                setMessage(searchFeedback, searchResults.length ? 'Selecciona una clase para cargar su lista.' : noResults, false);
+                const classes = result.clases;
+                scheduledStatus.textContent = classes.some((clase) => clase.en_horario)
+                    ? 'Selecciona una clase para cargar su lista de alumnos.'
+                    : classes.length ? 'Por ahora, ninguna clase está en horario de registro.' : 'No hay clases agendadas para hoy.';
+                scheduledClasses.replaceChildren(...classes.map((clase) => {
+                    const option = document.createElement('label');
+                    option.className = 'registros-scheduled-option';
+                    const radio = document.createElement('input');
+                    radio.type = 'radio';
+                    radio.name = 'clase_agendada_seleccionada';
+                    radio.value = clase.id;
+                    radio.disabled = !clase.en_horario;
+                    const text = document.createElement('span');
+                    const title = document.createElement('strong');
+                    title.textContent = clase.nombre;
+                    const detail = document.createElement('small');
+                    detail.textContent = clase.en_horario ? clase.docente : clase.docente + ' · Fuera de horario';
+                    text.append(title, detail);
+                    option.append(radio, text);
+                    return option;
+                }));
             } catch (error) {
                 if (version !== classOptionsVersion) return;
-                fillSelect(select, [], 'No fue posible cargar las clases', 'id', 'nombre');
-                setMessage(isScheduled ? classFeedback : searchFeedback, error.message, true);
-            } finally {
-                if (!isScheduled && version === classOptionsVersion) searchButton.disabled = false;
+                scheduledStatus.textContent = error.message || 'No fue posible cargar las clases.';
             }
         }
 
@@ -730,11 +1372,6 @@
             const soloNumeros = visitAccount.value.replace(/[^0-9]/g, '');
             if (visitAccount.value !== soloNumeros) visitAccount.value = soloNumeros;
         });
-        searchTeacherAccount.addEventListener('input', function () {
-            const soloNumeros = searchTeacherAccount.value.replace(/[^0-9]/g, '');
-            if (searchTeacherAccount.value !== soloNumeros) searchTeacherAccount.value = soloNumeros;
-        });
-
         document.querySelector('[data-search-student]').addEventListener('click', async function () {
             const account = visitAccount.value.trim();
             selectedStudentId = '';
@@ -743,16 +1380,19 @@
             visitFeedback.textContent = '';
             try {
                 const result = await requestJson(apiUrl('{% url "buscar_alumno_sala" %}', { cuenta: account }));
+                if (version !== entryVersion) return;
                 selectedStudentId = result.persona_id;
                 document.querySelector('[data-visit-name]').value = result.nombre;
                 document.querySelector('[data-register-visit]').disabled = false;
                 setMessage(visitFeedback, 'Alumno encontrado.', false);
             } catch (error) {
+                if (version !== entryVersion) return;
                 setMessage(visitFeedback, error.message, true);
             }
         });
 
         document.querySelector('[data-register-visit]').addEventListener('click', async function () {
+            const version = entryVersion;
             if (!selectedStudentId) {
                 setMessage(visitFeedback, 'Busca primero al alumno por su número de cuenta.', true);
                 return;
@@ -767,18 +1407,20 @@
                     persona_id: selectedStudentId,
                     equipo_id: equipmentValue('[data-visit-equipment]'),
                 }));
+                if (version !== entryVersion) return;
                 setMessage(visitFeedback, 'Entrada registrada. Folio: R-' + result.registro_id + '.', false);
                 selectedStudentId = '';
                 visitAccount.value = '';
                 document.querySelector('[data-visit-name]').value = '';
             } catch (error) {
-                setMessage(visitFeedback, error.message, true);
+                if (version === entryVersion) setMessage(visitFeedback, error.message, true);
             } finally {
                 this.disabled = !selectedStudentId;
             }
         });
 
         document.querySelector('[data-register-event]').addEventListener('click', async function () {
+            const version = entryVersion;
             const nombre = document.querySelector('[data-event-first-name]').value.trim();
             const apellidos = document.querySelector('[data-event-last-name]').value.trim();
             const evento = document.querySelector('[data-event-select]').value;
@@ -799,12 +1441,13 @@
                     institucion: document.querySelector('[data-event-institution]').value.trim(),
                     equipo_id: equipmentValue('[data-event-equipment]'),
                 }));
+                if (version !== entryVersion) return;
                 setMessage(eventFeedback, 'Entrada registrada. Entrega este folio para registrar la salida: R-' + result.registro_id + '.', false);
                 document.querySelector('[data-event-first-name]').value = '';
                 document.querySelector('[data-event-last-name]').value = '';
                 document.querySelector('[data-event-institution]').value = '';
             } catch (error) {
-                setMessage(eventFeedback, error.message, true);
+                if (version === entryVersion) setMessage(eventFeedback, error.message, true);
             } finally {
                 this.disabled = false;
             }

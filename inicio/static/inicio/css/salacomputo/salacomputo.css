@@ -7250,6 +7250,155 @@ body.sala-computo-body.sala-computo-body .sala-time-popover .sala-time-apply:hov
     }
 }
 
+.sala-time-picker[data-time-picker] > input[aria-hidden="true"] {
+    display: none;
+}
+
+body.sala-computo-body .sala-time-picker > .sala-time-trigger.sala-time-trigger--compact {
+    min-height: 46px;
+    padding: 6px 7px 6px 13px;
+    border: 1px solid #bfcdbf;
+    border-radius: 9px;
+    background: #fff;
+    color: #384033;
+    box-shadow: none;
+}
+
+body.sala-computo-body .sala-time-picker > .sala-time-trigger.sala-time-trigger--compact i {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    border-radius: 8px;
+    background: #edf3ed;
+    color: #526855;
+}
+
+body.sala-computo-body .sala-time-picker > .sala-time-trigger.sala-time-trigger--compact:is(:hover, [aria-expanded="true"]) i {
+    background: #526855;
+    color: #fff;
+}
+
+body.sala-computo-body.sala-computo-body .sala-time-popover--compact {
+    width: 300px;
+    max-width: calc(100vw - 24px);
+    padding: 18px;
+    border-color: #d8e1d8;
+    border-radius: 12px;
+    box-shadow: 0 12px 30px rgba(56, 64, 51, 0.18);
+    overflow: visible;
+}
+
+body.sala-computo-body.sala-computo-body .sala-time-popover--compact .sala-time-picker-heading {
+    margin-bottom: 16px;
+}
+
+body.sala-computo-body.sala-computo-body .sala-time-popover--compact .sala-time-columns {
+    grid-template-columns: minmax(0, 1fr) 8px minmax(0, 1fr) minmax(0, 1.15fr);
+    align-items: start;
+    gap: 7px;
+}
+
+body.sala-computo-body.sala-computo-body .sala-time-popover--compact .sala-time-columns::before {
+    align-self: start;
+    line-height: 40px;
+}
+
+.sala-time-popover--compact .sala-time-list-field:first-child { grid-column: 1; }
+.sala-time-popover--compact .sala-time-list-field:nth-child(2) { grid-column: 3; }
+.sala-time-popover--compact .sala-time-list-field:nth-child(3) { grid-column: 4; }
+
+.sala-time-popover--compact .sala-time-list-field {
+    position: relative;
+    grid-row: 1;
+    min-width: 0;
+}
+
+.sala-time-popover--compact .sala-time-list-trigger {
+    width: 100%;
+    min-width: 0;
+    min-height: 40px;
+    padding: 0 9px;
+    border: 1px solid #bfcdbf;
+    border-radius: 8px;
+    background: #f7f9f7;
+    color: #384033;
+    font: inherit;
+    font-size: 0.8125rem;
+    text-align: center;
+    cursor: pointer;
+}
+
+.sala-time-list-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+}
+
+.sala-time-list-trigger:is(:hover, [aria-expanded="true"]) { border-color: var(--color-gold); }
+.sala-time-list-trigger i { font-size: 0.65rem; }
+
+.sala-time-list-options {
+    position: absolute;
+    z-index: 2;
+    inset: calc(100% + 3px) 0 auto;
+    max-height: 130px;
+    border: 1px solid #bfcdbf;
+    border-radius: 6px;
+    background: #fff;
+    box-shadow: 0 6px 15px rgba(56, 64, 51, 0.2);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #9cad9c #f2f5f2;
+}
+
+.sala-time-list-options > button {
+    display: block;
+    width: 100%;
+    height: 32px;
+    padding: 0 4px;
+    border: 0;
+    background: transparent;
+    color: #384033;
+    font: inherit;
+    font-size: 0.8125rem;
+    text-align: center;
+    cursor: pointer;
+}
+
+.sala-time-list-options > button:hover { background: #edf3ed; }
+.sala-time-list-options > button[aria-pressed="true"] {
+    background: #526855;
+    color: #fff;
+}
+.sala-time-list-options[hidden] { display: none; }
+
+.sala-time-popover--compact button:focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 1px;
+}
+
+.sala-time-popover--compact .sala-time-list-options > button:focus-visible {
+    outline-offset: -2px;
+}
+
+body.sala-computo-body.sala-computo-body .sala-time-popover--compact .sala-time-actions {
+    display: flex;
+    margin-top: 16px;
+}
+
+body.sala-computo-body.sala-computo-body .sala-time-popover--compact .sala-time-apply {
+    display: block;
+    border-color: #526855;
+    border-radius: 8px;
+    background: #526855;
+}
+
+body.sala-computo-body.sala-computo-body .sala-time-popover--compact .sala-time-apply:hover {
+    background: #384033;
+}
+
 /* Vista de edición: títulos limpios, campos centrados e instrucciones visibles. */
 body.sala-edit-booking-body .sala-edit-booking-panel .sala-form-heading {
     text-align: center;

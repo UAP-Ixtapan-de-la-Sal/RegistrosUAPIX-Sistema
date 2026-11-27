@@ -2,6 +2,7 @@
     const dialog = document.getElementById('appConfirmTitle')?.closest('dialog');
     const title = dialog?.querySelector('#appConfirmTitle');
     const message = dialog?.querySelector('#appConfirmMessage');
+    const details = dialog?.querySelector('#appConfirmDetails');
     const acceptButton = dialog?.querySelector('[data-confirm-accept]');
     const cancelButton = dialog?.querySelector('[data-confirm-cancel]');
 
@@ -16,6 +17,20 @@
 
         title.textContent = settings.title || '¿Confirmas esta acción?';
         message.textContent = confirmationMessage;
+        if (details) {
+            const rows = (settings.details || []).map(([label, value]) => {
+                const row = document.createElement('div');
+                const term = document.createElement('dt');
+                const description = document.createElement('dd');
+                term.textContent = label;
+                description.textContent = value;
+                row.append(term, description);
+                return row;
+            });
+            details.replaceChildren(...rows);
+            details.hidden = !rows.length;
+            dialog.setAttribute('aria-describedby', rows.length ? `${message.id} ${details.id}` : message.id);
+        }
         acceptButton.textContent = settings.acceptText || 'Confirmar';
         dialog.classList.toggle('is-danger', Boolean(settings.danger));
 

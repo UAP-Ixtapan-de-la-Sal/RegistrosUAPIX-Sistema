@@ -22,7 +22,7 @@ body.sala-registros-active > .main-container > .sala-computo-page > .sala-comput
 }
 
 .registros-sala-page:has(.registros-operation-menu:not([hidden])) {
-    max-width: 960px;
+    max-width: 1150px;
 }
 
 .registros-kiosk-shell {
@@ -101,6 +101,73 @@ body.sala-registros-active > .main-container > .sala-computo-page > .sala-comput
     text-align: center;
 }
 
+@media (min-width: 851px) {
+    .registros-kiosk-shell:has(.registros-operation-menu:not([hidden])) {
+        display: flex;
+        flex-direction: column;
+        min-height: clamp(0px, calc(100dvh - 220px), 638px);
+        border-radius: 18px;
+    }
+
+    .registros-kiosk-shell:has(.registros-operation-menu:not([hidden])) > .registros-kiosk-header {
+        min-height: 84px;
+        padding: 18px 30px;
+    }
+
+    .registros-kiosk-content:has(> .registros-operation-menu:not([hidden])) {
+        flex: 1;
+        min-height: 0;
+        padding: clamp(16px, calc(12dvh - 62px), 40px) 45px;
+        align-content: center;
+    }
+
+    .registros-operation-menu {
+        max-width: 950px;
+    }
+
+    .registros-operation-menu .registros-operation-card {
+        min-height: clamp(205px, calc(40dvh - 45px), 295px);
+        padding: clamp(14px, calc(8dvh - 38px), 30px) 25px;
+    }
+
+    .registros-operation-menu .registros-operation-icon {
+        width: 75px;
+        height: 75px;
+    }
+}
+
+@media (max-height: 780px) {
+    body.sala-registros-active:has(.registros-operation-menu:not([hidden])) > .main-container {
+        padding-block: 12px;
+    }
+
+    .registros-operation-menu:not([hidden]) > p {
+        margin-bottom: 16px;
+    }
+
+    .registros-operation-menu .registros-kiosk-note {
+        margin-top: 12px;
+    }
+}
+
+@media (max-width: 600px) and (max-height: 780px) {
+    .registros-kiosk-content:has(> .registros-operation-menu:not([hidden])) {
+        padding-block: 14px;
+    }
+
+    .registros-operation-menu .registros-operation-card {
+        min-height: 0;
+        padding: 12px 16px;
+        gap: 7px;
+    }
+
+    .registros-operation-menu .registros-operation-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 1.2rem;
+    }
+}
+
 .registros-operation-menu h2 {
     margin: 0 0 8px;
     color: var(--color-green-hover);
@@ -168,7 +235,6 @@ body.sala-registros-active > .main-container > .sala-computo-page > .sala-comput
 .registros-exit-button:focus-visible,
 .registros-search-results .registros-class-result:focus-visible,
 .registros-form-actions .sala-form-submit:focus-visible,
-.registros-search-submit:focus-visible,
 .registros-exit-lookup .sala-form-submit:focus-visible {
     outline: 3px solid var(--color-gold);
     outline-offset: 4px;
@@ -278,6 +344,26 @@ body.sala-registros-active > .main-container > .sala-computo-page > .sala-comput
     box-shadow: 0 5px 12px rgba(62, 80, 64, 0.1);
 }
 
+.registros-entry-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.registros-entry-actions > button {
+    margin: 0;
+}
+
+.registros-entry-actions > [data-back-menu] {
+    margin-inline-end: auto;
+}
+
+[data-operation-view="entrada"]:not(:has([data-entry-type-picker][hidden])) [data-change-entry-type] {
+    display: none;
+}
+
 .registros-exit-icon-button {
     display: grid;
     place-items: center;
@@ -287,7 +373,7 @@ body.sala-registros-active > .main-container > .sala-computo-page > .sala-comput
     border: 1px solid transparent;
     border-radius: 50%;
     background: transparent;
-    color: #344638;
+    color: var(--color-green-hover);
     cursor: pointer;
     transition: background-color 160ms ease, border-color 160ms ease;
 }
@@ -299,16 +385,8 @@ body.sala-registros-active > .main-container > .sala-computo-page > .sala-comput
 }
 
 .registros-exit-icon-button:focus-visible {
-    outline: 2px solid #526855;
+    outline: 2px solid var(--color-green);
     outline-offset: 2px;
-}
-
-.registros-exit-close {
-    position: absolute;
-    top: 14px;
-    right: 14px;
-    border-color: #d9e1d8;
-    background: #fff;
 }
 
 .registros-exit-credentials {
@@ -344,15 +422,6 @@ body.sala-registros-active > .main-container > .sala-computo-page > .sala-comput
 
 .registros-exit-credentials .app-confirm-actions button {
     flex: 1 1 auto;
-}
-
-.registros-exit-credentials .app-confirm-accept {
-    border-radius: 12px;
-    background: #526855;
-}
-
-.registros-exit-credentials .app-confirm-accept:hover {
-    background: #405544;
 }
 
 .registros-exit-panel {
@@ -511,6 +580,23 @@ body.sala-registros-active > .main-container > .sala-computo-page > .sala-comput
     gap: 20px;
 }
 
+.registros-entry-heading {
+    position: relative;
+    inset-block-start: -12px;
+    justify-content: center;
+    text-align: center;
+}
+
+[data-operation-view="entrada"]:has([data-entry-type-picker][hidden]) > .registros-entry-heading {
+    display: none;
+}
+
+@media (min-width: 1000px) {
+    .registros-entry-heading {
+        inset-block-start: -36px;
+    }
+}
+
 .registros-panel-heading .sala-computo-eyebrow {
     margin-bottom: 6px;
 }
@@ -659,8 +745,7 @@ body.sala-registros-active > .main-container > .sala-computo-page > .sala-comput
     font-size: 0.88rem;
 }
 
-.registros-form-grid,
-.registros-search-form {
+.registros-form-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: end;
@@ -673,15 +758,13 @@ body.sala-registros-active > .main-container > .sala-computo-page > .sala-comput
     gap: 7px;
 }
 
-.registros-form .sala-form-field label,
-.registros-search-form .sala-form-field > span {
+.registros-form .sala-form-field label {
     color: var(--color-green-hover);
     font-size: 0.86rem;
     font-weight: 700;
 }
 
-.registros-form .sala-form-control,
-.registros-search-form .sala-form-control {
+.registros-form .sala-form-control {
     min-width: 0;
     min-height: 44px;
     padding: 10px 12px;
@@ -692,57 +775,542 @@ body.sala-registros-active > .main-container > .sala-computo-page > .sala-comput
     font: inherit;
 }
 
-.registros-form .sala-form-control:focus,
-.registros-search-form .sala-form-control:focus {
+.registros-form .sala-form-control:focus {
     border-color: var(--color-green);
     outline: none;
     box-shadow: 0 0 0 3px rgba(82, 104, 85, 0.12);
 }
 
 .registros-mode-field {
-    margin: 0 0 18px;
-    padding: 13px 15px;
+    width: fit-content;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0 0 16px;
+    padding: 4px;
     display: flex;
     flex-wrap: wrap;
-    gap: 12px 22px;
+    gap: 4px;
     border: 1px solid rgba(82, 104, 85, 0.18);
     border-radius: 12px;
+    background: #f5f8f4;
 }
 
-.registros-mode-field legend {
-    padding: 0 6px;
+.registros-scheduled-classes {
+    min-width: 0;
+    margin: 0 0 16px;
+    padding: 0;
+    border: 0;
+}
+
+.registros-scheduled-classes legend {
+    padding: 0;
     color: var(--color-green-hover);
-    font-size: 0.87rem;
     font-weight: 700;
+}
+
+.registros-scheduled-status {
+    margin: 6px 0 10px;
+    color: var(--muted);
+    font-size: 0.875rem;
+}
+
+.registros-scheduled-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 275px), 1fr));
+    gap: 8px;
+}
+
+.registros-scheduled-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid #d8e1d8;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.registros-scheduled-option span {
+    display: grid;
+    gap: 4px;
+}
+
+.registros-scheduled-option input {
+    accent-color: var(--color-green);
+}
+
+.registros-scheduled-option:has(:checked) {
+    border-color: #718a72;
+    background: #e2ebdf;
+}
+
+.registros-scheduled-option:focus-within {
+    outline: 2px solid var(--color-green);
+    outline-offset: 2px;
+}
+
+.registros-scheduled-option:has(:disabled) {
+    color: var(--muted);
+    background: #f5f7f5;
+    cursor: default;
 }
 
 .registros-mode-field label {
     display: inline-flex;
     align-items: center;
     gap: 8px;
+    min-height: 38px;
+    padding: 6px 12px;
+    border: 1px solid transparent;
+    border-radius: 8px;
     color: var(--text-main);
     font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.registros-mode-field label:has(input:checked) {
+    border-color: #718a72;
+    background: #e2ebdf;
+    color: var(--color-green-hover);
+}
+
+.registros-mode-field label:focus-within {
+    outline: 2px solid var(--color-green);
+    outline-offset: 1px;
 }
 
 .registros-mode-field input {
     accent-color: var(--color-green);
 }
 
-.registros-search-form {
-    margin: 14px 0;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.registros-search-submit,
 .registros-lookup-button {
     justify-self: center;
 }
 
-.registros-search-submit {
+.registros-class-search {
+    padding: clamp(14px, 2vw, 24px);
+    border: 1px solid #d8e1d8;
+    border-radius: 14px;
+    background: #f8faf8;
+}
+
+#registrosManualClassTitle {
+    margin: 0 0 16px;
+    color: #384033;
+}
+
+.registros-manual-heading {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.registros-manual-heading > i {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 38px;
+    border-radius: 10px;
+    background: #e2ebe2;
+    color: var(--color-green-hover);
+}
+
+.registros-manual-class-grid,
+.registros-manual-schedule-grid {
+    display: grid;
+    gap: 16px;
+    align-items: start;
+}
+
+.registros-manual-class-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.2fr);
+}
+
+.registros-manual-class-grid > .sala-form-field select.sala-form-control {
+    min-height: 46px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    font-weight: 500;
+}
+
+.registros-class-search [data-manual-subject-picker] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.registros-class-search [data-manual-subject-picker] > input {
+    grid-area: 1 / 1;
+    width: 100%;
+    min-height: 46px;
+    padding: 10px 12px;
+    border: 1px solid #bfcdbf;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.registros-selected-subject:not([hidden]) {
+    grid-area: 1 / 1;
+    align-self: center;
+    z-index: 1;
+    padding: 10px 13px;
+    color: var(--text-main);
+    overflow-wrap: anywhere;
+    pointer-events: none;
+}
+
+.registros-class-search [data-manual-subject-picker]:has(.registros-selected-subject:not([hidden])) > input {
+    color: transparent;
+}
+
+.registros-class-search [data-manual-subject-picker] > input[readonly] {
+    cursor: pointer;
+}
+
+.registros-class-search [data-manual-subject-picker] > input:focus {
+    border-color: var(--color-green);
+    outline: 0;
+    box-shadow: 0 0 0 3px rgba(82, 104, 85, 0.14);
+}
+
+[data-manual-subject-picker] .sala-search-select-options {
+    max-height: 240px;
+    border-color: #d8e1d8;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+}
+
+[data-manual-subject-picker] .sala-search-select-option {
+    min-height: 41px;
+    padding: 10px 12px;
+    overflow-wrap: anywhere;
+}
+
+[data-manual-subject-picker] .sala-search-select-option[aria-selected="true"] {
+    background: #eaf2e9;
+}
+
+.registros-manual-schedule-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.registros-manual-schedule,
+.registros-manual-class-status {
     grid-column: 1 / -1;
+    margin: 0;
+}
+
+.registros-manual-class-grid label {
+    color: #384033;
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+.registros-manual-schedule {
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid #d8e1d8;
+    border-radius: 12px;
+    background: #eef3ee;
+}
+
+.registros-manual-schedule legend {
+    padding: 0 6px;
+    color: #384033;
+    font-weight: 700;
+}
+
+.app-confirm-dialog:has(> .app-confirm-details:not([hidden])) {
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+}
+
+.app-confirm-details:not([hidden]) {
+    margin: 0 0 18px;
+    padding: 4px 12px;
+    border: 1px solid #d8e1d8;
+    border-radius: 10px;
+    background: #f1f5ef;
+    text-align: left;
+    font-size: 0.85rem;
+}
+
+.app-confirm-details > div {
+    display: grid;
+    grid-template-columns: 60px minmax(0, 1fr);
+    gap: 10px;
+    padding: 7px 0;
+}
+
+.app-confirm-details > div + div { border-top: 1px solid #d8e1d8; }
+.app-confirm-details dt { color: #526855; }
+.app-confirm-details dd { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+
+.registros-manual-summary-help {
+    margin: 20px 0 10px;
+    color: var(--muted);
+    font-size: 0.875rem;
+    text-align: center;
+}
+
+.registros-manual-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 215px), 1fr));
+    gap: 12px 20px;
+    margin: 0;
+    padding: 16px;
+    border: 1px solid #d8e1d8;
+    border-radius: 12px;
+    background: #eaf0ea;
+    font-size: 0.875rem;
+}
+
+.registros-manual-summary dt {
+    color: var(--muted);
+}
+
+.registros-manual-summary dd {
+    margin: 4px 0 0;
+    color: #384033;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.registros-manual-roster-toolbar,
+.registros-add-student,
+.registros-manual-save-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.registros-manual-roster-toolbar {
+    align-items: center;
+    margin-top: 20px;
+}
+
+.registros-manual-roster-toolbar h4 { margin: 0 auto 0 0; }
+
+.registros-edit-manual-data {
     min-height: 44px;
-    padding: 10px 14px;
+    margin: 0;
+}
+
+.registros-edit-manual-data:disabled {
+    opacity: 0.6;
+    cursor: default;
+    transform: none;
+    box-shadow: none;
+}
+
+.registros-add-student,
+.registros-manual-save-actions {
+    align-items: end;
+    margin-top: 12px;
+}
+
+.registros-add-student[hidden] { display: none; }
+
+.registros-add-student .sala-form-field {
+    flex: 0 1 240px;
+}
+
+.registros-manual-save-actions {
+    justify-content: center;
+}
+
+.registros-manual-roster-status.is-error { color: #a3342a; }
+
+.registros-manual-roster {
+    margin-top: 20px;
+    border: 1px solid #d8e1d8;
+    border-radius: 10px;
+}
+
+.registros-manual-roster .registros-table {
+    min-width: 760px;
+}
+
+.registros-manual-roster .registros-table th {
+    padding: 15px 12px;
+    background: #eaf0ea;
+    color: #384033;
+    text-transform: none;
     white-space: nowrap;
+}
+
+.registros-manual-roster .registros-table td {
+    padding: 13px 12px;
+    border-top: 1px solid #d8e1d8;
+    color: #384033;
+    vertical-align: middle;
+}
+
+.registros-manual-roster .registros-table tbody tr:nth-child(even) {
+    background: #f8faf8;
+}
+
+.registros-manual-roster .registros-table tbody tr:focus-within,
+.registros-manual-roster .registros-table tbody tr:hover {
+    background: #edf4ed;
+}
+
+.registros-manual-attendance,
+.registros-manual-attendance label {
+    display: flex;
+    align-items: center;
+}
+
+.registros-manual-attendance {
+    gap: 15px;
+}
+
+.registros-manual-attendance label {
+    gap: 5px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.registros-manual-attendance input {
+    accent-color: var(--color-green);
+    cursor: pointer;
+}
+
+.registros-manual-pc {
+    width: 150px;
+}
+
+.registros-manual-pc-toggle {
+    width: 100%;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 10px;
+    font: inherit;
+    text-align: left;
+}
+
+.registros-manual-pc-toggle,
+.registros-manual-pc-options {
+    border: 1px solid #bfcdbf;
+    border-radius: 8px;
+    background: #f5f8f4;
+    color: #384033;
+}
+
+.registros-manual-pc-toggle,
+.registros-manual-pc-options button {
+    cursor: pointer;
+}
+
+.registros-manual-pc-toggle:disabled {
+    color: #727f73;
+    cursor: default;
+}
+
+.registros-manual-pc-options {
+    position: fixed;
+    inset: auto;
+    z-index: 1200;
+    max-height: 130px;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    box-shadow: 0 8px 20px rgba(62, 80, 64, 0.16);
+}
+
+.registros-manual-pc-options[hidden] { display: none; }
+
+.registros-manual-pc-options button {
+    display: block;
+    width: 100%;
+    min-height: 32px;
+    padding: 4px 8px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+}
+
+.registros-manual-pc-options button:hover,
+.registros-manual-pc-toggle:hover:not(:disabled) {
+    background: #e2ebdf;
+}
+
+.registros-manual-pc-options button:focus-visible,
+.registros-manual-pc-toggle:focus-visible {
+    outline: 2px solid var(--color-green);
+    outline-offset: -2px;
+}
+
+.registros-manual-pc-options button[aria-pressed="true"] {
+    background: #e2ebdf;
+    font-weight: 700;
+}
+
+.registros-manual-pc-error:not(:empty) {
+    margin: 5px 0 0;
+    color: #a3342a;
+    font-size: 0.75rem;
+    white-space: normal;
+}
+
+.registros-manual-pc-error:empty {
+    margin: 0;
+}
+
+.registros-manual-roster-status {
+    margin: 10px 0 0;
+    color: var(--muted);
+    font-size: 0.875rem;
+}
+
+.registros-manual-class-note {
+    margin: 14px 0;
+    padding: 10px 12px;
+    border-inline-start: 3px solid var(--color-gold);
+    border-radius: 6px;
+    background: #fcf6e9;
+    color: #69532d;
+    font-size: 0.875rem;
+}
+
+.registros-fields:has(> .registros-class-search:not([hidden])) > .registros-class-attendance {
+    display: none;
+}
+
+@media (max-width: 950px) {
+    .registros-manual-class-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 600px) {
+    .registros-manual-class-grid,
+    .registros-manual-schedule-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+.registros-class-search .sala-form-field {
+    gap: 9px;
+}
+
+.registros-class-search .sala-form-field > span {
+    color: #384033;
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+.registros-class-search .sala-form-field > .sala-form-control {
+    width: 100%;
+    min-height: 46px;
+    padding: 10px 13px;
+    border: 1px solid #bfcdbf;
+    border-radius: 9px;
+    background-color: #fff;
 }
 
 .registros-sala-page .sala-form-submit,
@@ -1009,10 +1577,6 @@ body.sala-registros-active > .main-container > .sala-computo-page > .sala-comput
         min-height: 0;
     }
 
-    .registros-search-form {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
 }
 
 @media (max-width: 600px) {
@@ -1045,8 +1609,7 @@ body.sala-registros-active > .main-container > .sala-computo-page > .sala-comput
     }
 
     .registros-type-grid,
-    .registros-form-grid,
-    .registros-search-form {
+    .registros-form-grid {
         grid-template-columns: 1fr;
     }
 
